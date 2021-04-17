@@ -64,6 +64,7 @@ ament_target_dependencies(bt_ros2
 	${dependencies}
 )
 
+# Remove
 include_directories(./thirdparty/nlohmann-json)
 
 install (TARGETS
