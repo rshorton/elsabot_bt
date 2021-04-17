@@ -1,0 +1,17 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Repeat num_cycles="1">
+            <Fallback name="get_answer">
+              <Sequence>
+                 <Delay delay_msec="3000">
+                   <TextToSpeechClient msg="What's your name?" />
+                 </Delay>
+                 <SpeechToTextClient text="{said}" />
+                 <TextToSpeechClient msg="You said" />
+                 <TextToSpeechClient msg="{said}" />
+              </Sequence>
+              <TextToSpeechClient msg="I'm sorry, but I didn't hear a response" />
+            </Fallback>
+        </Repeat>
+    </BehaviorTree>
+</root>
