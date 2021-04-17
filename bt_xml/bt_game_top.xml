@@ -1,0 +1,301 @@
+<root main_tree_to_execute="MainTree">
+
+	<BehaviorTree ID="Init">
+		<Sequence>
+			<SetBlackboard output_key="exit_key" value="0" />
+      <SetBlackboard output_key="stop_key" value="0" />
+			<SetBlackboard output_key="do_greeting" value="0" />
+			<SetBlackboard output_key="do_menu" value="0" />
+			<SetBlackboard output_key="person_detected" value="0" />
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="Terminate">
+		<Sequence>
+			<TextToSpeechActionClient msg="Goodbye" />
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="Greet">
+		<Sequence>
+			<TextToSpeechActionClient msg="Hi there" />
+			<Delay delay_msec="500">
+				<SmileAction level="3" duration_ms="2000" />
+			</Delay>
+			<Delay delay_msec="1000">
+				<SmileAction level="0" duration_ms="1" />
+			</Delay>
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="DetectPerson">
+		<Sequence>
+			<HumanPoseDetect expected_pose_left="" expected_pose_right="" pose_left_speech="{pose_left_speech}"
+				pose_right_speech="{pose_right_speech}" />
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="GamePlay">
+		<Sequence>
+			<Repeat num_cycles="10">
+				<BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
+					<Sequence>
+						<Fallback name="get_answer">
+							<Sequence>
+								<TextToSpeechActionClient msg="What do you want to do" />
+								<SpeechToTextActionClient text="{said}" />
+							</Sequence>
+						</Fallback>
+
+						<Fallback name="pick_action">
+							<Sequence>
+								<SpeechTextCompareClient text="{said}" ck_for="" />
+								<TextToSpeechActionClient msg="I'm sorry, but I didn't hear a response" />
+							</Sequence>
+							<Sequence>
+								<Sequence>
+									<TextToSpeechActionClient msg="You said, " msg2="{said}" />
+								</Sequence>
+								<Fallback>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*(hide|seek).*" />
+										<TextToSpeechActionClient msg="Ok, let's play hide and seek together" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*(simon|says).*" />
+										<TextToSpeechActionClient msg="Ok, let's play simon says" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*(stop|quit|exit).*" />
+										<TextToSpeechActionClient msg="Ok, let's play again later" />
+										<SetBlackboard output_key="exit_key" value="1" />
+									</Sequence>
+									<Sequence>
+										<HeadTiltAction angle="20" dwell_ms="1500" />
+										<TextToSpeechActionClient msg="I'm sorry, but I don't know how to do that" />
+									</Sequence>
+								</Fallback>
+							</Sequence>
+						</Fallback>
+					</Sequence>
+				</BlackboardCheckInt>
+			</Repeat>
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="RobotSays">
+		<Sequence>
+      <TextToSpeechActionClient msg="Here's how to play robot says. I'll tell you where to put your hands and arms, and then you try to do that. If you want to stop, just say hey robot." />
+
+
+      <TextToSpeechActionClient msg="We are finished playing robot says now. " />
+		</Sequence>
+	</BehaviorTree>
+
+  <BehaviorTree ID="RobotSays_dummy">
+    <Sequence>
+      <TextToSpeechActionClient msg="We are playing robot says now. " />
+      <TextToSpeechActionClient msg="We are finished playing robot says now. " />
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="RobotSeek">
+    <Sequence>
+      <TextToSpeechActionClient msg="We are playing robot seek now. " />
+      <TextToSpeechActionClient msg="We are finished playing robot seek now. " />
+    </Sequence>
+  </BehaviorTree>
+
+	<BehaviorTree ID="AskGame">
+		<Sequence>
+		  <SetBlackboard output_key="result" value="0" />
+			<RetryUntilSuccesful num_attempts="2">
+				<Sequence>
+					<TextToSpeechActionClient msg="{game_name}" />
+					<SpeechToTextActionClient text="{said}" />
+					<Inverter>
+						<ReactiveSequence>
+							<SpeechTextCompareClient text="{said}" ck_for="" />
+							<TextToSpeechActionClient msg="I'm sorry, but I didn't understand you." />
+						</ReactiveSequence>
+					</Inverter>
+
+					<Fallback>
+						<ReactiveSequence>
+							<SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
+							<Sequence>
+  							<SetBlackboard output_key="result" value="1" />
+                <TextToSpeechActionClient msg="Great! Let's play!" />
+							</Sequence>
+						</ReactiveSequence>
+						<ReactiveSequence>
+							<SpeechTextCompareClient text="{said}" ck_for=".*(no|nope|nah).*" />
+							<!-- Will return success and end cause loop to finish -->
+							<SetBlackboard output_key="dummy" value="0" />
+						</ReactiveSequence>
+						<ForceFailure>
+							<TextToSpeechActionClient msg="I'm sorry, but I didn't understand you." />
+						</ForceFailure>
+					</Fallback>
+				</Sequence>
+			</RetryUntilSuccesful>
+			<BlackboardCheckInt value_A="{result}" value_B="1" return_on_mismatch="FAILURE">
+			  <SetBlackboard output_key="dummy" value="0" />
+			</BlackboardCheckInt>
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="ChooseAndPlayGame">
+		<Sequence>
+			<SetBlackboard output_key="break" value="0" />
+			<SetBlackboard output_key="first" value="1" />
+			<RetryUntilSuccesful num_attempts="2">
+				<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
+					<Fallback>
+						<Sequence>
+							<SetBlackboard output_key="game_name" value="Do you want to play Robot Says?" />
+							<SubTree ID="AskGame" game_name="game_name" />
+							<SubTree ID="RobotSays" />
+						</Sequence>
+						<Sequence>
+							<SetBlackboard output_key="game_name" value="Well, how about Robot Seek" />
+							<SubTree ID="AskGame" game_name="game_name" />
+							<SubTree ID="RobotSeek" />
+						</Sequence>
+						<Sequence>
+							<BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
+								<Sequence>
+									<SetBlackboard output_key="first" value="0" />
+									<TextToSpeechActionClient msg="Would you like to hear the list again?" />
+									<SpeechToTextActionClient text="{said}" />
+									<ReactiveSequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
+										<!-- this will make it try again since a retry loop -->
+										<ForceFailure>
+											<SetBlackboard output_key="dummy" value="0" />
+										</ForceFailure>
+									</ReactiveSequence>
+								</Sequence>
+							</BlackboardCheckInt>
+						</Sequence>
+					</Fallback>
+					</BlackboardCheckInt>
+				</RetryUntilSuccesful>
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="GameMenu">
+	<Sequence>
+	  <SetBlackboard output_key="stop_key" value="0" />
+		<Repeat num_cycles="3">
+			<BlackboardCheckInt value_A="{stop_key}" value_B="0" return_on_mismatch="FAILURE">
+				<Sequence>
+					<Fallback name="get_answer">
+						<Sequence>
+							<TextToSpeechActionClient msg="Would you like to play a game?" />
+							<SpeechToTextActionClient text="{said}" />
+						</Sequence>
+					</Fallback>
+
+					<Fallback>
+						<Sequence>
+							<SpeechTextCompareClient text="{said}" ck_for="" />
+							<TextToSpeechActionClient msg="I'm sorry, but I didn't hear you" />
+						</Sequence>
+						<Sequence>
+							<!-- Sequence -->
+								<!--   TextToSpeechActionClient msg="You said, " msg2="{said}" / -->
+							<!--  /Sequence -->
+							<Fallback>
+								<Sequence>
+									<SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
+									<TextToSpeechActionClient msg="Ok!" />
+									<ForceSuccess>
+									<SubTree ID="ChooseAndPlayGame" />
+									</ForceSuccess>
+								</Sequence>
+								<Sequence>
+									<SpeechTextCompareClient text="{said}" ck_for=".*(no|nope|nah).*" />
+									<TextToSpeechActionClient msg="Ok, maybe we can play later." />
+									<SetBlackboard output_key="stop_key" value="1" />
+								</Sequence>
+								<Sequence>
+                  <HeadTiltAction angle="20" dwell_ms="1500" />
+                  <TextToSpeechActionClient msg="I'm sorry, I didn't understand." />
+                </Sequence>
+
+							</Fallback>
+						</Sequence>
+					</Fallback>
+				</Sequence>
+			</BlackboardCheckInt>
+		</Repeat>
+	</Sequence>
+</BehaviorTree>
+
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+      <SetBlackboard output_key="exit_key" value="0" />
+      <SetBlackboard output_key="stop_key" value="0" />
+      <SetBlackboard output_key="do_greeting" value="0" />
+      <SetBlackboard output_key="do_menu" value="0" />
+      <SetBlackboard output_key="person_detected" value="0" />
+      <RobotSaysInitAction level_start="0" level_end="3" />
+			<KeepRunningUntilFailure>
+				<BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
+					<ForceSuccess>
+						<Sequence>
+
+							<!-- Update person detection status and enable greeting and menu if person now detected -->
+							<IfThenElse>
+  							<Delay delay_msec="200">
+	   							<SubTree ID="DetectPerson" />
+								</Delay>
+								<!-- Detected -->
+								<BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="SUCCESS">
+									<Sequence>
+										<SetBlackboard output_key="person_detected" value="1" />
+										<SetBlackboard output_key="do_greeting" value="1" />
+										<SetBlackboard output_key="do_menu" value="1" />
+									</Sequence>
+								</BlackboardCheckInt>
+								<!-- Not Detected -->
+								<SetBlackboard output_key="person_detected" value="0" />
+							</IfThenElse>
+
+							<!-- Update hot wake word detection and enable greeting and menu if heard -->
+							<IfThenElse>
+								<WakeWordDetected />
+								<!-- Detected -->
+								<Sequence>
+									<SetBlackboard output_key="do_greeting" value="1" />
+									<SetBlackboard output_key="do_menu" value="1" />
+								</Sequence>
+								<SetBlackboard output_key="dummy" value="1" />
+							</IfThenElse>
+
+							<BlackboardCheckInt value_A="{do_greeting}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<SubTree ID="Greet" />
+									<SetBlackboard output_key="do_greeting" value="0" />
+								</Sequence>
+							</BlackboardCheckInt>
+
+							<BlackboardCheckInt value_A="{do_menu}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<ForceSuccess>
+										<SubTree ID="GameMenu" stop_key="stop_key" />
+									</ForceSuccess>
+									<SetBlackboard output_key="do_menu" value="0" />
+								</Sequence>
+							</BlackboardCheckInt>
+
+						</Sequence>
+					</ForceSuccess>
+				</BlackboardCheckInt>
+			</KeepRunningUntilFailure>
+			<SubTree ID="Terminate" />
+		</Sequence>
+	</BehaviorTree>
+
+</root>

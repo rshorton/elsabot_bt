@@ -1,0 +1,27 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Sequence>
+        <Repeat num_cycles="1">
+            <Fallback name="get_answer">
+              <Sequence>
+                 <TextToSpeechActionClient msg="Hi there" />
+                 <Delay delay_msec="500">
+                   <SmileAction level="3" duration_ms="2000"/>
+                 </Delay>
+                 <Delay delay_msec="2000">
+                   <TextToSpeechActionClient msg="What's your name?" />
+                 </Delay>
+                 <SpeechToTextActionClient text="{said}" />
+                 <TextToSpeechActionClient msg="You said" />
+                 <TextToSpeechActionClient msg="{said}" />
+              </Sequence>
+              <ForceFailure>
+                <HeadTiltAction angle="45" dwell_ms="1500" />
+              </ForceFailure>
+              <TextToSpeechActionClient msg="I'm sorry, but I didn't you" />
+            </Fallback>
+        </Repeat>
+        <TextToSpeechActionClient msg="Goodbye" />
+        </Sequence>
+    </BehaviorTree>
+</root>

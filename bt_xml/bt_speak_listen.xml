@@ -1,17 +1,30 @@
-<root main_tree_to_execute = "MainTree">
+<?xml version="1.0"?>
+<root main_tree_to_execute="MainTree">
+    <!-- ////////// -->
     <BehaviorTree ID="MainTree">
-        <Repeat num_cycles="1">
+        <Repeat num_cycles="2">
             <Fallback name="get_answer">
-              <Sequence>
-                 <Delay delay_msec="3000">
-                   <TextToSpeechClient msg="What's your name?" />
-                 </Delay>
-                 <SpeechToTextClient text="{said}" />
-                 <TextToSpeechClient msg="You said" />
-                 <TextToSpeechClient msg="{said}" />
-              </Sequence>
-              <TextToSpeechClient msg="I'm sorry, but I didn't hear a response" />
+                <Sequence>
+                    <Delay delay_msec="3000">
+                        <Action ID="TextToSpeechActionClient" msg="What's your name?"/>
+                    </Delay>
+                    <Action ID="SpeechToTextActionClient" text="{said}"/>
+                    <Action ID="TextToSpeechActionClient" msg="You said"/>
+                    <Action ID="TextToSpeechActionClient" msg="{said}"/>
+                </Sequence>
+                <Action ID="TextToSpeechActionClient" msg="I'm sorry, but I didn't hear a response"/>
             </Fallback>
         </Repeat>
     </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="SpeechToTextActionClient">
+            <output_port name="text" type="std::string"/>
+        </Action>
+        <Action ID="TextToSpeechActionClient">
+            <input_port name="msg" type="std::string"/>
+        </Action>
+    </TreeNodesModel>
+    <!-- ////////// -->
 </root>
+
