@@ -48,14 +48,14 @@
 							<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
 								pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
 							<TextToSpeechActionClient msg="{pose_speech}" />
-							<Delay delay_msec="2000">
+							<Delay delay_msec="2500">
                   <SetBlackboard output_key="dummy" value="0" />
               </Delay>
 							<Fallback>
 								<Sequence>
 									<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
 										pose_lr_check="{pose_lr_check}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-                  <GetRandomSelectionAction options="Fabulous!|Good!|Nice!|Ok!|Super!|Fantastic!" selected="{to_say}"/>
+                  <GetRandomSelectionAction options="Fabulous!|Good!|Nice!|Ok!|Super!|Fantastic!|Nice going!" selected="{to_say}"/>
                   <TextToSpeechActionClient msg="{to_say}" />
 								</Sequence>
 								<SetBlackboard output_key="dummy" value="0" />
@@ -63,9 +63,14 @@
 						</Sequence>
 
 						<Fallback>
-							<RobotSaysNextPassAction />
+              <Sequence>
+                <RobotSaysNextPassAction level_desc="{level_desc}" />
+                <TextToSpeechActionClient msg="Let's play the next level, " msg2="{level_desc}" />
+                <SmileAction level="3" duration_ms="2000" />
+              </Sequence>
 							<ForceFailure>
 								<TextToSpeechActionClient msg="You finished playing the game. Great job!" />
+								<SmileAction level="4" duration_ms="2000" />
 							</ForceFailure>
 						</Fallback>
 					</Fallback>

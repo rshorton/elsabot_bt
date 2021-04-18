@@ -35,7 +35,7 @@ public:
 	static RobotSaysGame* GetRobotSaysGame();
 	static RobotSaysGame* CreateRobotSaysGame();
 
-	int NextPass(bool reset);
+	int NextPass(bool reset, std::string &level_desc);
 
 	// Type: any, l, r, lr
 	int NextStep(string &pose_name_l, string &pose_name_r, string &pose_lr_check, string &pose_speech);
@@ -52,6 +52,7 @@ private:
 	map<enum Pose, string> speech_;
 	map<enum Pose, string> name_;
 	vector<enum Sides> levels_;
+	vector<std::string> level_desc_;
 	int32_t level_start_;
 	int32_t level_end_;
 	int32_t level_cur_;

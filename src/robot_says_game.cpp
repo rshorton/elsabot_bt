@@ -51,6 +51,7 @@ RobotSaysGame::RobotSaysGame():
 	poses_ = {OnHip, ArmOut, ArmToSide, TShoulder, TStomach, AHead, OHead /*, TNeck*/};
 
 	levels_ = {SideAny, Left, Right, LeftAndRight};
+	level_desc_ = {"Either left or right", "Left hand only", "Right hand only", "Left and Right hands"};
 
 	Init(level_start_, level_end_);
 }
@@ -59,7 +60,7 @@ RobotSaysGame::~RobotSaysGame()
 {
 }
 
-int RobotSaysGame::NextPass(bool reset)
+int RobotSaysGame::NextPass(bool reset, std::string &level_desc)
 {
 	if (reset) {
 		level_cur_ = level_start_;
@@ -80,6 +81,7 @@ int RobotSaysGame::NextPass(bool reset)
 		std::cout << name_[*it] << " ";
 	}
 	std::cout << endl;
+	level_desc = level_desc_[level_cur_];
 	return 0;
 }
 
@@ -152,7 +154,8 @@ void RobotSaysGame::Init(int32_t level_start, int32_t level_end)
 	level_start_ = level_start;
 	level_end_ = level_end;
 
-	NextPass(true);
+	std::string level_desc;
+	NextPass(true, level_desc);
 }
 
 void RobotSaysGame::DumpSteps()
@@ -171,13 +174,14 @@ void RobotSaysGame::DumpSteps()
 
 void RobotSaysGame::TestGameData()
 {
-	NextPass(true);
+	std::string level_desc;
+	NextPass(true, level_desc);
 	DumpSteps();
-	NextPass(false);
+	NextPass(false, level_desc);
 	DumpSteps();
-	NextPass(false);
+	NextPass(false, level_desc);
 	DumpSteps();
-	NextPass(false);
+	NextPass(false, level_desc);
 	DumpSteps();
 }
 
