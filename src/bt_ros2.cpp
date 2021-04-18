@@ -9,7 +9,9 @@
 #include "smile_action.hpp"
 #include "head_tilt_action.hpp"
 #include "wakeword_detected.hpp"
-#include "robot_says_actions.hpp"
+#include "robot_says_init_actions.hpp"
+#include "robot_says_next_pass.hpp"
+#include "robot_says_next_step.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -46,6 +48,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<HeadTiltAction>("HeadTiltAction");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");
     factory.registerNodeType<RobotSaysInitAction>("RobotSaysInitAction");
+    factory.registerNodeType<RobotSaysNextPassAction>("RobotSaysNextPassAction");
+    factory.registerNodeType<RobotSaysNextStepAction>("RobotSaysNextStepAction");
 
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at

@@ -35,60 +35,38 @@
 		</Sequence>
 	</BehaviorTree>
 
-	<BehaviorTree ID="GamePlay">
-		<Sequence>
-			<Repeat num_cycles="10">
-				<BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
-					<Sequence>
-						<Fallback name="get_answer">
-							<Sequence>
-								<TextToSpeechActionClient msg="What do you want to do" />
-								<SpeechToTextActionClient text="{said}" />
-							</Sequence>
-						</Fallback>
-
-						<Fallback name="pick_action">
-							<Sequence>
-								<SpeechTextCompareClient text="{said}" ck_for="" />
-								<TextToSpeechActionClient msg="I'm sorry, but I didn't hear a response" />
-							</Sequence>
-							<Sequence>
-								<Sequence>
-									<TextToSpeechActionClient msg="You said, " msg2="{said}" />
-								</Sequence>
-								<Fallback>
-									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*(hide|seek).*" />
-										<TextToSpeechActionClient msg="Ok, let's play hide and seek together" />
-									</Sequence>
-									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*(simon|says).*" />
-										<TextToSpeechActionClient msg="Ok, let's play simon says" />
-									</Sequence>
-									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*(stop|quit|exit).*" />
-										<TextToSpeechActionClient msg="Ok, let's play again later" />
-										<SetBlackboard output_key="exit_key" value="1" />
-									</Sequence>
-									<Sequence>
-										<HeadTiltAction angle="20" dwell_ms="1500" />
-										<TextToSpeechActionClient msg="I'm sorry, but I don't know how to do that" />
-									</Sequence>
-								</Fallback>
-							</Sequence>
-						</Fallback>
-					</Sequence>
-				</BlackboardCheckInt>
-			</Repeat>
-		</Sequence>
-	</BehaviorTree>
-
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
-      <TextToSpeechActionClient msg="Here's how to play robot says. I'll tell you where to put your hands and arms, and then you try to do that. If you want to stop, just say hey robot." />
+      <!- TextToSpeechActionClient
+        msg="Here's how to play robot says. I'll tell you where to put your hands and arms, and then you try to do that. If you want to stop, just say hey robot." / -->
 
+			<RobotSaysInitAction level_start="0" level_end="3" />
+			<KeepRunningUntilFailure>
+				<Sequence>
+					<Fallback>
+						<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
+							pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
+						<Fallback>
+							<RobotSaysNextPassAction />
+							<ForceFailure>
+								<TextToSpeechActionClient msg="Great job! We are finished playing. " />
+							</ForceFailure>
+						</Fallback>
+					</Fallback>
+					<TextToSpeechActionClient msg="{pose_speech}" />
+					<Delay delay_msec="2000">
+						<Sequence>
+							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
+								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+							<TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}" />
+							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
+								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+							<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
+						</Sequence>
+					</Delay>
+				</Sequence>
 
-      <TextToSpeechActionClient msg="We are finished playing robot says now. " />
+			</KeepRunningUntilFailure>
 		</Sequence>
 	</BehaviorTree>
 
@@ -240,7 +218,8 @@
       <SetBlackboard output_key="do_greeting" value="0" />
       <SetBlackboard output_key="do_menu" value="0" />
       <SetBlackboard output_key="person_detected" value="0" />
-      <RobotSaysInitAction level_start="0" level_end="3" />
+
+      <SubTree ID="RobotSays" />
 			<KeepRunningUntilFailure>
 				<BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
 					<ForceSuccess>

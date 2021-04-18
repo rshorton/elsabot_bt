@@ -59,6 +59,7 @@ ament_target_dependencies(send_goal
 
 add_executable(bt_ros2
   src/bt_ros2.cpp
+  src/robot_says_game.cpp
 )
 ament_target_dependencies(bt_ros2
 	${dependencies}
