@@ -1,1 +1,0 @@
-/home/scott/ros2/robot_ws/src/BT_ros2/launch/bt_ros2.launch.py
