@@ -37,6 +37,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 			return{
 				BT::InputPort<std::string>("expected_pose_left"),
 				BT::InputPort<std::string>("expected_pose_right"),
+				BT::InputPort<std::string>("pose_lr_check"),
 				BT::OutputPort<std::string>("pose_left"),
 				BT::OutputPort<std::string>("pose_right"),
 				BT::OutputPort<std::string>("pose_left_speech"),
@@ -117,22 +118,35 @@ class HumanPoseDetect : public BT::SyncActionNode
 				throw BT::RuntimeError("missing expected pose_right");
 			}
 
-			RCLCPP_INFO(node_->get_logger(), "Check for poses: detected= [%d], L [%s], R [%s], current L [%s], R[%s]",
-					detected_, expected_left.c_str(), expected_right.c_str(), cur_pose_left_.c_str(), cur_pose_right_.c_str());
+			std::string pose_lr_check = "any";
+			getInput<std::string>("pose_lr_check", pose_lr_check);
+
+			RCLCPP_INFO(node_->get_logger(), "Check for poses: person_det= [%d], Compare: [%s],  L [%s], R [%s], current L [%s], R[%s]",
+					detected_,
+					pose_lr_check.c_str(),
+					expected_left.c_str(),
+					expected_right.c_str(),
+					cur_pose_left_.c_str(),
+					cur_pose_right_.c_str());
 
 			// Return success if both of the expected left/right poses are seen.  Either or both
 			// can be required.  If neither l/r poses are specified, then success if a person
 			// is detected at all.
 			if (detected_) {
-				bool okL = true;
-				bool okR = true;
-				if (expected_left.length() != 0 && expected_left.compare(cur_pose_left_) != 0) {
-					okL = false;
+				bool okL = false;
+				bool okR = false;
+
+				if (expected_left.length() != 0 && expected_left.compare(cur_pose_left_) == 0) {
+					okL = true;
 				}
-				if (expected_right.length() != 0 && expected_right.compare(cur_pose_right_) != 0) {
-					okR = false;
+				if (expected_right.length() != 0 && expected_right.compare(cur_pose_right_) == 0) {
+					okR = true;
 				}
-				if (okL && okR) {
+
+				if ((pose_lr_check.compare("left") == 0 && okL) ||
+					(pose_lr_check.compare("right") == 0 && okR) ||
+					(pose_lr_check.compare("any") == 0 && (okL || okR)) ||
+					(pose_lr_check.compare("both") == 0 && okL && okR)) {
 					return BT::NodeStatus::SUCCESS;
 				}
 			}

@@ -44,26 +44,31 @@
 			<KeepRunningUntilFailure>
 				<Sequence>
 					<Fallback>
-						<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
-							pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
+						<Sequence>
+							<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
+								pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
+							<TextToSpeechActionClient msg="{pose_speech}" />
+							<Delay delay_msec="2000">
+                  <SetBlackboard output_key="dummy" value="0" />
+              </Delay>
+							<Fallback>
+								<Sequence>
+									<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
+										pose_lr_check="{pose_lr_check}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+                  <GetRandomSelectionAction options="Fabulous!|Good!|Nice!|Ok!|Super!|Fantastic!" selected="{to_say}"/>
+                  <TextToSpeechActionClient msg="{to_say}" />
+								</Sequence>
+								<SetBlackboard output_key="dummy" value="0" />
+							</Fallback>
+						</Sequence>
+
 						<Fallback>
 							<RobotSaysNextPassAction />
 							<ForceFailure>
-								<TextToSpeechActionClient msg="Great job! We are finished playing. " />
+								<TextToSpeechActionClient msg="You finished playing the game. Great job!" />
 							</ForceFailure>
 						</Fallback>
 					</Fallback>
-					<TextToSpeechActionClient msg="{pose_speech}" />
-					<Delay delay_msec="2000">
-						<Sequence>
-							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
-								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-							<TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}" />
-							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
-								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-							<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
-						</Sequence>
-					</Delay>
 				</Sequence>
 
 			</KeepRunningUntilFailure>

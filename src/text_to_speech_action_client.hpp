@@ -34,6 +34,32 @@ public:
         return{ BT::InputPort<std::string>("msg"), BT::InputPort<std::string>("msg2") };
     }
 
+    void ReplaceAllOccurrences(std::string search, std::string replace, std::string &str)
+    {
+    	size_t pos = 0;
+    	size_t len = str.length();
+    	size_t slen = search.length();
+    	size_t rlen = replace.length();
+    	while (pos < len) {
+    		size_t found = str.find(search, pos);
+    		if (found != std::string::npos) {
+	        	str = str.replace(found, slen, replace);
+	        	len = str.length();
+	        	pos = found + rlen + 1;
+    		} else {
+    			break;
+    		}
+    	}
+    }
+
+    void UnescapeXML(std::string &str)
+    {
+    	ReplaceAllOccurrences("$lt;",   "<", str);
+    	ReplaceAllOccurrences("$gt;",   ">", str);
+    	ReplaceAllOccurrences("$quot;", "\"", str);
+    	ReplaceAllOccurrences("$amp;",  "&", str);
+    }
+
     virtual BT::NodeStatus tick() override
     {
     	std::string msg;
@@ -62,6 +88,14 @@ public:
 
         _aborted = false;
 
+    	msg += " ";
+    	msg += msg2;
+
+        // Unescape any SSML in the string(s)
+        UnescapeXML(msg);
+
+		std::cout << "Unescaped text: " << msg << std::endl;
+
     	std::ifstream file("./ssml.xml");
     	std::string ssml_in, str;
     	while (std::getline(file, str))
@@ -75,15 +109,10 @@ public:
     	std::string place_holder = "TEXT";
     	pos = ssml_in.find(place_holder);
     	if (pos != std::string::npos) {
-    		ssml = ssml_in.substr(0, pos);
-    		ssml += msg;
-    		if (msg2.length() > 0) {
-    			ssml += "";
-    			ssml += msg2;
-    		}
-    		ssml += ssml_in.substr(pos + place_holder.length());
+        	ssml = ssml_in.replace(pos, place_holder.length(), msg);
     	}
         RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech cmd [%s]", msg.c_str());
+        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech ssml cmd [%s]", ssml.c_str());
 
         auto goal_msg = Speak::Goal();
         goal_msg.text = ssml;

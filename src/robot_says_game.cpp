@@ -37,7 +37,7 @@ RobotSaysGame::RobotSaysGame():
 	speech_[TStomach] = "put your * hand on your stomach";
 	speech_[AHead] = "put your * hand high above your head";
 	speech_[OHead] = "put your * hand on your head";
-	speech_[TNeck] = "put your * hand on your neck";
+	//speech_[TNeck] = "put your * hand on your neck";
 
 	name_[OnHip] = "OnHip";
 	name_[ArmOut] = "ArmOut";
@@ -46,9 +46,9 @@ RobotSaysGame::RobotSaysGame():
 	name_[TStomach] = "TouchingStomach";
 	name_[AHead] = "Abovehead";
 	name_[OHead] = "OnHead";
-	name_[TNeck] = "TouchingNeck";
+	//name_[TNeck] = "TouchingNeck";
 
-	poses_ = {OnHip, ArmOut, ArmToSide, TShoulder, TStomach, AHead, OHead, TNeck};
+	poses_ = {OnHip, ArmOut, ArmToSide, TShoulder, TStomach, AHead, OHead /*, TNeck*/};
 
 	levels_ = {SideAny, Left, Right, LeftAndRight};
 
@@ -83,7 +83,6 @@ int RobotSaysGame::NextPass(bool reset)
 	return 0;
 }
 
-// Type: any, l, r, lr
 int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &pose_lr_check, string &pose_speech)
 {
 	pose_name_l = "";
@@ -93,6 +92,13 @@ int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &po
 	if (random_poses_.size() == 0) {
 		return -1;
 	}
+
+	std::cout << "NextStep: Remaining in pose list: ";
+	for (auto it = random_poses_.begin(); it != random_poses_.end(); it++) {
+		std::cout << name_[*it] << " ";
+	}
+	std::cout << endl;
+
 	Pose p = random_poses_.back();
 	random_poses_.pop_back();
 	pose_speech = speech_[p];
@@ -111,12 +117,12 @@ int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &po
 		case Left:
 			side = "left";
 			pose_name_l = name_[p];
-			pose_lr_check = "both";
+			pose_lr_check = "left";
 			break;
 		case Right:
 			side = "right";
 			pose_name_r = name_[p];
-			pose_lr_check = "both";
+			pose_lr_check = "right";
 			break;
 		case LeftAndRight:
 			if ((rand() % 2) == 0) {
@@ -126,7 +132,7 @@ int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &po
 				pose_name_r = name_[p];
 				side = "right";
 			}
-			pose_lr_check = "both";
+			pose_lr_check = side;
 			break;
 		}
 		pose_speech.replace(marker, 1, side);

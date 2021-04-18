@@ -1,0 +1,1 @@
+rclcpp;rclcpp_action;std_msgs;geometry_msgs;nav2_behavior_tree;nav2_msgs;behaviortree_cpp_v3;speech_action_interfaces;face_control_interfaces;ament_lint_auto;ament_lint_common
