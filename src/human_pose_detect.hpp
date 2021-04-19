@@ -133,6 +133,10 @@ class HumanPoseDetect : public BT::SyncActionNode
 			// can be required.  If neither l/r poses are specified, then success if a person
 			// is detected at all.
 			if (detected_) {
+				if (pose_lr_check.compare("presence") == 0) {
+					return BT::NodeStatus::SUCCESS;
+				}
+
 				bool okL = false;
 				bool okR = false;
 
