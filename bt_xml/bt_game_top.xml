@@ -37,125 +37,132 @@
 
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
-			<TextToSpeechActionClient msg="Here's how to play robot says. I'll tell you where to put your hands and arms, and
+			<TextToSpeechActionClient
+				msg="Here's how to play robot says. I'll tell you where to put your hands and arms, and
 				then you try to do that. If you want to stop, just say hey robot." />
 
 			<SetBlackboard output_key="break" value="0" />
 			<RobotSaysInitAction level_start="0" level_end="3" />
-			<KeepRunningUntilFailure>
-				<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
-					<Fallback>
-						<Sequence>
-							<SetBlackboard output_key="dummy" value="0" />
-							<WakeWordDetected since_ms="3000" />
-							<TextToSpeechActionClient
-								msg="Hey there. here are the options for this game.  Say stop to end or continue to keep playing. To change the level say level easy, level left, level right, level challenging, or level all." />
-							<SpeechToTextActionClient text="{said}" />
-							<Fallback>
-								<Sequence>
-									<SpeechTextCompareClient text="{said}" ck_for=".*stop.*" />
-									<TextToSpeechActionClient msg="Ok, let's stop playing this game." />
-									<SetBlackboard output_key="break" value="1" />
-								</Sequence>
-								<Sequence>
-									<SpeechTextCompareClient text="{said}" ck_for=".*easy.*" />
-									<TextToSpeechActionClient msg="Ok, let's play the easy level." />
-									<RobotSaysInitAction level_start="0" level_end="0" />
-								</Sequence>
-								<Sequence>
-									<SpeechTextCompareClient text="{said}" ck_for=".*left.*" />
-									<TextToSpeechActionClient msg="Ok, let's play the left-hand level." />
-									<RobotSaysInitAction level_start="1" level_end="1" />
-								</Sequence>
-								<Sequence>
-									<SpeechTextCompareClient text="{said}" ck_for=".*right.*" />
-									<TextToSpeechActionClient msg="Ok, let's play the right-hand level." />
-									<RobotSaysInitAction level_start="2" level_end="2" />
-								</Sequence>
-								<Sequence>
-									<SpeechTextCompareClient text="{said}" ck_for=".*chal.*" />
-									<TextToSpeechActionClient msg="Ok, let's play the most challenging level." />
-									<RobotSaysInitAction level_start="3" level_end="3" />
-								</Sequence>
-								<Sequence>
-									<SpeechTextCompareClient text="{said}" ck_for=".*all.*" />
-									<TextToSpeechActionClient msg="Ok, let's play all levels." />
-									<RobotSaysInitAction level_start="0" level_end="3" />
-								</Sequence>
-							</Fallback>
-						</Sequence>
+			<ForceSuccess>
+				<KeepRunningUntilFailure>
+					<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
+						<Fallback>
+							<Sequence>
+								<SetBlackboard output_key="dummy" value="0" />
+								<WakeWordDetected since_ms="3000" />
+								<HeadTiltAction angle="10" dwell_ms="1500" />
+								<TextToSpeechActionClient
+									msg="Hey there. here are the options for this game.  Say stop to end or continue to keep playing. To change the level say level easy, level left, level right, level challenging, or level all." />
+								<SpeechToTextActionClient text="{said}" />
+								<Fallback>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*stop.*" />
+										<TextToSpeechActionClient msg="Ok, let's stop playing this game." />
+										<SetBlackboard output_key="break" value="1" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*easy.*" />
+										<TextToSpeechActionClient msg="Ok, let's play the easy level." />
+										<RobotSaysInitAction level_start="0" level_end="0" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*left.*" />
+										<TextToSpeechActionClient msg="Ok, let's play the left-hand level." />
+										<RobotSaysInitAction level_start="1" level_end="1" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*right.*" />
+										<TextToSpeechActionClient msg="Ok, let's play the right-hand level." />
+										<RobotSaysInitAction level_start="2" level_end="2" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*chal.*" />
+										<TextToSpeechActionClient msg="Ok, let's play the most challenging level." />
+										<RobotSaysInitAction level_start="3" level_end="3" />
+									</Sequence>
+									<Sequence>
+										<SpeechTextCompareClient text="{said}" ck_for=".*all.*" />
+										<TextToSpeechActionClient msg="Ok, let's play all levels." />
+										<RobotSaysInitAction level_start="0" level_end="3" />
+									</Sequence>
+								</Fallback>
+							</Sequence>
 
-						<Sequence>
-							<Fallback>
-								<Sequence>
-									<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
-										pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
-									<TextToSpeechActionClient msg="{pose_speech}" />
-									<Delay delay_msec="2500">
-										<SetBlackboard output_key="dummy" value="0" />
-									</Delay>
+							<Sequence>
+								<Fallback>
+									<Sequence>
+										<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
+											pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
+										<TextToSpeechActionClient msg="{pose_speech}" />
+										<Delay delay_msec="2500">
+											<SetBlackboard output_key="dummy" value="0" />
+										</Delay>
+
+										<Fallback>
+											<Sequence>
+												<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
+													pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+													pose_right_speech="{pose_right_speech}" />
+												<GetRandomSelectionAction
+													options="Fabulous!|Good!|Nice!|Ok!|Super!|Fantastic!|Nice going!" selected="{to_say}" />
+												<TextToSpeechActionClient msg="{to_say}" />
+											</Sequence>
+											<Sequence>
+												<SpeechTextCompareClient text="{detected_person}" ck_for="no" />
+												<HeadTiltAction angle="20" dwell_ms="1500" />
+												<TextToSpeechActionClient
+													msg="Hey there! Where did you go?  I'll wait a while for you to come back." />
+												<Fallback>
+													<RetryUntilSuccesful num_attempts="10">
+														<Sequence>
+
+															<Delay delay_msec="3000">
+																<SetBlackboard output_key="dummy" value="0" />
+															</Delay>
+															<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
+																pose_lr_check="presence" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+																pose_right_speech="{pose_right_speech}" />
+															<TextToSpeechActionClient msg="Great, you're back.  Let's keep playing!" />
+														</Sequence>
+													</RetryUntilSuccesful>
+													<Sequence>
+														<SpeechTextCompareClient text="{detected_person}" ck_for="no" />
+														<SetBlackboard output_key="break" value="1" />
+														<SetBlackboard output_key="stop_key" value="1" />
+														<TextToSpeechActionClient
+															msg="Oh well...maybe they will come back later.  Stopping game." />
+													</Sequence>
+												</Fallback>
+											</Sequence>
+											<Sequence>
+												<SetBlackboard output_key="dummy" value="0" />
+											</Sequence>
+										</Fallback>
+									</Sequence>
 
 									<Fallback>
 										<Sequence>
-											<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
-												pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
-												pose_right_speech="{pose_right_speech}" />
-											<GetRandomSelectionAction
-												options="Fabulous!|Good!|Nice!|Ok!|Super!|Fantastic!|Nice going!" selected="{to_say}" />
-											<TextToSpeechActionClient msg="{to_say}" />
-										</Sequence>
-										<Sequence>
-											<SpeechTextCompareClient text="{detected_person}" ck_for="no" />
-											<TextToSpeechActionClient
-												msg="Hey there! Where did you go?  I'll wait a while for you to come back." />
-											<Fallback>
-												<RetryUntilSuccesful num_attempts="10">
-													<Sequence>
-
-														<Delay delay_msec="3000">
-															<SetBlackboard output_key="dummy" value="0" />
-														</Delay>
-														<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
-															pose_lr_check="presence" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
-															pose_right_speech="{pose_right_speech}" />
-														<TextToSpeechActionClient msg="Great, you're back.  Let's keep playing!" />
-													</Sequence>
-												</RetryUntilSuccesful>
-												<Sequence>
-													<SpeechTextCompareClient text="{detected_person}" ck_for="no" />
-													<SetBlackboard output_key="break" value="1" />
-													<TextToSpeechActionClient msg="Oh well...maybe they will come back later.  Stopping game." />
-												</Sequence>
-											</Fallback>
-										</Sequence>
-										<Sequence>
-											<SetBlackboard output_key="dummy" value="0" />
-										</Sequence>
-									</Fallback>
-								</Sequence>
-
-								<Fallback>
-									<Sequence>
-										<RobotSaysNextPassAction level_desc="{level_desc}" />
-										<TextToSpeechActionClient msg="Let's play the next level, " msg2="{level_desc}" />
-										<SmileAction level="3" duration_ms="2000" />
-										<Delay delay_msec="2500">
-                      <SetBlackboard output_key="dummy" value="0" />
-                    </Delay>
-
-									</Sequence>
-									<ForceFailure>
-										<Sequence>
-											<TextToSpeechActionClient msg="You finished playing the game. Great job!" />
+											<RobotSaysNextPassAction level_desc="{level_desc}" />
+											<TextToSpeechActionClient msg="Let's play the next level, " msg2="{level_desc}" />
 											<SmileAction level="3" duration_ms="2000" />
+											<Delay delay_msec="2500">
+												<SetBlackboard output_key="dummy" value="0" />
+											</Delay>
+
 										</Sequence>
-									</ForceFailure>
+										<ForceFailure>
+											<Sequence>
+												<TextToSpeechActionClient msg="You finished playing the game. Great job!" />
+												<SmileAction level="3" duration_ms="2000" />
+											</Sequence>
+										</ForceFailure>
+									</Fallback>
 								</Fallback>
-							</Fallback>
-						</Sequence>
-					</Fallback>
-				</BlackboardCheckInt>
-			</KeepRunningUntilFailure>
+							</Sequence>
+						</Fallback>
+					</BlackboardCheckInt>
+				</KeepRunningUntilFailure>
+			</ForceSuccess>
 		</Sequence>
 	</BehaviorTree>
 
@@ -222,12 +229,12 @@
             <Sequence>
               <SetBlackboard output_key="game_name" value="Do you want to play Robot Says?" />
               <SubTree ID="AskGame" game_name="game_name" />
-              <SubTree ID="RobotSays" />
+              <SubTree ID="RobotSays" stop_key="stop_key"/>
             </Sequence>
             <Sequence>
               <SetBlackboard output_key="game_name" value="How about Robot Seek" />
               <SubTree ID="AskGame" game_name="game_name" />
-              <SubTree ID="RobotSeek" />
+              <SubTree ID="RobotSeek" stop_key="stop_key"/>
             </Sequence>
             <Sequence>
               <BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
@@ -273,7 +280,7 @@
                   <SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
                   <TextToSpeechActionClient msg="Ok!" />
                   <ForceSuccess>
-                  <SubTree ID="ChooseAndPlayGame" />
+                  <SubTree ID="ChooseAndPlayGame"  stop_key="stop_key"/>
                   </ForceSuccess>
                 </Sequence>
                 <Sequence>
