@@ -235,13 +235,8 @@
                   <SetBlackboard output_key="first" value="0" />
                   <TextToSpeechActionClient msg="Would you like to hear the list again?" />
                   <SpeechToTextActionClient text="{said}" />
-                  <ReactiveSequence>
-                    <SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
-                    <!-- this will make it try again since a retry loop -->
-                    <ForceFailure>
-                      <SetBlackboard output_key="dummy" value="0" />
-                    </ForceFailure>
-                  </ReactiveSequence>
+                  <SpeechTextCompareClient text="{said}" ck_for=".*(no|nope|nah).*" />
+                  <SetBlackboard output_key="break" value="1" />
                 </Sequence>
               </BlackboardCheckInt>
             </Sequence>
