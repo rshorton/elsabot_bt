@@ -38,6 +38,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 				BT::InputPort<std::string>("expected_pose_left"),
 				BT::InputPort<std::string>("expected_pose_right"),
 				BT::InputPort<std::string>("pose_lr_check"),
+				BT::OutputPort<std::string>("detected_person"),
 				BT::OutputPort<std::string>("pose_left"),
 				BT::OutputPort<std::string>("pose_right"),
 				BT::OutputPort<std::string>("pose_left_speech"),
@@ -102,6 +103,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 
         	setOutput("pose_left", cur_pose_left_);
         	setOutput("pose_left", cur_pose_right_);
+        	setOutput("detected_person", detected_? "yes": "no");
 
 			RCLCPP_INFO(node_->get_logger(), "[%s], [%s]", getSpeechText(cur_pose_left_).c_str(), getSpeechText(cur_pose_right_).c_str());
 

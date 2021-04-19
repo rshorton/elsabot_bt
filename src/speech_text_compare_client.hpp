@@ -12,6 +12,7 @@
 #include "std_srvs/srv/empty.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
+// Rename to TextCompareAction
 class SpeechTextCompareClient : public BT::SyncActionNode
 {
     public:
