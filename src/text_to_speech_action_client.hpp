@@ -112,7 +112,7 @@ public:
         	ssml = ssml_in.replace(pos, place_holder.length(), msg);
     	}
         RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech cmd [%s]", msg.c_str());
-        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech ssml cmd [%s]", ssml.c_str());
+//        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech ssml cmd [%s]", ssml.c_str());
 
         auto goal_msg = Speak::Goal();
         goal_msg.text = ssml;
