@@ -25,23 +25,29 @@ class WakeWordDetected : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return{};
+        	return {BT::InputPort<std::string>("since_ms")};
+
         }
 
         virtual BT::NodeStatus tick() override
         {
         	rclcpp::spin_some(node_);
 
-        	steady_clock::time_point now = steady_clock::now();
-        	duration<double> time_span = duration_cast<duration<double>>(now - ww_time);
+        	if (ww.length()) {
+				unsigned since_ms = 1000;
+				getInput("delay_msec", since_ms);
 
-        	auto ww_temp = ww;
-        	ww = "";
+				steady_clock::time_point now = steady_clock::now();
+				auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - ww_time);
 
-            if (ww_temp.length() > 0 && time_span.count() < 1.0) {
-            	RCLCPP_INFO(node_->get_logger(), "Wakeword Detected: return success");
-            	return BT::NodeStatus::SUCCESS;
-            }
+				auto ww_temp = ww;
+				ww = "";
+				std::cout << "Wakeword: since last: " << ms.count() << ", since_ms: " << since_ms << std::endl;
+				if (ww_temp.length() > 0 && ms.count() < since_ms) {
+					RCLCPP_INFO(node_->get_logger(), "Wakeword Detected: return success");
+					return BT::NodeStatus::SUCCESS;
+				}
+        	}
             return BT::NodeStatus::FAILURE;
         }
 
