@@ -12,7 +12,7 @@ class SmileAction : public BT::SyncActionNode
         {
             node_ = rclcpp::Node::make_shared("bt_smile_action_node");
 
-            smile_publisher_ = node_->create_publisher<face_control_interfaces::msg::Smile>("/smile", 2);
+            smile_publisher_ = node_->create_publisher<face_control_interfaces::msg::Smile>("/head/smile", 2);
         }
 
         static BT::PortsList providedPorts()

@@ -18,6 +18,7 @@
   <depend>behaviortree_cpp_v3</depend>
   <depend>speech_action_interfaces</depend>
   <depend>face_control_interfaces</depend>
+  <depend>human_pose_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

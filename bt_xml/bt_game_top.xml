@@ -38,9 +38,7 @@
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
 			<TextToSpeechActionClient
-				msg="Here's how to play robot says. I'll tell you where to put your hands and arms, and
-				then you try to do that. If you want to stop, just say hey robot." />
-
+				msg="Here's how to play robot says. I'll tell you where to put your hands and arms and then you try to do that. If you want to stop, just say hey robot." />
 			<SetBlackboard output_key="break" value="0" />
 			<RobotSaysInitAction level_start="0" level_end="3" />
 			<ForceSuccess>
@@ -104,7 +102,7 @@
 													pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
 													pose_right_speech="{pose_right_speech}" />
 												<GetRandomSelectionAction
-													options="Fabulous!|Good!|Nice!|Ok!|Super!|Fantastic!|Nice going!" selected="{to_say}" />
+													options="Fabulous!|Good!|Nice!|Cool!|Super!|Fantastic!|Nice going!|Groovy baby|Splendid" selected="{to_say}" />
 												<TextToSpeechActionClient msg="{to_say}" />
 											</Sequence>
 											<Sequence>

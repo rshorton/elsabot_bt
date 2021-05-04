@@ -8,6 +8,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "human_pose_interfaces/msg/detected_pose.hpp"
+
 #include <behaviortree_cpp_v3/action_node.h>
 
 using namespace std::chrono_literals;
@@ -22,14 +24,14 @@ class HumanPoseDetect : public BT::SyncActionNode
         {
             node_ = rclcpp::Node::make_shared("human_pose_detect_bt_node");
 
+            detected_pose__sub_ = node_->create_subscription<human_pose_interfaces::msg::DetectedPose>(
+                "/head/detected_pose",
+				rclcpp::SystemDefaultsQoS(),
+				std::bind(&HumanPoseDetect::poseCallback, this, std::placeholders::_1));
+
             speech_strings_ = createPoseToSpeechMap();
 
-            //vad_sub_ = node_->create_subscription<std_msgs::msg::Bool>(
-            //  "speech_detect/vad",
-            //  rclcpp::SystemDefaultsQoS(),
-            //  std::bind(&VoiceDetected::vadCallback, this, std::placeholders::_1));
-
-            timer_ = node_->create_wall_timer(100ms, std::bind(&HumanPoseDetect::update, this));
+//            timer_ = node_->create_wall_timer(100ms, std::bind(&HumanPoseDetect::update, this));
         }
 
         static BT::PortsList providedPorts()
@@ -45,6 +47,15 @@ class HumanPoseDetect : public BT::SyncActionNode
 				BT::OutputPort<std::string>("pose_right_speech")};
         }
 
+        void poseCallback(human_pose_interfaces::msg::DetectedPose::SharedPtr msg)
+        {
+        	cur_pose_left_ = msg->left;
+        	cur_pose_right_ = msg->right;
+        	detected_ = msg->detected;
+			RCLCPP_INFO(node_->get_logger(), "Got pose callback [%s], [%s]", cur_pose_left_.c_str(), cur_pose_right_.c_str());
+        }
+
+#if 0
         void update()
         {
     		RCLCPP_INFO(node_->get_logger(), "update");
@@ -74,7 +85,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 #endif
         	}
         }
-
+#endif
         const std::string getSpeechText(std::string pose)
         {
         	return speech_strings_[pose];
@@ -99,7 +110,8 @@ class HumanPoseDetect : public BT::SyncActionNode
         virtual BT::NodeStatus tick() override
         {
         	// timer not working
-        	update();
+        	//update();
+        	rclcpp::spin_some(node_);
 
         	setOutput("pose_left", cur_pose_left_);
         	setOutput("pose_left", cur_pose_right_);
@@ -162,7 +174,7 @@ class HumanPoseDetect : public BT::SyncActionNode
     private:
         rclcpp::Node::SharedPtr node_;
         rclcpp::TimerBase::SharedPtr timer_;
-//        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr vad_sub_;
+        rclcpp::Subscription<human_pose_interfaces::msg::DetectedPose>::SharedPtr detected_pose__sub_;
 
         bool detected_;
         std::string cur_pose_left_;

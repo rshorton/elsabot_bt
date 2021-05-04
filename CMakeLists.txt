@@ -26,6 +26,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
 find_package(face_control_interfaces REQUIRED)
+find_package(human_pose_interfaces REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -48,6 +49,7 @@ set(dependencies
   behaviortree_cpp_v3
   speech_action_interfaces
   face_control_interfaces
+  human_pose_interfaces
 )
 
 add_executable(send_goal

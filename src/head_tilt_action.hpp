@@ -12,7 +12,7 @@ class HeadTiltAction : public BT::SyncActionNode
         {
             node_ = rclcpp::Node::make_shared("bt_head_tilt_action_node");
 
-            head_tilt_publisher_ = node_->create_publisher<face_control_interfaces::msg::HeadTilt>("/head_tilt", 2);
+            head_tilt_publisher_ = node_->create_publisher<face_control_interfaces::msg::HeadTilt>("/head/tilt", 2);
         }
 
         static BT::PortsList providedPorts()
