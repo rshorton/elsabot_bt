@@ -1,4 +1,8 @@
 #include "nav2_client.hpp"
+#include "nav2_compute_path_client.hpp"
+#include "nav2_clear_local_cost_map.hpp"
+#include "nav2_clear_global_cost_map.hpp"
+
 #include "interrupt_event.hpp"
 #include "snapshot_client.hpp"
 #include "speech_text_compare_client.hpp"
@@ -13,6 +17,7 @@
 #include "robot_says_next_pass.hpp"
 #include "robot_says_next_step.hpp"
 #include "get_random_selection.hpp"
+#include "robot_seek_init_action.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -52,9 +57,14 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSaysNextPassAction>("RobotSaysNextPassAction");
     factory.registerNodeType<RobotSaysNextStepAction>("RobotSaysNextStepAction");
     factory.registerNodeType<GetRandomSelectionAction>("GetRandomSelectionAction");
+    factory.registerNodeType<Nav2ComputePathClient>("Nav2ComputePathClient");
+    factory.registerNodeType<Nav2ClearLocalCostMap>("Nav2ClearLocalCostMap");
+    factory.registerNodeType<Nav2ClearGlobalCostMap>("Nav2ClearGlobalCostMap");
+
+    factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
 
 
-
+    // Check the template type above since you probably copy and pasted and forgot to change it!!!!
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the

@@ -1,0 +1,12 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Repeat num_cycles="1">
+            <Sequence>
+                <Nav2ClearLocalCostMap/>
+                <Nav2ClearGlobalCostMap/>
+                <SetBlackboard output_key="Goal_a" value="-0.7,-3.8" />
+                <Nav2ComputePathClient goal="{Goal_a}" />
+            </Sequence>
+        </Repeat>
+    </BehaviorTree>
+</root>

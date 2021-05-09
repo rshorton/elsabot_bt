@@ -9,20 +9,23 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
-#include "geometry_msgs/msg/pose.hpp"
-#include "geometry_msgs/msg/quaternion.hpp"
+//#include "geometry_msgs/msg/pose.hpp"
+//#include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "tf2/transform_datatypes.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+//#include "tf2/transform_datatypes.h"
+//#include "tf2/LinearMath/Quaternion.h"
+//#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "behaviortree_cpp_v3/action_node.h"
+#include "nav2_util/geometry_utils.hpp"
+
+using nav2_util::geometry_utils::orientationAroundZAxis;
 
 // Custom type
 struct Pose2D
 {
-    double x, y, quaternion_z, quaternion_w;
+    double x, y;
+    double yaw;
 };
-
 
 namespace BT
 {
@@ -31,18 +34,17 @@ Pose2D convertFromString(StringView key)
 {
     // three real numbers separated by semicolons
     auto parts = BT::splitString(key, ';');
-    if (parts.size() != 4)
+    if (parts.size() != 3)
     {
         throw BT::RuntimeError("invalid input)");
     }
     else
     {
         Pose2D output;
-        output.x     = convertFromString<double>(parts[0]);
-        output.y     = convertFromString<double>(parts[1]);
-        output.quaternion_z = convertFromString<double>(parts[2]);
-        output.quaternion_w = convertFromString<double>(parts[3]);
-	return output;
+        output.x = convertFromString<double>(parts[0]);
+        output.y = convertFromString<double>(parts[1]);
+		output.yaw = convertFromString<double>(parts[2]);
+		return output;
     }
 }
 } // end namespace BT
@@ -79,7 +81,7 @@ public:
 
         _aborted = false;
 
-        RCLCPP_INFO(node_->get_logger(), "Sending goal %f %f %f %f", goal.x, goal.y, goal.quaternion_z, goal.quaternion_w);
+        RCLCPP_INFO(node_->get_logger(), "Sending goal %f %f %f", goal.x, goal.y, goal.yaw);
 
         nav2_msgs::action::NavigateToPose::Goal goal_msg;
         goal_msg.pose.header.frame_id = "map";
@@ -87,11 +89,7 @@ public:
         goal_msg.pose.pose.position.x = goal.x;
         goal_msg.pose.pose.position.y = goal.y;
         goal_msg.pose.pose.position.z = 0.0;
-
-	goal_msg.pose.pose.orientation.x = 0;
-        goal_msg.pose.pose.orientation.y = 0;
-        goal_msg.pose.pose.orientation.z = goal.quaternion_z;
-        goal_msg.pose.pose.orientation.w = goal.quaternion_w;
+        goal_msg.pose.pose.orientation = orientationAroundZAxis(goal.yaw);
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=

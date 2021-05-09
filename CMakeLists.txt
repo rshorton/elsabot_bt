@@ -27,6 +27,9 @@ find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
 find_package(face_control_interfaces REQUIRED)
 find_package(human_pose_interfaces REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(nav_msgs REQUIRED)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -50,6 +53,8 @@ set(dependencies
   speech_action_interfaces
   face_control_interfaces
   human_pose_interfaces
+  nav2_util
+  nav_msgs
 )
 
 add_executable(send_goal
@@ -62,6 +67,8 @@ ament_target_dependencies(send_goal
 add_executable(bt_ros2
   src/bt_ros2.cpp
   src/robot_says_game.cpp
+  src/robot_seek_game.cpp
+  src/nav2_compute_path_client_util.cpp
 )
 ament_target_dependencies(bt_ros2
 	${dependencies}
