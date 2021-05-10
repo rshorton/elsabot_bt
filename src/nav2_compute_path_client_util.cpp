@@ -11,7 +11,7 @@
 //#include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav_msgs/msg/path.h"
+#include "nav_msgs/msg/path.hpp"
 
 #include "nav2_compute_path_client_util.hpp"
 

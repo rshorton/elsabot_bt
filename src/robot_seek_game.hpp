@@ -5,8 +5,6 @@
 #include <string>
 #include <map>
 
-using namespace std;
-
 class RobotSeekGame
 {
 private:
@@ -26,7 +24,7 @@ public:
 	static RobotSeekGame* GetRobotSeekGame();
 	static RobotSeekGame* CreateRobotSeekGame();
 
-	bool Init(rclcpp::Node::SharedPtr node, std::string search_poses, double init_x, double init_y, double init_yaw);
+	bool Init(rclcpp::Node::SharedPtr node, std::vector<SearchPose> &poses, double init_x, double init_y, double init_yaw);
 	bool NextSearchPose(double &x, double &y, double &yaw);
 
 //	void DumpSteps();
@@ -34,7 +32,7 @@ public:
 
 
 private:
-	vector<SearchPose> poses_;
+	std::vector<SearchPose> poses_;
 	unsigned int idx_cur_;
 	unsigned int idx_start_;
 	bool bFirst_;
