@@ -11,6 +11,7 @@
 #include "human_pose_detect.hpp"
 #include "voice_detected.hpp"
 #include "smile_action.hpp"
+#include "track_action.hpp"
 #include "head_tilt_action.hpp"
 #include "wakeword_detected.hpp"
 #include "robot_says_init_actions.hpp"
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
     factory.registerNodeType<HumanPoseDetect>("HumanPoseDetect");
     factory.registerNodeType<SmileAction>("SmileAction");
+    factory.registerNodeType<TrackAction>("TrackAction");
     factory.registerNodeType<HeadTiltAction>("HeadTiltAction");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");
     factory.registerNodeType<RobotSaysInitAction>("RobotSaysInitAction");
@@ -63,7 +65,6 @@ int main(int argc, char **argv)
     factory.registerNodeType<Nav2ClearGlobalCostMap>("Nav2ClearGlobalCostMap");
     factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
     factory.registerNodeType<RobotSpin>("RobotSpin");
-
 
     // Check the template type above since you probably copy and pasted and forgot to change it!!!!
 

@@ -1,0 +1,14 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<SmileAction level="1" duration_ms="2000" />
+			<Delay delay_msec="3000">
+        <SmileAction level="3" duration_ms="2000" />
+			</Delay>
+      <Delay delay_msec="3000">
+        <SmileAction level="0" duration_ms="2000" />
+      </Delay>
+		</Sequence>
+
+	</BehaviorTree>
+</root>

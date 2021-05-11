@@ -1,0 +1,16 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Delay delay_msec="4000">
+        <TrackAction mode="Track" rate="3" />
+			</Delay>
+      <Delay delay_msec="4000">
+        <TrackAction mode="Off" rate="3" />
+      </Delay>
+      <Delay delay_msec="4000">
+        <TrackAction mode="Track" rate="3" />
+      </Delay>
+		</Sequence>
+
+	</BehaviorTree>
+</root>
