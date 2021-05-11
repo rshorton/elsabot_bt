@@ -27,14 +27,15 @@ public:
 	bool Init(rclcpp::Node::SharedPtr node, std::vector<SearchPose> &poses, double init_x, double init_y, double init_yaw);
 	bool NextSearchPose(double &x, double &y, double &yaw);
 
-//	void DumpSteps();
-//	void TestGameData();
-
+private:
+	void GetPointInSameDirection(SearchPose p0, SearchPose p1, double x, double y, double yaw,
+								 SearchPose &best, double &angleDiff, double &angleTo);
 
 private:
 	std::vector<SearchPose> poses_;
-	unsigned int idx_cur_;
-	unsigned int idx_start_;
+	int idx_cur_;
+	int idx_start_;
+	int dir_;
 	bool bFirst_;
 };
 
