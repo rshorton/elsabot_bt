@@ -33,7 +33,7 @@ template <> inline
 Pose2D convertFromString(StringView key)
 {
     // three real numbers separated by semicolons
-    auto parts = BT::splitString(key, ';');
+    auto parts = BT::splitString(key, ',');
     if (parts.size() != 3)
     {
         throw BT::RuntimeError("invalid input)");
@@ -59,7 +59,7 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<Pose2D>("goal")};
+        return{ BT::InputPort<std::string>("goal")};
     }
 
     virtual BT::NodeStatus tick() override
@@ -72,12 +72,15 @@ public:
             return BT::NodeStatus::FAILURE;
         }
         // Take the goal from the InputPort of the Node
-        Pose2D goal;
-        if (!getInput<Pose2D>("goal", goal)) {
+
+        std::string goal_in;
+        if (!getInput<std::string>("goal", goal_in)) {
             // if I can't get this, there is something wrong with your BT.
             // For this reason throw an exception instead of returning FAILURE
             throw BT::RuntimeError("missing required input [goal]");
         }
+
+        Pose2D goal = BT::convertFromString<Pose2D>(goal_in);
 
         _aborted = false;
 

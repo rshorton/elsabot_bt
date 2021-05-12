@@ -1,0 +1,24 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Nav2ClearGlobalCostMap />
+			<RobotSeekInitAction
+				search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0;-6.4,-1.9,0.0;-8.0,1.5,90.0;-4.4,0.95,218.0" />
+			<KeepRunningUntilFailure>
+				<Sequence>
+					<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" />
+					<SubTree ID="MoveRobot" target="next_goal" />
+					<TextToSpeechActionClient msg="{goal_speech}" />
+				</Sequence>
+			</KeepRunningUntilFailure>
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="MoveRobot">
+		<Sequence name="SetGoal">
+			<Nav2Client goal="{target}" />
+		</Sequence>
+	</BehaviorTree>
+</root>
+
+

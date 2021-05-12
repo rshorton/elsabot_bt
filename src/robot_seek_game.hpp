@@ -25,7 +25,7 @@ public:
 	static RobotSeekGame* CreateRobotSeekGame();
 
 	bool Init(rclcpp::Node::SharedPtr node, std::vector<SearchPose> &poses, double init_x, double init_y, double init_yaw);
-	bool NextSearchPose(double &x, double &y, double &yaw);
+	bool NextSearchPose(double &x, double &y, double &yaw, int &index);
 
 private:
 	void GetPointInSameDirection(SearchPose p0, SearchPose p1, double x, double y, double yaw,

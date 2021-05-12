@@ -150,10 +150,12 @@ class RobotSeekInitAction : public BT::SyncActionNode
         	rclcpp::spin_some(node_);
 
         	if (game->Init(node_, poses, cur_pos_x, cur_pos_y, cur_yaw)) {
+#if 0
         		// test
         		double x, y, yaw;
-        		while(game->NextSearchPose(x, y, yaw));
-
+        		int index;
+        		while(game->NextSearchPose(x, y, yaw, index));
+#endif
         		return BT::NodeStatus::SUCCESS;
         	} else {
         		return BT::NodeStatus::FAILURE;

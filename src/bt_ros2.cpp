@@ -19,6 +19,7 @@
 #include "robot_says_next_step.hpp"
 #include "get_random_selection.hpp"
 #include "robot_seek_init_action.hpp"
+#include "robot_seek_next_pose.hpp"
 #include "robot_spin.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
@@ -64,7 +65,10 @@ int main(int argc, char **argv)
     factory.registerNodeType<Nav2ClearLocalCostMap>("Nav2ClearLocalCostMap");
     factory.registerNodeType<Nav2ClearGlobalCostMap>("Nav2ClearGlobalCostMap");
     factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
+    factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
+
+
 
     // Check the template type above since you probably copy and pasted and forgot to change it!!!!
 

@@ -176,7 +176,7 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, vector<SearchPose> &poses
     return true;
 }
 
-bool RobotSeekGame::NextSearchPose(double &x, double &y, double &yaw)
+bool RobotSeekGame::NextSearchPose(double &x, double &y, double &yaw, int &index)
 {
 	if (bFirst_) {
 		bFirst_ = false;
@@ -197,6 +197,7 @@ bool RobotSeekGame::NextSearchPose(double &x, double &y, double &yaw)
 	yaw = poses_[idx_cur_].yaw;
 
 	cout << "NextPose: x= " << x << ", y= " << y << ", yaw= " << yaw << endl;
+	index = idx_cur_;
 	return true;
 }
 
