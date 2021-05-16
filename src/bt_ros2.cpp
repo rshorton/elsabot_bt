@@ -9,6 +9,7 @@
 #include "speech_to_text_action_client.hpp"
 #include "text_to_speech_action_client.hpp"
 #include "human_pose_detect.hpp"
+#include "human_pose_detection_control_action.hpp"
 #include "voice_detected.hpp"
 #include "smile_action.hpp"
 #include "track_action.hpp"
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<TextToSpeechActionClient>("TextToSpeechActionClient");
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
     factory.registerNodeType<HumanPoseDetect>("HumanPoseDetect");
+    factory.registerNodeType<PoseDetectionControlAction>("PoseDetectionControlAction");
     factory.registerNodeType<SmileAction>("SmileAction");
     factory.registerNodeType<TrackAction>("TrackAction");
     factory.registerNodeType<HeadTiltAction>("HeadTiltAction");
@@ -67,8 +69,6 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
-
-
 
     // Check the template type above since you probably copy and pasted and forgot to change it!!!!
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <chrono>
+#include <thread>
+
 #include "rclcpp/rclcpp.hpp"
 #include "face_control_interfaces/msg/track.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
@@ -37,7 +40,7 @@ class TrackAction : public BT::SyncActionNode
             message.rate = rate;
             track_publisher_->publish(message);
 
-        	rclcpp::spin_some(node_);
+            std::this_thread::sleep_for(100ms);
 
             return BT::NodeStatus::SUCCESS;
         }

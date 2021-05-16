@@ -307,6 +307,7 @@
       <SetBlackboard output_key="do_greeting" value="0" />
       <SetBlackboard output_key="do_menu" value="0" />
       <SetBlackboard output_key="person_detected" value="0" />
+      <PoseDetectionControlAction enable="true" />
 
       <!--  SubTree ID="RobotSays" /-->
       <KeepRunningUntilFailure>

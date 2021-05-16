@@ -1,0 +1,14 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Repeat num_cycles="3">
+            <Sequence>
+                <PoseDetectionControlAction enable="false" />
+                <SmileAction level="3" duration_ms="2000" />
+                <SetBlackboard output_key="Goal_a" value="-5.40,-5.37,90.0" />
+                <Sequence>
+                    <Nav2Client goal="{Goal_a}" behavior_tree="follow_point.xml" />
+                </Sequence>
+            </Sequence>
+        </Repeat>
+    </BehaviorTree>
+</root>

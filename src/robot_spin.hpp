@@ -63,7 +63,8 @@ class RobotSpin : public BT::AsyncActionNode
 
         virtual BT::NodeStatus tick() override
         {
-            _aborted = false;
+        	setStatus(BT::NodeStatus::RUNNING);
+        	_aborted = false;
 
         	for (int t = 0; t < 20; t++) {
             	rclcpp::spin_some(node_);
@@ -82,6 +83,7 @@ class RobotSpin : public BT::AsyncActionNode
         	valid_pose = false;
         	strt_yaw_ = cur_yaw_;
         	prev_yaw_ = cur_yaw_;
+        	relative_yaw_ = 0.0;
 
         	delta_yaw_goal_ = 360.0;
         	getInput<double>("angle", delta_yaw_goal_);
@@ -109,8 +111,8 @@ class RobotSpin : public BT::AsyncActionNode
 
                 	double remaining_yaw = abs(delta_yaw_goal_) - abs(relative_yaw_);
 
-                	//RCLCPP_INFO(node_->get_logger(), "Spin: cur: %.2f, prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
-                	//		cur_yaw_, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
+                	RCLCPP_INFO(node_->get_logger(), "Spin: cur: %.2f, prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
+                			cur_yaw_, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
 
                 	if (remaining_yaw < 1e-6 || _aborted) {
                     	cmd_vel.angular.z = 0.0;
@@ -124,7 +126,8 @@ class RobotSpin : public BT::AsyncActionNode
         		rate.sleep();
         	}
         	if (_aborted) {
-        		return BT::NodeStatus::FAILURE;
+        		_aborted = false;
+        		return BT::NodeStatus::IDLE;
         	}
        		return BT::NodeStatus::SUCCESS;
         }

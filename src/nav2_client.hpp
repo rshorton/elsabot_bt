@@ -59,7 +59,7 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<std::string>("goal")};
+        return{ BT::InputPort<std::string>("goal"), BT::InputPort<std::string>("behavior_tree")};
     }
 
     virtual BT::NodeStatus tick() override
@@ -72,6 +72,10 @@ public:
             return BT::NodeStatus::FAILURE;
         }
         // Take the goal from the InputPort of the Node
+
+        // optional
+        std::string behavior_tree;
+        getInput<std::string>("behavior_tree", behavior_tree);
 
         std::string goal_in;
         if (!getInput<std::string>("goal", goal_in)) {
@@ -93,6 +97,7 @@ public:
         goal_msg.pose.pose.position.y = goal.y;
         goal_msg.pose.pose.position.z = 0.0;
         goal_msg.pose.pose.orientation = orientationAroundZAxis(goal.yaw);
+        goal_msg.behavior_tree = behavior_tree;
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=

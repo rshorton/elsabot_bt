@@ -2,14 +2,18 @@
 	<BehaviorTree ID="MainTree">
 		<Sequence>
 			<TrackAction mode="none" rate="none" />
-			<Repeat num_cycles="1">
-				<ReactiveSequence>
-					<Inverter>
-						<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
-							detected_person="{detected_person}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-					</Inverter>
-					<RobotSpin angle="360" velocity="0.5" />
-				</ReactiveSequence>
+			<Repeat num_cycles="3">
+				<Sequence>
+					<TextToSpeechActionClient msg="Starting spin cycle" />
+					<ReactiveSequence>
+						<Inverter>
+							<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+								detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+								pose_right_speech="{pose_right_speech}" />
+						</Inverter>
+						<RobotSpin angle="360" velocity="0.5" />
+					</ReactiveSequence>
+				</Sequence>
 			</Repeat>
 		</Sequence>
 

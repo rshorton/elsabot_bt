@@ -3,7 +3,7 @@
 		<Sequence>
 			<Nav2ClearGlobalCostMap />
 			<RobotSeekInitAction
-				search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0;-6.4,-1.9,0.0;-8.0,1.5,90.0;-4.4,0.95,218.0" />
+				search_poses="-4.3,-4,180.0;0.75,-3.7,206.0;0.71,-6.0,206.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0;-6.4,-1.9,0.0;-8.0,1.5,90.0;-4.4,0.95,218.0" />
 			<KeepRunningUntilFailure>
 				<Sequence>
 					<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" />
