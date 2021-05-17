@@ -1,0 +1,51 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+      <PoseDetectionControlAction enable="false" />
+			<Nav2ClearGlobalCostMap />
+			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" /- -->
+			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;0.75,-3.7,206.0;0.71,-6.0,206.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0;-6.4,-1.9,0.0;-8.0,1.5,90.0;-4.4,0.95,218.0"
+				/ -->
+			<RobotSeekInitAction
+				search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0;-6.4,-1.9,0.0;-8.0,1.5,90.0;-4.4,0.95,218.0" />
+			<SetBlackboard output_key="found" value="0" />
+			<Fallback>
+				<KeepRunningUntilFailure>
+					<ReactiveSequence>
+  					<Fallback>
+							<Inverter>
+							  <ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.95" />
+								<!-- HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+									detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+									pose_right_speech="{pose_right_speech}" / -->
+							</Inverter>
+							<ForceFailure>
+								<SetBlackboard output_key="found" value="1" />
+							</ForceFailure>
+						</Fallback>
+						<Sequence>
+							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" />
+							<SubTree ID="MoveRobot" target="next_goal" />
+							<TextToSpeechActionClient msg="{goal_speech}" />
+							<RobotSpin angle="359" velocity="0.5" />
+							<TextToSpeechActionClient msg="I didn't see anyone." />
+						</Sequence>
+					</ReactiveSequence>
+				</KeepRunningUntilFailure>
+				<Sequence>
+					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
+						<TextToSpeechActionClient msg="I found you!" />
+					</BlackboardCheckInt>
+				</Sequence>
+			</Fallback>
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="MoveRobot">
+		<Sequence name="SetGoal">
+			<Nav2Client goal="{target}" />
+		</Sequence>
+	</BehaviorTree>
+</root>
+
+

@@ -27,6 +27,7 @@ find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
 find_package(face_control_interfaces REQUIRED)
 find_package(human_pose_interfaces REQUIRED)
+find_package(object_detection_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 
@@ -53,6 +54,7 @@ set(dependencies
   speech_action_interfaces
   face_control_interfaces
   human_pose_interfaces
+  object_detection_msgs
   nav2_util
   nav_msgs
 )

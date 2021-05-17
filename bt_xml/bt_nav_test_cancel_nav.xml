@@ -1,0 +1,43 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Repeat num_cycles="3">
+			<Sequence>
+				<SetBlackboard output_key="Goal_a" value="-4.3,-4,180.0" />
+				<SetBlackboard output_key="Goal_b" value="-4.7,-6.6,270.0" />
+				<SetBlackboard output_key="Goal_c" value="-6.0,-4.2,206.0" />
+				<Sequence>
+					<ReactiveSequence>
+						<Inverter>
+							<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+								detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+								pose_right_speech="{pose_right_speech}" />
+						</Inverter>
+						<SubTree ID="MoveRobot" target="Goal_a" />
+					</ReactiveSequence>
+					<ReactiveSequence>
+						<Inverter>
+							<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+								detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+								pose_right_speech="{pose_right_speech}" />
+						</Inverter>
+						<SubTree ID="MoveRobot" target="Goal_b" />
+					</ReactiveSequence>
+					<ReactiveSequence>
+						<Inverter>
+							<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+								detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+								pose_right_speech="{pose_right_speech}" />
+						</Inverter>
+						<SubTree ID="MoveRobot" target="Goal_c" />
+					</ReactiveSequence>
+				</Sequence>
+			</Sequence>
+		</Repeat>
+	</BehaviorTree>
+
+	<BehaviorTree ID="MoveRobot">
+		<Sequence name="SetGoal">
+			<Nav2Client goal="{target}" />
+		</Sequence>
+	</BehaviorTree>
+</root>

@@ -1,0 +1,20 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+  		<PoseDetectionControlAction enable="false" />
+			<TrackAction mode="none" rate="none" />
+			<Repeat num_cycles="3">
+				<Sequence>
+					<TextToSpeechActionClient msg="Starting spin cycle" />
+					<ReactiveSequence>
+						<Inverter>
+							<ObjectDetectionAction class="person" pose="detected_Pose" />
+						</Inverter>
+						<RobotSpin angle="360" velocity="0.5" />
+					</ReactiveSequence>
+				</Sequence>
+			</Repeat>
+		</Sequence>
+
+	</BehaviorTree>
+</root>

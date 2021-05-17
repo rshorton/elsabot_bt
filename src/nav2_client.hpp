@@ -20,6 +20,8 @@
 
 using nav2_util::geometry_utils::orientationAroundZAxis;
 
+#undef FUTURE_WAIT_BLOCK
+
 // Custom type
 struct Pose2D
 {
@@ -116,11 +118,56 @@ public:
         auto result_future = action_client->async_get_result(goal_handle);
 
         RCLCPP_INFO(node_->get_logger(), "Waiting for result");
+#if defined(FUTURE_WAIT_BLOCK)
         if (rclcpp::spin_until_future_complete(node_, result_future) !=
                 rclcpp::FutureReturnCode::SUCCESS)
         {
             RCLCPP_ERROR(node_->get_logger(), "get result call failed " );
             return BT::NodeStatus::FAILURE;
+        }
+#else
+        bool bSuccess = false;
+		auto timeout = std::chrono::duration<float, std::milli>(250);
+        while(true) {
+        	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...");
+        	auto result = rclcpp::spin_until_future_complete(node_, result_future, timeout);
+        	if (result == rclcpp::FutureReturnCode::TIMEOUT) {
+            	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...timeout");
+
+        		if (_aborted) {
+                	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...aborted");
+        			break;
+        		}
+        	} else {
+        		if (result != rclcpp::FutureReturnCode::SUCCESS) {
+        			RCLCPP_ERROR(node_->get_logger(), "get result call failed " );
+        			return BT::NodeStatus::FAILURE;
+        		}
+        		bSuccess = true;
+            	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...success");
+            	break;
+        	}
+        }
+
+        if (!bSuccess && _aborted) {
+        	RCLCPP_INFO(node_->get_logger(), "canceling nav after abort");
+
+        	auto future_cancel = action_client->async_cancel_goal(goal_handle);
+    	    if (rclcpp::spin_until_future_complete(node_, future_cancel) !=
+    	    	rclcpp::FutureReturnCode::SUCCESS) {
+    	    	RCLCPP_ERROR(node_->get_logger(), "failed to cancel nav goal");
+    	    } else {
+    	    	RCLCPP_INFO(node_->get_logger(), "nav goal is being canceled");
+    	    }
+        	return BT::NodeStatus::IDLE;
+        }
+
+#endif
+        if (_aborted) {
+            // this happens only if method halt() was invoked
+            //_client.cancelAllGoals();
+            RCLCPP_INFO(node_->get_logger(), "Nav aborted");
+            return BT::NodeStatus::IDLE;
         }
 
         rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult wrapped_result = result_future.get();
@@ -139,18 +186,14 @@ public:
                 return BT::NodeStatus::FAILURE;
         }
 
-        if (_aborted) {
-            // this happens only if method halt() was invoked
-            //_client.cancelAllGoals();
-            RCLCPP_INFO(node_->get_logger(), "MoveBase aborted");
-            return BT::NodeStatus::FAILURE;
-        }
 
         RCLCPP_INFO(node_->get_logger(), "result received");
         return BT::NodeStatus::SUCCESS;
     }
 
     virtual void halt() override {
+    	RCLCPP_INFO(node_->get_logger(), "requesting nav abort");
+
         _aborted = true;
     }
 private:
