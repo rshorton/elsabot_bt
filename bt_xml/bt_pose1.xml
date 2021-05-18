@@ -1,12 +1,27 @@
-<root main_tree_to_execute = "MainTree">
-    <BehaviorTree ID="MainTree">
-        <Repeat num_cycles="9999">
-              <Sequence>
-                 <HumanPoseDetect expected_pose_left="" expected_pose_right="" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}"/>
-                 <TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}"/>
-                 <HumanPoseDetect expected_pose_left="" expected_pose_right="" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}"/>
-                 <TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}"/>
-              </Sequence>
-        </Repeat>
-    </BehaviorTree>
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Repeat num_cycles="9999">
+			<Sequence>
+				<Sequence>
+					<Fallback>
+						<Sequence>
+							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
+								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+						</Sequence>
+						<TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}" />
+					</Fallback>
+					<Fallback>
+						<Sequence>
+							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
+								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+						</Sequence>
+						<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
+					</Fallback>
+				</Sequence>
+				<Sequence>
+					<TextToSpeechActionClient msg="End of loop" msg2="" />
+				</Sequence>
+			</Sequence>
+		</Repeat>
+	</BehaviorTree>
 </root>

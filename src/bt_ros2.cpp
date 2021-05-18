@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     rclcpp::init(argc, argv);
 
-    auto nh = rclcpp::Node::make_shared("neuronbt");
+    auto nh = rclcpp::Node::make_shared("robot_bt");
     nh->declare_parameter("bt_xml", rclcpp::ParameterValue(std::string(DEFAULT_BT_XML)));
     std::string bt_xml;
     nh->get_parameter("bt_xml", bt_xml);
@@ -71,7 +71,6 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
     factory.registerNodeType<ObjectDetectionAction>("ObjectDetectionAction");
-
 
     // Check the template type above since you probably copy and pasted and forgot to change it!!!!
 

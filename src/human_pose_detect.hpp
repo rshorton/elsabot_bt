@@ -31,7 +31,8 @@ class HumanPoseDetect : public BT::SyncActionNode
 
             speech_strings_ = createPoseToSpeechMap();
 
-//            timer_ = node_->create_wall_timer(100ms, std::bind(&HumanPoseDetect::update, this));
+            //RCLCPP_INFO(node_->get_logger(), "Created HumanPoseDetect node (%p)", this);
+
         }
 
         static BT::PortsList providedPorts()
@@ -55,37 +56,6 @@ class HumanPoseDetect : public BT::SyncActionNode
 			RCLCPP_INFO(node_->get_logger(), "Got pose callback [%s], [%s]", cur_pose_left_.c_str(), cur_pose_right_.c_str());
         }
 
-#if 0
-        void update()
-        {
-    		RCLCPP_INFO(node_->get_logger(), "update");
-
-        	const std::string pose_file = "/home/scott/ros2/remote_ws/tmp/pose";
-        	std::ifstream ifs(pose_file);
-        	std::string pose( (std::istreambuf_iterator<char>(ifs) ),
-        	                       (std::istreambuf_iterator<char>()) );
-        	if (pose.length() > 0) {
-        		RCLCPP_INFO(node_->get_logger(), "Received Pose: %s", pose.c_str());
-        		remove(pose_file.c_str());
-
-        		auto parts = BT::splitString(pose, ',');
-				if (parts.size() == 3) {
-					detected_ = BT::convertFromString<bool>(parts[0]);
-					cur_pose_left_ = BT::convertFromString<std::string>(parts[1]);
-					cur_pose_right_ = BT::convertFromString<std::string>(parts[2]);
-            		RCLCPP_INFO(node_->get_logger(), "Pose, Detected %d, L %s, R %s", detected_, cur_pose_left_.c_str(), cur_pose_right_.c_str());
-				}
-#if 0
-        		size_t delim = pose.find(',');
-        		if (delim != std::string::npos) {
-        			cur_pose_left_ = pose.substr(0, delim);
-        			cur_pose_right_ = pose.substr(delim + 2);
-            		RCLCPP_INFO(node_->get_logger(), "Pose, L %s, R %s", cur_pose_left_.c_str(), cur_pose_right_.c_str());
-        		}
-#endif
-        	}
-        }
-#endif
         const std::string getSpeechText(std::string pose)
         {
         	return speech_strings_[pose];

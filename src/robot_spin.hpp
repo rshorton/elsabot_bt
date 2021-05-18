@@ -111,8 +111,8 @@ class RobotSpin : public BT::AsyncActionNode
 
                 	double remaining_yaw = abs(delta_yaw_goal_) - abs(relative_yaw_);
 
-                	RCLCPP_INFO(node_->get_logger(), "Spin: cur: %.2f, prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
-                			cur_yaw_, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
+                	//RCLCPP_INFO(node_->get_logger(), "Spin: cur: %.2f, prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
+                	//		cur_yaw_, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
 
                 	if (remaining_yaw < 1e-6 || _aborted) {
                     	cmd_vel.angular.z = 0.0;
