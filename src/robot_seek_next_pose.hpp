@@ -20,7 +20,10 @@ class RobotSeekNextSearchPose : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-            return{ BT::OutputPort<std::string>("next_goal"), BT::OutputPort<std::string>("goal_speech")};
+            return{ BT::OutputPort<std::string>("next_goal"),
+            	    BT::OutputPort<std::string>("goal_speech"),
+					BT::OutputPort<bool>("spin_at_goal"),
+					BT::OutputPort<bool>("scan_at_goal") };
         }
 
         virtual BT::NodeStatus tick() override
@@ -34,8 +37,10 @@ class RobotSeekNextSearchPose : public BT::SyncActionNode
     		}
 
 			double x, y, yaw;
+			bool spin_at_goal = false;
+			bool scan_at_goal = false;
 			int index;
-    		if (game->NextSearchPose(x, y, yaw, index)) {
+    		if (game->NextSearchPose(x, y, yaw, spin_at_goal, scan_at_goal, index)) {
     			std::stringstream ss;
 
     			ss << x << ',' << y << ',' << yaw;
@@ -46,6 +51,8 @@ class RobotSeekNextSearchPose : public BT::SyncActionNode
 
     			ss << "At search point " << (index + 1);
     			setOutput("goal_speech", ss.str());
+    			setOutput("spin_at_goal", spin_at_goal);
+    			setOutput("scan_at_goal", scan_at_goal);
 	            return BT::NodeStatus::SUCCESS;
     		}
 			return BT::NodeStatus::FAILURE;

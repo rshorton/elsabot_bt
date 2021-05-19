@@ -28,13 +28,15 @@ RobotSeekGame::SearchPose convertFromString(StringView key)
 {
     // three real numbers (x,y) separated by comma
     auto parts = BT::splitString(key, ',');
-    if (parts.size() != 3) {
+    if (parts.size() != 5) {
         throw BT::RuntimeError("invalid input)");
     } else {
     	RobotSeekGame::SearchPose pose;
     	pose.x = convertFromString<double>(parts[0]);
     	pose.y = convertFromString<double>(parts[1]);
     	pose.yaw = convertFromString<double>(parts[2]);
+    	pose.spin = convertFromString<bool>(parts[3]);
+    	pose.scan = convertFromString<bool>(parts[4]);
     	pose.initial_dist = 0.0;
         return pose;
     }
@@ -138,7 +140,12 @@ class RobotSeekInitAction : public BT::SyncActionNode
             	msg.pose.orientation = orientationAroundZAxis(it.yaw);
             	path_poses.push_back(msg);
 
-                cout << "x= " << it.x << ", y= " << it.y << ", yaw= " << it.yaw << endl;
+                cout << "x= " << it.x
+                	 << ", y= " << it.y
+					 << ", yaw= " << it.yaw
+					 << ", spin= " << it.spin
+					 << ", scan= " << it.scan
+					 << endl;
             }
 
             nav_msgs::msg::Path path;

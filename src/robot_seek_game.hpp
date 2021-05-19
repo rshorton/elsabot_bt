@@ -15,6 +15,9 @@ public:
 	    double x;
 	    double y;
 	    double yaw;
+	    bool spin;
+	    bool scan;
+
 	    double initial_dist;
 	};
 
@@ -25,7 +28,7 @@ public:
 	static RobotSeekGame* CreateRobotSeekGame();
 
 	bool Init(rclcpp::Node::SharedPtr node, std::vector<SearchPose> &poses, double init_x, double init_y, double init_yaw);
-	bool NextSearchPose(double &x, double &y, double &yaw, int &index);
+	bool NextSearchPose(double &x, double &y, double &yaw, bool &spin_at_goal, bool &scan_at_goal, int &index);
 
 private:
 	void GetPointInSameDirection(SearchPose p0, SearchPose p1, double x, double y, double yaw,
