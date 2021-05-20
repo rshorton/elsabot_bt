@@ -1,0 +1,13 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+		  <PoseDetectionControlAction enable="false" />
+
+      <TrackAction mode="Scan" rate="3" />
+      <TextToSpeechActionClient msg="Start" />
+      <ScanWaitAction />
+      <TextToSpeechActionClient msg="End" />
+		</Sequence>
+
+	</BehaviorTree>
+</root>

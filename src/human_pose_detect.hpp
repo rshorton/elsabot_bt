@@ -143,7 +143,6 @@ class HumanPoseDetect : public BT::SyncActionNode
 
     private:
         rclcpp::Node::SharedPtr node_;
-        rclcpp::TimerBase::SharedPtr timer_;
         rclcpp::Subscription<human_pose_interfaces::msg::DetectedPose>::SharedPtr detected_pose__sub_;
 
         bool detected_;

@@ -23,6 +23,7 @@
 #include "robot_seek_next_pose.hpp"
 #include "robot_spin.hpp"
 #include "object_detection_action.hpp"
+#include "scan_wait_action.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -71,6 +72,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
     factory.registerNodeType<ObjectDetectionAction>("ObjectDetectionAction");
+    factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
 
     // Check the template type above since you probably copy and pasted and forgot to change it!!!!
 

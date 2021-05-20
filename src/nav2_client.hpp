@@ -98,8 +98,11 @@ public:
         goal_msg.pose.pose.position.x = goal.x;
         goal_msg.pose.pose.position.y = goal.y;
         goal_msg.pose.pose.position.z = 0.0;
-        goal_msg.pose.pose.orientation = orientationAroundZAxis(goal.yaw);
+        goal_msg.pose.pose.orientation = orientationAroundZAxis(goal.yaw/180.0*M_PI);
         goal_msg.behavior_tree = behavior_tree;
+
+        //RCLCPP_INFO(node_->get_logger(), "orientation %f %f %f %f", goal_msg.pose.pose.orientation.x, goal_msg.pose.pose.orientation.y, goal_msg.pose.pose.orientation.z, goal_msg.pose.pose.orientation.w);
+
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
@@ -128,12 +131,12 @@ public:
 #else
         bool bSuccess = false;
 		auto timeout = std::chrono::duration<float, std::milli>(250);
-        while(true) {
-        	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...");
+
+		RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...");
+
+		while(true) {
         	auto result = rclcpp::spin_until_future_complete(node_, result_future, timeout);
         	if (result == rclcpp::FutureReturnCode::TIMEOUT) {
-            	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...timeout");
-
         		if (_aborted) {
                 	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...aborted");
         			break;
