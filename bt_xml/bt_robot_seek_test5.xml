@@ -2,11 +2,12 @@
 	<BehaviorTree ID="MainTree">
 		<Sequence>
 			<Delay delay_msec="1000">
-				<PoseDetectionControlAction enable="false" />
+				<PoseDetectionControlAction enable="true" />
 			</Delay>
 			<Nav2ClearGlobalCostMap />
 			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
-			<RobotSeekInitAction search_poses="0.75,-3.7,225.0,0,1;
+			<RobotSeekInitAction
+				search_poses="0.75,-3.7,225.0,0,1;
 			                                   -2.9,-4.1,230.0,0,1;
 			                                   -5.6,-4.1,230.0,0,1;
 			                                   -6.4,-1.2,90.0,0,0;
@@ -15,19 +16,19 @@
 			                                   -4.2,1.1,240.0,0,1;
 			                                   -4.4,-6.8,230.0,0,1" />
 
-			<!--  RobotSeekInitAction search_poses="-4.5,-7.3,235.0,0,1;-3.3,-4.1,252.0,1,1;-5.79,-4.2,239.0,0,1" /-->
+			<!-- RobotSeekInitAction search_poses="-4.5,-7.3,235.0,0,1;-3.3,-4.1,252.0,1,1;-5.79,-4.2,239.0,0,1" / -->
 
 			<!-- RobotSeekInitAction search_poses="-4.4,-7.0,230.0,0,1; -5.7,6.3,224.0,0,1; -3.3,-4.1,252.0,0,1; -4.1,0.95,241.0,0,1;
 				-7.3,4.7,263.0,0,0; -5.72,6.25,190.0,0,1" / -->
 
-      <TrackAction mode="None" rate="2" />
-      <TextToSpeechActionClient msg="Let's play hide and seek!" />
-      <TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
-      <RobotSpin angle="180" velocity="0.8" />
-      <TrackAction mode="LookDown" rate="2" />
-      <TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
-      <TrackAction mode="Scan" rate="2" />
-      <RobotSpin angle="180" velocity="0.8" />
+			<TrackAction mode="None" rate="2" />
+			<TextToSpeechActionClient msg="Let's play hide and seek!" />
+			<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
+			<RobotSpin angle="180" velocity="0.8" />
+			<TrackAction mode="LookDown" rate="2" />
+			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
+			<TrackAction mode="Scan" rate="2" />
+			<RobotSpin angle="180" velocity="0.8" />
 
 			<SetBlackboard output_key="found" value="0" />
 			<Fallback>
@@ -35,10 +36,12 @@
 					<ReactiveSequence>
 						<Fallback>
 							<Inverter>
-								<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.70"
-									min_detect_count="5" />
-								<!-- HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
-									pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" / -->
+							  <Fallback>
+  								<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.70"
+	   								min_detect_count="5" />
+			   					<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
+					   				pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+								</Fallback>
 							</Inverter>
 							<ForceFailure>
 								<SetBlackboard output_key="found" value="1" />
@@ -49,7 +52,8 @@
 								spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
 							<TrackAction mode="Scan" rate="1" />
 							<SubTree ID="MoveRobot" target="next_goal" />
-							<TextToSpeechActionClient msg="{goal_speech}" />
+							<!--  TextToSpeechActionClient msg="{goal_speech}" /-->
+              <TextToSpeechActionClient msg="Are you over here?" />
 							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<TrackAction mode="Off" rate="0" />
@@ -59,13 +63,10 @@
 							<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<TrackAction mode="Scan" rate="2" />
-                  <ScanWaitAction />
-									<!--  Delay delay_msec="4000">
-										<SetBlackboard output_key="dummy" value="0" />
-									</Delay -->
+									<ScanWaitAction />
 								</Sequence>
 							</BlackboardCheckInt>
-							<TextToSpeechActionClient msg="I didn't see anyone." />
+							<TextToSpeechActionClient msg="I don't see you." />
 						</Sequence>
 					</ReactiveSequence>
 				</KeepRunningUntilFailure>
@@ -73,11 +74,16 @@
 					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
 						<Sequence>
 							<TrackAction mode="Track" rate="3" />
-							<TextToSpeechActionClient msg="I found you!" />
+							<TextToSpeechActionClient msg="Yay, I found you!" />
 						</Sequence>
 					</BlackboardCheckInt>
 				</Sequence>
 			</Fallback>
+			<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
+				<Sequence>
+					<TextToSpeechActionClient msg="Come come out where ever you are!" />
+				</Sequence>
+			</BlackboardCheckInt>
 		</Sequence>
 	</BehaviorTree>
 
