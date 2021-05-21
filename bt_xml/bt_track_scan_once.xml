@@ -7,6 +7,8 @@
       <TextToSpeechActionClient msg="Start" />
       <ScanWaitAction />
       <TextToSpeechActionClient msg="End" />
+      <TrackAction mode="Track" rate="3" />
+
 		</Sequence>
 
 	</BehaviorTree>

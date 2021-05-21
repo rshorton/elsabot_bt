@@ -101,7 +101,7 @@ public:
         goal_msg.pose.pose.orientation = orientationAroundZAxis(goal.yaw/180.0*M_PI);
         goal_msg.behavior_tree = behavior_tree;
 
-        //RCLCPP_INFO(node_->get_logger(), "orientation %f %f %f %f", goal_msg.pose.pose.orientation.x, goal_msg.pose.pose.orientation.y, goal_msg.pose.pose.orientation.z, goal_msg.pose.pose.orientation.w);
+        RCLCPP_INFO(node_->get_logger(), "orientation %f %f %f %f", goal_msg.pose.pose.orientation.x, goal_msg.pose.pose.orientation.y, goal_msg.pose.pose.orientation.z, goal_msg.pose.pose.orientation.w);
 
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
