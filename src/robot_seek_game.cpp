@@ -104,7 +104,7 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, vector<SearchPose> &poses
         if (GetPathToPose(node, path, len, it.x, it.y)) {
         	it.initial_dist = len;
         	//temp - to view the path on rviz/web app
-        	std::this_thread::sleep_for(300ms);
+        	//std::this_thread::sleep_for(300ms);
         } else {
         	RCLCPP_ERROR(node->get_logger(), "Failed to get path to pose %f, %f\n", it.x, it.y);
         	it.initial_dist = 99999.0;

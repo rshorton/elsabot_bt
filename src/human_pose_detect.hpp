@@ -121,7 +121,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 			// Return success if both of the expected left/right poses are seen.  Either or both
 			// can be required.  If neither l/r poses are specified, then success if a person
 			// is detected at all.
-			if (detected_ && min_points_ >= min_points) {
+			if (detected_ && num_points_ >= min_points) {
 				if (pose_lr_check.compare("presence") == 0) {
 					return BT::NodeStatus::SUCCESS;
 				}

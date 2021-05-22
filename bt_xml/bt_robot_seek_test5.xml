@@ -36,7 +36,7 @@
 					<ReactiveSequence>
 						<Fallback>
 							<Inverter>
-							  <Fallback>
+							  <Fallback ID="Detection">
   								<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.70"
 	   								min_detect_count="5" />
 			   					<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
@@ -81,7 +81,7 @@
 			</Fallback>
 			<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
 				<Sequence>
-					<TextToSpeechActionClient msg="Come come out where ever you are!" />
+					<TextToSpeechActionClient msg="Come out come out where ever you are!" />
 				</Sequence>
 			</BlackboardCheckInt>
 		</Sequence>
