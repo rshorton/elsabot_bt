@@ -41,6 +41,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 				BT::InputPort<std::string>("expected_pose_left"),
 				BT::InputPort<std::string>("expected_pose_right"),
 				BT::InputPort<std::string>("pose_lr_check"),
+				BT::InputPort<int>("min_points"),
 				BT::OutputPort<std::string>("detected_person"),
 				BT::OutputPort<std::string>("pose_left"),
 				BT::OutputPort<std::string>("pose_right"),
@@ -53,6 +54,7 @@ class HumanPoseDetect : public BT::SyncActionNode
         	cur_pose_left_ = msg->left;
         	cur_pose_right_ = msg->right;
         	detected_ = msg->detected;
+        	num_points_ = msg->num_points;
 			RCLCPP_INFO(node_->get_logger(), "Got pose callback [%s], [%s]", cur_pose_left_.c_str(), cur_pose_right_.c_str());
         }
 
@@ -92,6 +94,9 @@ class HumanPoseDetect : public BT::SyncActionNode
         	setOutput("pose_left_speech", getSpeechText(cur_pose_left_));
         	setOutput("pose_right_speech", getSpeechText(cur_pose_right_));
 
+        	int min_points = 2;
+			getInput<int>("min_points", min_points);
+
 			std::string expected_left;
 			if (!getInput<std::string>("expected_pose_left", expected_left)) {
 				throw BT::RuntimeError("missing expected pose_left");
@@ -116,7 +121,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 			// Return success if both of the expected left/right poses are seen.  Either or both
 			// can be required.  If neither l/r poses are specified, then success if a person
 			// is detected at all.
-			if (detected_) {
+			if (detected_ && min_points >= min_points) {
 				if (pose_lr_check.compare("presence") == 0) {
 					return BT::NodeStatus::SUCCESS;
 				}
@@ -146,6 +151,7 @@ class HumanPoseDetect : public BT::SyncActionNode
         rclcpp::Subscription<human_pose_interfaces::msg::DetectedPose>::SharedPtr detected_pose__sub_;
 
         bool detected_;
+        int num_points_;
         std::string cur_pose_left_;
         std::string cur_pose_right_;
 
