@@ -217,7 +217,7 @@
                 <Fallback ID="Detection">
                   <ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.70"
                     min_detect_count="5" />
-                  <HumanPoseDetect pose_lr_check="presence" min_points="7" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
+                  <HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
                     pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
                 </Fallback>
               </Inverter>
@@ -318,14 +318,14 @@
         <BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
           <Fallback>
             <Sequence>
-              <SetBlackboard output_key="game_name" value="Do you want to play Robot Says?" />
-              <SubTree ID="AskGame" game_name="game_name" />
-              <SubTree ID="RobotSays" stop_key="stop_key"/>
-            </Sequence>
-            <Sequence>
-              <SetBlackboard output_key="game_name" value="How about Robot Seek" />
+              <SetBlackboard output_key="game_name" value="Do you want play Robot Seek" />
               <SubTree ID="AskGame" game_name="game_name" />
               <SubTree ID="RobotSeek" stop_key="stop_key"/>
+            </Sequence>
+            <Sequence>
+              <SetBlackboard output_key="game_name" value="How about Robot Says?" />
+              <SubTree ID="AskGame" game_name="game_name" />
+              <SubTree ID="RobotSays" stop_key="stop_key"/>
             </Sequence>
             <Sequence>
               <BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
