@@ -1,0 +1,21 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Repeat num_cycles="999">
+			<Fallback>
+				<Sequence>
+					<Delay delay_msec="3000">
+	          <TextToSpeechActionClient msg="Say something" />
+					</Delay>
+					<SpeechToTextActionClient text="{said}" />
+					<TextToSpeechActionClient msg="You said" />
+					<TextToSpeechActionClient msg="{said}" />
+				</Sequence>
+
+				<TextToSpeechActionClient msg="I'm sorry, but I didn't here you" />
+			</Fallback>
+			</Repeat>
+			<TextToSpeechActionClient msg="Goodbye" />
+		</Sequence>
+	</BehaviorTree>
+</root>
