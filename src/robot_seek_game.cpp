@@ -1,11 +1,14 @@
 #include <math.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <string>
 #include <map>
 #include <algorithm>    // std::shuffle
 #include <random>       // std::default_random_engine
 #include <chrono>       // std::chrono::system_clock
+
+#include <json.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <geometry_msgs/msg/pose.hpp>
@@ -16,9 +19,16 @@
 
 #include "robot_seek_game.hpp"
 
+using json = nlohmann::json;
 using namespace std;
 
+namespace ns {
+	struct SearchPose;
+}
+
 static RobotSeekGame* game = nullptr;
+
+const std::string pose_json_file = "./robot_says_poses.json";
 
 RobotSeekGame* RobotSeekGame::GetRobotSeekGame()
 {
@@ -89,13 +99,35 @@ void RobotSeekGame::GetPointInSameDirection(SearchPose p0, SearchPose p1,
     }
 }
 
-bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, vector<SearchPose> &poses, double init_x, double init_y, double init_yaw)
+bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, std::string datapath,
+						 double init_x, double init_y, double init_yaw, vector<RobotSeekGame::SearchPose> &poses)
 {
 	idx_cur_ = 0;
 	idx_start_ = 0;
 	bFirst_ = 0;
 
-	poses_ = poses;
+	json game_data;
+	std::ifstream f(datapath);
+	f >> game_data;
+
+	poses_.clear();
+
+	for (json::iterator it = game_data["search_poses"].begin(); it != game_data["search_poses"].end(); ++it) {
+		SearchPose sp;
+		sp.x = (*it)["x"].get<double>();
+		sp.y = (*it)["y"].get<double>();
+		sp.yaw = (*it)["yaw"].get<double>();
+		sp.spin = (*it)["spin"].get<bool>();
+		sp.scan = (*it)["scan"].get<bool>();
+
+		poses_.push_back(sp);
+		cout << "x= " << sp.x
+		     << ", y= " << sp.y
+			 << ", yaw= " << sp.yaw
+			 << ", spin= " << sp.spin
+			 << ", scan= " << sp.scan
+			 << endl;
+	}
 
     // Determine the first search pose
     for (auto& it : poses_) {
@@ -108,7 +140,6 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, vector<SearchPose> &poses
         } else {
         	RCLCPP_ERROR(node->get_logger(), "Failed to get path to pose %f, %f\n", it.x, it.y);
         	it.initial_dist = 99999.0;
-//        	return false;
         }
     }
 
@@ -174,6 +205,7 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, vector<SearchPose> &poses
     	}
     }
     cout << "Direction= " << dir_ << endl;
+    poses = poses_;
     return true;
 }
 

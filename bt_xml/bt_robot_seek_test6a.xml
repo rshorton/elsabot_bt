@@ -1,0 +1,11 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Nav2ClearGlobalCostMap />
+			<RobotSeekInitAction game_file="robot_seek_1.json" />
+		</Sequence>
+	</BehaviorTree>
+
+</root>
+
+
