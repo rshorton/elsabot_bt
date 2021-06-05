@@ -1,39 +1,39 @@
 <root main_tree_to_execute="MainTree">
 
-  <BehaviorTree ID="Init">
-    <Sequence>
-      <SetBlackboard output_key="exit_key" value="0" />
-      <SetBlackboard output_key="stop_key" value="0" />
-      <SetBlackboard output_key="do_greeting" value="0" />
-      <SetBlackboard output_key="do_menu" value="0" />
-      <SetBlackboard output_key="person_detected" value="0" />
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="Init">
+		<Sequence>
+			<SetBlackboard output_key="exit_key" value="0" />
+			<SetBlackboard output_key="stop_key" value="0" />
+			<SetBlackboard output_key="do_greeting" value="0" />
+			<SetBlackboard output_key="do_menu" value="0" />
+			<SetBlackboard output_key="person_detected" value="0" />
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="Terminate">
-    <Sequence>
-      <TextToSpeechActionClient msg="Goodbye" />
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="Terminate">
+		<Sequence>
+			<TextToSpeechActionClient msg="Goodbye" />
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="Greet">
-    <Sequence>
-      <TextToSpeechActionClient msg="Hi there" />
-      <Delay delay_msec="500">
-        <SmileAction level="3" duration_ms="2000" />
-      </Delay>
-      <Delay delay_msec="1000">
-        <SmileAction level="0" duration_ms="1" />
-      </Delay>
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="Greet">
+		<Sequence>
+			<TextToSpeechActionClient msg="Hi there" />
+			<Delay delay_msec="500">
+				<SmileAction level="3" duration_ms="2000" />
+			</Delay>
+			<Delay delay_msec="1000">
+				<SmileAction level="0" duration_ms="1" />
+			</Delay>
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="DetectPerson">
-    <Sequence>
-      <HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
-        pose_right_speech="{pose_right_speech}" />
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="DetectPerson">
+		<Sequence>
+			<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+				detected_person="{detected_person}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+		</Sequence>
+	</BehaviorTree>
 
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
@@ -47,39 +47,39 @@
 						<Fallback>
 							<Sequence>
 								<SetBlackboard output_key="dummy" value="0" />
-								<WakeWordDetected since_ms="3000" />
+								<WakeWordDetected since_sec="3.0" />
 								<HeadTiltAction angle="10" dwell_ms="1500" />
 								<TextToSpeechActionClient
 									msg="Hey there. here are the options for this game.  Say stop to end or continue to keep playing. To change the level say level easy, level left, level right, level challenging, or level all." />
 								<SpeechToTextActionClient text="{said}" />
 								<Fallback>
 									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*stop.*" />
+										<TextCompareAction text="{said}" ck_for=".*stop.*" />
 										<TextToSpeechActionClient msg="Ok, let's stop playing this game." />
 										<SetBlackboard output_key="break" value="1" />
 									</Sequence>
 									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*easy.*" />
+										<TextCompareAction text="{said}" ck_for=".*easy.*" />
 										<TextToSpeechActionClient msg="Ok, let's play the easy level." />
 										<RobotSaysInitAction level_start="0" level_end="0" />
 									</Sequence>
 									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*left.*" />
+										<TextCompareAction text="{said}" ck_for=".*left.*" />
 										<TextToSpeechActionClient msg="Ok, let's play the left-hand level." />
 										<RobotSaysInitAction level_start="1" level_end="1" />
 									</Sequence>
 									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*right.*" />
+										<TextCompareAction text="{said}" ck_for=".*right.*" />
 										<TextToSpeechActionClient msg="Ok, let's play the right-hand level." />
 										<RobotSaysInitAction level_start="2" level_end="2" />
 									</Sequence>
 									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*chal.*" />
+										<TextCompareAction text="{said}" ck_for=".*chal.*" />
 										<TextToSpeechActionClient msg="Ok, let's play the most challenging level." />
 										<RobotSaysInitAction level_start="3" level_end="3" />
 									</Sequence>
 									<Sequence>
-										<SpeechTextCompareClient text="{said}" ck_for=".*all.*" />
+										<TextCompareAction text="{said}" ck_for=".*all.*" />
 										<TextToSpeechActionClient msg="Ok, let's play all levels." />
 										<RobotSaysInitAction level_start="0" level_end="3" />
 									</Sequence>
@@ -91,6 +91,26 @@
 									<Sequence>
 										<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
 											pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
+
+										<ForceSuccess>
+											<Sequence>
+												<TextCompareAction text="{pose_lr_check}" ck_for="left" />
+												<AntennaAction rate="5" intensity="10" left_blink_pattern="110" right_blink_pattern="00" />
+											</Sequence>
+										</ForceSuccess>
+										<ForceSuccess>
+											<Sequence>
+												<TextCompareAction text="{pose_lr_check}" ck_for="right" />
+												<AntennaAction rate="5" intensity="10" left_blink_pattern="00" right_blink_pattern="110" />
+											</Sequence>
+										</ForceSuccess>
+										<ForceSuccess>
+											<Sequence>
+												<TextCompareAction text="{pose_lr_check}" ck_for="any" />
+												<AntennaAction rate="5" intensity="10" left_blink_pattern="110" right_blink_pattern="011" />
+											</Sequence>
+										</ForceSuccess>
+
 										<TextToSpeechActionClient msg="{pose_speech}" />
 										<Delay delay_msec="2500">
 											<SetBlackboard output_key="dummy" value="0" />
@@ -101,19 +121,22 @@
 												<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
 													pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
 													pose_right_speech="{pose_right_speech}" />
+												<AntennaAction rate="0" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
 												<GetRandomSelectionAction
-													options="Fabulous!|Good!|Nice!|Cool!|Super!|Great!|That's Great|Wonderful!|Fantastic!|Nice going!|Groovy baby|Splendid" selected="{to_say}" />
+													options="Fabulous!|Good!|Nice!|Cool!|Super!|Great!|That's Great|Wonderful!|Fantastic!|Nice going!|Groovy baby|Splendid"
+													selected="{to_say}" />
 												<TextToSpeechActionClient msg="{to_say}" />
 											</Sequence>
 											<Sequence>
-												<SpeechTextCompareClient text="{detected_person}" ck_for="no" />
+												<AntennaAction rate="0" intensity="10" left_blink_pattern="0" right_blink_pattern="0" />
+												<TextCompareAction text="{detected_person}" ck_for="no" />
 												<HeadTiltAction angle="20" dwell_ms="1500" />
+												<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
 												<TextToSpeechActionClient
 													msg="Hey there! Where did you go?  I'll wait a while for you to come back." />
 												<Fallback>
 													<RetryUntilSuccesful num_attempts="10">
 														<Sequence>
-
 															<Delay delay_msec="3000">
 																<SetBlackboard output_key="dummy" value="0" />
 															</Delay>
@@ -124,11 +147,11 @@
 														</Sequence>
 													</RetryUntilSuccesful>
 													<Sequence>
-														<SpeechTextCompareClient text="{detected_person}" ck_for="no" />
+														<TextCompareAction text="{detected_person}" ck_for="no" />
 														<SetBlackboard output_key="break" value="1" />
 														<SetBlackboard output_key="stop_key" value="1" />
 														<TextToSpeechActionClient
-															msg="Oh well...maybe they will come back later.  Stopping game." />
+															msg="Oh well...maybe you will come back later.  Stopping game." />
 													</Sequence>
 												</Fallback>
 											</Sequence>
@@ -152,6 +175,9 @@
 											<Sequence>
 												<TextToSpeechActionClient msg="You finished playing the game. Great job!" />
 												<SmileAction level="3" duration_ms="2000" />
+												<Delay delay_msec="2500">
+													<SetBlackboard output_key="dummy" value="0" />
+												</Delay>
 											</Sequence>
 										</ForceFailure>
 									</Fallback>
@@ -164,287 +190,294 @@
 		</Sequence>
 	</BehaviorTree>
 
-  <BehaviorTree ID="RobotSays_dummy">
-    <Sequence>
-      <TextToSpeechActionClient msg="We are playing robot says now. " />
-      <TextToSpeechActionClient msg="We are finished playing robot says now. " />
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="RobotSays_dummy">
+		<Sequence>
+			<TextToSpeechActionClient msg="We are playing robot says now. " />
+			<TextToSpeechActionClient msg="We are finished playing robot says now. " />
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="RobotSeek_dummy">
-    <Sequence>
-      <TextToSpeechActionClient msg="We are playing robot seek now. " />
-      <TextToSpeechActionClient msg="We are finished playing robot seek now. " />
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="RobotSeek_dummy">
+		<Sequence>
+			<TextToSpeechActionClient msg="We are playing robot seek now. " />
+			<TextToSpeechActionClient msg="We are finished playing robot seek now. " />
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="RobotSeek">
-    <Sequence>
-      <TextToSpeechActionClient msg="Hold on while get ready. " />
-      <PoseDetectionControlAction enable="true" />
-      <Nav2ClearGlobalCostMap />
-      <!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
-      <RobotSeekInitAction game_file="robot_seek_1.json" />
-      <TrackAction mode="None" rate="2" />
-      <TextToSpeechActionClient msg="Let's play!" />
-      <TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
-      <RobotSpin angle="180" velocity="0.8" />
-      <TrackAction mode="LookDown" rate="2" />
-      <TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
-      <TrackAction mode="Scan" rate="2" />
-      <RobotSpin angle="180" velocity="0.8" />
+	<BehaviorTree ID="RobotSeek">
+		<Sequence>
+			<TextToSpeechActionClient msg="Hold on while get ready. " />
+			<PoseDetectionControlAction enable="true" />
+			<Nav2ClearGlobalCostMap />
+			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
+			<RobotSeekInitAction game_file="robot_seek_1.json" />
+			<TrackAction mode="None" rate="2" detect_voice="0" />
+			<TextToSpeechActionClient msg="Let's play!" />
+			<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
+			<RobotSpin angle="180" velocity="0.8" />
+			<TrackAction mode="LookDown" rate="2"  detect_voice="0" />
+			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
+			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
+			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
+			<TrackAction mode="Scan" rate="2" detect_voice="0" />
+			<RobotSpin angle="180" velocity="0.8" />
 
-      <SetBlackboard output_key="found" value="0" />
-      <Fallback>
-        <KeepRunningUntilFailure>
-          <ReactiveSequence>
-            <Fallback>
-              <Inverter>
-                <Fallback ID="Detection">
-                  <ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85"
-                    min_detect_count="4" />
-                  <!--  HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
-                    pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" /-->
-                </Fallback>
-              </Inverter>
-              <ForceFailure>
-                <SetBlackboard output_key="found" value="1" />
-              </ForceFailure>
-            </Fallback>
-            <Sequence>
-              <RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
-                spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
-              <TrackAction mode="Scan" rate="1" />
-              <SubTree ID="MoveRobot" target="next_goal" />
-              <!--  TextToSpeechActionClient msg="{goal_speech}" /-->
-              <TextToSpeechActionClient msg="Are you over here?" />
-              <BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
-                <Sequence>
-                  <TrackAction mode="Off" rate="0" />
-                  <RobotSpin angle="359" velocity="0.5" />
-                </Sequence>
-              </BlackboardCheckInt>
-              <BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
-                <Sequence>
-                  <TrackAction mode="Scan" rate="2" />
-                  <ScanWaitAction />
-                </Sequence>
-              </BlackboardCheckInt>
-              <TextToSpeechActionClient msg="I don't see you." />
-            </Sequence>
-          </ReactiveSequence>
-        </KeepRunningUntilFailure>
-        <Sequence>
-          <BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
-            <Sequence>
-              <TrackAction mode="Track" rate="3" />
-              <TextToSpeechActionClient msg="Yay, I found you!" />
-            </Sequence>
-          </BlackboardCheckInt>
-        </Sequence>
-      </Fallback>
-      <BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
-        <Sequence>
-          <TextToSpeechActionClient msg="Come out come out where ever you are!" />
-        </Sequence>
-      </BlackboardCheckInt>
-    </Sequence>
-  </BehaviorTree>
+			<SetBlackboard output_key="found" value="0" />
+			<Fallback>
+				<KeepRunningUntilFailure>
+					<ReactiveSequence>
+						<Fallback>
+							<Inverter>
+								<Fallback ID="Detection">
+									<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85"
+										min_detect_count="4" />
+									<!-- HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
+										pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" / -->
+								</Fallback>
+							</Inverter>
+							<ForceFailure>
+								<SetBlackboard output_key="found" value="1" />
+							</ForceFailure>
+						</Fallback>
+						<Sequence>
+							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
+								spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
+							<TrackAction mode="Scan" rate="1" detect_voice="0" />
+							<SubTree ID="MoveRobot" target="next_goal" />
+							<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
+							<TextToSpeechActionClient msg="Are you over here?" />
+							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<TrackAction mode="Off" rate="0" detect_voice="0" />
+									<RobotSpin angle="359" velocity="0.5" />
+								</Sequence>
+							</BlackboardCheckInt>
+							<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<TrackAction mode="Scan" rate="2" detect_voice="0" />
+									<ScanWaitAction />
+								</Sequence>
+							</BlackboardCheckInt>
+							<TextToSpeechActionClient msg="I don't see you." />
+						</Sequence>
+					</ReactiveSequence>
+				</KeepRunningUntilFailure>
+				<Sequence>
+					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
+						<Sequence>
+							<TrackAction mode="Track" rate="3" detect_voice="1" />
+							<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
+							<TextToSpeechActionClient msg="Yay, I found you!" />
+						</Sequence>
+					</BlackboardCheckInt>
+				</Sequence>
+			</Fallback>
+			<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
+				<Sequence>
+					<TextToSpeechActionClient msg="Come out come out where ever you are!" />
+				</Sequence>
+			</BlackboardCheckInt>
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="MoveRobot">
-    <Sequence name="SetGoal">
-      <Nav2Client goal="{target}" />
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="MoveRobot">
+		<Sequence name="SetGoal">
+			<Nav2Client goal="{target}" />
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="AskGame">
-    <Sequence>
-      <SetBlackboard output_key="result" value="0" />
-      <RetryUntilSuccesful num_attempts="2">
-        <Sequence>
-          <TextToSpeechActionClient msg="{game_name}" />
-          <SpeechToTextActionClient text="{said}" />
-          <Inverter>
-            <ReactiveSequence>
-              <SpeechTextCompareClient text="{said}" ck_for="" />
-              <TextToSpeechActionClient msg="I'm sorry, but I didn't understand you." />
-            </ReactiveSequence>
-          </Inverter>
+	<BehaviorTree ID="AskGame">
+		<Sequence>
+			<SetBlackboard output_key="result" value="0" />
+			<RetryUntilSuccesful num_attempts="2">
+				<Sequence>
+					<TextToSpeechActionClient msg="{game_name}" />
+					<SpeechToTextActionClient text="{said}" />
+					<Inverter>
+						<ReactiveSequence>
+							<TextCompareAction text="{said}" ck_for="" />
+							<TextToSpeechActionClient msg="I'm sorry, but I didn't understand you." />
+						</ReactiveSequence>
+					</Inverter>
 
-          <Fallback>
-            <ReactiveSequence>
-              <SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
-              <Sequence>
-                <SetBlackboard output_key="result" value="1" />
-                <TextToSpeechActionClient msg="Great! Let's play!" />
-              </Sequence>
-            </ReactiveSequence>
-            <ReactiveSequence>
-              <SpeechTextCompareClient text="{said}" ck_for=".*(no|nope|nah).*" />
-              <!-- Will return success and end cause loop to finish -->
-              <SetBlackboard output_key="dummy" value="0" />
-            </ReactiveSequence>
-            <ForceFailure>
-              <TextToSpeechActionClient msg="I'm sorry, but I didn't understand you." />
-            </ForceFailure>
-          </Fallback>
-        </Sequence>
-      </RetryUntilSuccesful>
-      <BlackboardCheckInt value_A="{result}" value_B="1" return_on_mismatch="FAILURE">
-        <SetBlackboard output_key="dummy" value="0" />
-      </BlackboardCheckInt>
-    </Sequence>
-  </BehaviorTree>
+					<Fallback>
+						<ReactiveSequence>
+							<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+							<Sequence>
+								<SetBlackboard output_key="result" value="1" />
+								<TextToSpeechActionClient msg="Great! Let's play!" />
+							</Sequence>
+						</ReactiveSequence>
+						<ReactiveSequence>
+							<TextCompareAction text="{said}" ck_for=".*(no|nope|nah).*" />
+							<!-- Will return success and end cause loop to finish -->
+							<SetBlackboard output_key="dummy" value="0" />
+						</ReactiveSequence>
+						<ForceFailure>
+							<TextToSpeechActionClient msg="I'm sorry, but I didn't understand you." />
+						</ForceFailure>
+					</Fallback>
+				</Sequence>
+			</RetryUntilSuccesful>
+			<BlackboardCheckInt value_A="{result}" value_B="1" return_on_mismatch="FAILURE">
+				<SetBlackboard output_key="dummy" value="0" />
+			</BlackboardCheckInt>
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="ChooseAndPlayGame">
-    <Sequence>
-      <SetBlackboard output_key="break" value="0" />
-      <SetBlackboard output_key="first" value="1" />
-      <RetryUntilSuccesful num_attempts="2">
-        <BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
-          <Fallback>
-            <Sequence>
-              <SetBlackboard output_key="game_name" value="Do you want play Robot Seek" />
-              <SubTree ID="AskGame" game_name="game_name" />
-              <SubTree ID="RobotSeek" stop_key="stop_key"/>
-            </Sequence>
-            <Sequence>
-              <SetBlackboard output_key="game_name" value="How about Robot Says?" />
-              <SubTree ID="AskGame" game_name="game_name" />
-              <SubTree ID="RobotSays" stop_key="stop_key"/>
-            </Sequence>
-            <Sequence>
-              <BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
-                <Sequence>
-                  <SetBlackboard output_key="first" value="0" />
-                  <TextToSpeechActionClient msg="Would you like to hear the list again?" />
-                  <SpeechToTextActionClient text="{said}" />
-                  <SpeechTextCompareClient text="{said}" ck_for=".*(no|nope|nah).*" />
-                  <SetBlackboard output_key="break" value="1" />
-                </Sequence>
-              </BlackboardCheckInt>
-            </Sequence>
-          </Fallback>
-          </BlackboardCheckInt>
-        </RetryUntilSuccesful>
-    </Sequence>
-  </BehaviorTree>
+	<BehaviorTree ID="ChooseAndPlayGame">
+		<Sequence>
+			<SetBlackboard output_key="break" value="0" />
+			<SetBlackboard output_key="first" value="1" />
+			<RetryUntilSuccesful num_attempts="2">
+				<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
+					<Fallback>
+						<Sequence>
+							<SetBlackboard output_key="game_name" value="Do you want play Robot Seek" />
+							<SubTree ID="AskGame" game_name="game_name" />
+							<SubTree ID="RobotSeek" stop_key="stop_key" />
+						</Sequence>
+						<Sequence>
+							<SetBlackboard output_key="game_name" value="How about Robot Says?" />
+							<SubTree ID="AskGame" game_name="game_name" />
+							<SubTree ID="RobotSays" stop_key="stop_key" />
+						</Sequence>
+						<Sequence>
+							<BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
+								<Sequence>
+									<SetBlackboard output_key="first" value="0" />
+									<TextToSpeechActionClient msg="Would you like to hear the list again?" />
+									<SpeechToTextActionClient text="{said}" />
+									<TextCompareAction text="{said}" ck_for=".*(no|nope|nah).*" />
+									<SetBlackboard output_key="break" value="1" />
+								</Sequence>
+							</BlackboardCheckInt>
+						</Sequence>
+					</Fallback>
+				</BlackboardCheckInt>
+			</RetryUntilSuccesful>
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="GameMenu">
-  <Sequence>
-    <SetBlackboard output_key="stop_key" value="0" />
-    <Repeat num_cycles="3">
-      <BlackboardCheckInt value_A="{stop_key}" value_B="0" return_on_mismatch="FAILURE">
-        <Sequence>
-          <Fallback name="get_answer">
-            <Sequence>
-              <TextToSpeechActionClient msg="Would you like to play a game?" />
-              <SpeechToTextActionClient text="{said}" />
-            </Sequence>
-          </Fallback>
+	<BehaviorTree ID="GameMenu">
+		<Sequence>
+			<SetBlackboard output_key="stop_key" value="0" />
+			<Repeat num_cycles="3">
+				<BlackboardCheckInt value_A="{stop_key}" value_B="0" return_on_mismatch="FAILURE">
+					<Sequence>
+						<Fallback name="get_answer">
+							<Sequence>
+								<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
+								<TextToSpeechActionClient msg="Would you like to play a game?" />
+								<SpeechToTextActionClient text="{said}" />
+							</Sequence>
+						</Fallback>
 
-          <Fallback>
-            <Sequence>
-              <SpeechTextCompareClient text="{said}" ck_for="" />
-              <TextToSpeechActionClient msg="I'm sorry, but I didn't hear you" />
-            </Sequence>
-            <Sequence>
-              <!-- Sequence -->
-                <!--   TextToSpeechActionClient msg="You said, " msg2="{said}" / -->
-              <!--  /Sequence -->
-              <Fallback>
-                <Sequence>
-                  <SpeechTextCompareClient text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
-                  <TextToSpeechActionClient msg="Ok!" />
-                  <ForceSuccess>
-                  <SubTree ID="ChooseAndPlayGame"  stop_key="stop_key"/>
-                  </ForceSuccess>
-                </Sequence>
-                <Sequence>
-                  <SpeechTextCompareClient text="{said}" ck_for=".*(no|nope|nah).*" />
-                  <TextToSpeechActionClient msg="Ok, maybe we can play later." />
-                  <SetBlackboard output_key="stop_key" value="1" />
-                </Sequence>
-                <Sequence>
-                  <HeadTiltAction angle="20" dwell_ms="1500" />
-                  <TextToSpeechActionClient msg="I'm sorry, I didn't understand." />
-                </Sequence>
+						<Fallback>
+							<Sequence>
+								<TextCompareAction text="{said}" ck_for="" />
+								<TextToSpeechActionClient msg="I'm sorry, but I didn't hear you" />
+							</Sequence>
+							<Sequence>
+								<!-- Sequence -->
+								<!-- TextToSpeechActionClient msg="You said, " msg2="{said}" / -->
+								<!-- /Sequence -->
+								<Fallback>
+									<Sequence>
+										<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+										<TextToSpeechActionClient msg="Ok!" />
+										<ForceSuccess>
+											<SubTree ID="ChooseAndPlayGame" stop_key="stop_key" />
+										</ForceSuccess>
+									</Sequence>
+									<Sequence>
+										<TextCompareAction text="{said}" ck_for=".*(no|nope|nah).*" />
+										<TextToSpeechActionClient msg="Ok, maybe we can play later." />
+										<SetBlackboard output_key="stop_key" value="1" />
+									</Sequence>
+									<Sequence>
+										<HeadTiltAction angle="20" dwell_ms="1500" />
+										<TextToSpeechActionClient msg="I'm sorry, I didn't understand." />
+									</Sequence>
 
-              </Fallback>
-            </Sequence>
-          </Fallback>
-        </Sequence>
-      </BlackboardCheckInt>
-    </Repeat>
-  </Sequence>
-</BehaviorTree>
+								</Fallback>
+							</Sequence>
+						</Fallback>
+					</Sequence>
+				</BlackboardCheckInt>
+			</Repeat>
+		</Sequence>
+	</BehaviorTree>
 
-  <BehaviorTree ID="MainTree">
-    <Sequence>
-      <SetBlackboard output_key="exit_key" value="0" />
-      <SetBlackboard output_key="stop_key" value="0" />
-      <SetBlackboard output_key="do_greeting" value="0" />
-      <SetBlackboard output_key="do_menu" value="0" />
-      <SetBlackboard output_key="person_detected" value="0" />
-      <PoseDetectionControlAction enable="true" />
-      <TrackAction mode="Track" rate="3" />
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<SetBlackboard output_key="exit_key" value="0" />
+			<SetBlackboard output_key="stop_key" value="0" />
+			<SetBlackboard output_key="do_greeting" value="0" />
+			<SetBlackboard output_key="do_menu" value="0" />
+			<SetBlackboard output_key="person_detected" value="0" />
+			<PoseDetectionControlAction enable="true" />
+			<TrackAction mode="Track" rate="3" detect_voice="1" />
+			<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
 
-      <!--  SubTree ID="RobotSays" /-->
-      <KeepRunningUntilFailure>
-        <BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
-          <ForceSuccess>
-            <Sequence>
+			<!-- SubTree ID="RobotSays" / -->
+			<KeepRunningUntilFailure>
+				<BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
+					<ForceSuccess>
+						<Sequence>
 
-              <!-- Update person detection status and enable greeting and menu if person now detected -->
-              <IfThenElse>
-                <Delay delay_msec="200">
-                  <SubTree ID="DetectPerson" />
-                </Delay>
-                <!-- Detected -->
-                <BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="SUCCESS">
-                  <Sequence>
-                    <SetBlackboard output_key="person_detected" value="1" />
-                    <SetBlackboard output_key="do_greeting" value="1" />
-                    <SetBlackboard output_key="do_menu" value="1" />
-                  </Sequence>
-                </BlackboardCheckInt>
-                <!-- Not Detected -->
-                <SetBlackboard output_key="person_detected" value="0" />
-              </IfThenElse>
+							<!-- Update person detection status and enable greeting and menu if person now detected -->
+							<IfThenElse>
+								<Delay delay_msec="200">
+									<SubTree ID="DetectPerson" />
+								</Delay>
+								<!-- Detected -->
+								<BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="SUCCESS">
+									<Sequence>
+										<SetBlackboard output_key="person_detected" value="1" />
+										<SetBlackboard output_key="do_greeting" value="1" />
+										<SetBlackboard output_key="do_menu" value="1" />
+									</Sequence>
+								</BlackboardCheckInt>
+								<!-- Not Detected -->
+								<SetBlackboard output_key="person_detected" value="0" />
+							</IfThenElse>
 
-              <!-- Update hot wake word detection and enable greeting and menu if heard -->
-              <IfThenElse>
-                <WakeWordDetected since_ms="2000"/>
-                <!-- Detected -->
-                <Sequence>
-                  <SetBlackboard output_key="do_greeting" value="1" />
-                  <SetBlackboard output_key="do_menu" value="1" />
-                </Sequence>
-                <SetBlackboard output_key="dummy" value="1" />
-              </IfThenElse>
+							<!-- Update wake word detection and enable greeting and menu if heard -->
+							<IfThenElse>
+								<WakeWordDetected since_sec="4.0" />
+								<!-- Detected -->
+								<Sequence>
+									<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
+									<SetBlackboard output_key="do_greeting" value="1" />
+									<SetBlackboard output_key="do_menu" value="1" />
+									<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
+								</Sequence>
+								<SetBlackboard output_key="dummy" value="1" />
+							</IfThenElse>
 
-              <BlackboardCheckInt value_A="{do_greeting}" value_B="1" return_on_mismatch="SUCCESS">
-                <Sequence>
-                  <SubTree ID="Greet" />
-                  <SetBlackboard output_key="do_greeting" value="0" />
-                </Sequence>
-              </BlackboardCheckInt>
+							<BlackboardCheckInt value_A="{do_greeting}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<SubTree ID="Greet" />
+									<SetBlackboard output_key="do_greeting" value="0" />
+								</Sequence>
+							</BlackboardCheckInt>
 
-              <BlackboardCheckInt value_A="{do_menu}" value_B="1" return_on_mismatch="SUCCESS">
-                <Sequence>
-                  <ForceSuccess>
-                    <SubTree ID="GameMenu" stop_key="stop_key" />
-                  </ForceSuccess>
-                  <SetBlackboard output_key="do_menu" value="0" />
-                </Sequence>
-              </BlackboardCheckInt>
+							<BlackboardCheckInt value_A="{do_menu}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<ForceSuccess>
+										<SubTree ID="GameMenu" stop_key="stop_key" />
+									</ForceSuccess>
+									<SetBlackboard output_key="do_menu" value="0" />
+								</Sequence>
+							</BlackboardCheckInt>
 
-            </Sequence>
-          </ForceSuccess>
-        </BlackboardCheckInt>
-      </KeepRunningUntilFailure>
-      <SubTree ID="Terminate" />
-    </Sequence>
-  </BehaviorTree>
+						</Sequence>
+					</ForceSuccess>
+				</BlackboardCheckInt>
+			</KeepRunningUntilFailure>
+			<SubTree ID="Terminate" />
+		</Sequence>
+	</BehaviorTree>
 
 </root>

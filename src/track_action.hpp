@@ -20,24 +20,31 @@ class TrackAction : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return { BT::InputPort<std::string>("mode"), BT::InputPort<std::string>("rate") };
+        	return { BT::InputPort<std::string>("mode"),
+        			 BT::InputPort<std::string>("rate"),
+					 BT::InputPort<bool>("detect_voice")};
         }
 
         virtual BT::NodeStatus tick() override
         {
         	std::string mode;
         	std::string rate;
+        	bool detect_voice = false;
         	if (!getInput<std::string>("mode", mode)) {
     			throw BT::RuntimeError("missing mode");
     		}
         	if (!getInput<std::string>("rate", rate)) {
     			throw BT::RuntimeError("missing rate");
     		}
+        	if (!getInput<bool>("detect_voice", detect_voice)) {
+    			throw BT::RuntimeError("missing detect_voice");
+    		}
 
         	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s", mode.c_str(), rate.c_str());
         	auto message = face_control_interfaces::msg::Track();
             message.mode = mode;
             message.rate = rate;
+            message.voice_detect = detect_voice;
             track_publisher_->publish(message);
 
             std::this_thread::sleep_for(100ms);

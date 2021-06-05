@@ -12,14 +12,13 @@
 #include "std_srvs/srv/empty.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Rename to TextCompareAction
-class SpeechTextCompareClient : public BT::SyncActionNode
+class TextCompareAction : public BT::SyncActionNode
 {
     public:
-		SpeechTextCompareClient(const std::string& name, const BT::NodeConfiguration& config)
+	TextCompareAction(const std::string& name, const BT::NodeConfiguration& config)
 				: BT::SyncActionNode(name, config)
 		{
-			node_ = rclcpp::Node::make_shared("speech_text_compare_client");
+			node_ = rclcpp::Node::make_shared("text_compare_action");
 			setlocale(LC_ALL, "");
 		}
 

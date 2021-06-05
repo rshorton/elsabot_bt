@@ -1,0 +1,10 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<KeepRunningUntilFailure>
+			<Sequence>
+  			<SetBlackboard output_key="test" value="1" />
+
+			</Sequence>
+		</KeepRunningUntilFailure>
+	</BehaviorTree>
+</root>
