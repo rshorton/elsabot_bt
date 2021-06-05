@@ -5,13 +5,14 @@
 
 #include "interrupt_event.hpp"
 #include "snapshot_client.hpp"
-#include "speech_text_compare_client.hpp"
+#include "text_compare_action.hpp"
 #include "speech_to_text_action_client.hpp"
 #include "text_to_speech_action_client.hpp"
 #include "human_pose_detect.hpp"
 #include "human_pose_detection_control_action.hpp"
 #include "voice_detected.hpp"
 #include "smile_action.hpp"
+#include "antenna_action.hpp"
 #include "track_action.hpp"
 #include "head_tilt_action.hpp"
 #include "wakeword_detected.hpp"
@@ -49,15 +50,14 @@ int main(int argc, char **argv)
     BehaviorTreeFactory factory;
 
     factory.registerNodeType<Nav2Client>("Nav2Client");
-    factory.registerNodeType<InterruptEvent>("InterruptEvent");
-    factory.registerNodeType<SnapshotClient>("SnapshotClient");
-    factory.registerNodeType<SpeechTextCompareClient>("SpeechTextCompareClient");
+    factory.registerNodeType<TextCompareAction>("TextCompareAction");
     factory.registerNodeType<SpeechToTextActionClient>("SpeechToTextActionClient");
     factory.registerNodeType<TextToSpeechActionClient>("TextToSpeechActionClient");
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
     factory.registerNodeType<HumanPoseDetect>("HumanPoseDetect");
     factory.registerNodeType<PoseDetectionControlAction>("PoseDetectionControlAction");
     factory.registerNodeType<SmileAction>("SmileAction");
+    factory.registerNodeType<AntennaAction>("AntennaAction");
     factory.registerNodeType<TrackAction>("TrackAction");
     factory.registerNodeType<HeadTiltAction>("HeadTiltAction");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");

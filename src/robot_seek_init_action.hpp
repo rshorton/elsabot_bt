@@ -21,28 +21,6 @@
 
 using namespace std;
 
-namespace BT
-{
-template <> inline
-RobotSeekGame::SearchPose convertFromString(StringView key)
-{
-    // three real numbers (x,y) separated by comma
-    auto parts = BT::splitString(key, ',');
-    if (parts.size() != 5) {
-        throw BT::RuntimeError("invalid input)");
-    } else {
-    	RobotSeekGame::SearchPose pose;
-    	pose.x = convertFromString<double>(parts[0]);
-    	pose.y = convertFromString<double>(parts[1]);
-    	pose.yaw = convertFromString<double>(parts[2]);
-    	pose.spin = convertFromString<bool>(parts[3]);
-    	pose.scan = convertFromString<bool>(parts[4]);
-    	pose.initial_dist = 0.0;
-        return pose;
-    }
-}
-}
-
 class RobotSeekInitAction : public BT::SyncActionNode
 {
     public:
@@ -64,7 +42,7 @@ class RobotSeekInitAction : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return { BT::InputPort<std::string>("search_poses") };
+        	return { BT::InputPort<std::string>("game_file") };
         }
 
         void poseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -109,54 +87,49 @@ class RobotSeekInitAction : public BT::SyncActionNode
 				game = RobotSeekGame::CreateRobotSeekGame();
 			}
 
-        	std::string search_poses;
-        	if (!getInput<std::string>("search_poses", search_poses)) {
-        		throw BT::RuntimeError("missing search poses");
+			const char* dir = std::getenv("GAME_DATA_DIR");
+			if (!dir) {
+				throw BT::RuntimeError("Please env var GAME_DATA_DIR to the directory holding the game data files.");
+			}
+
+        	std::string game_file;
+        	if (!getInput<std::string>("game_file", game_file)) {
+        		throw BT::RuntimeError("missing game file mame");
         	}
 
-        	// Parse the ordered search pose list
-        	vector<RobotSeekGame::SearchPose> poses;
-            auto poses_in = BT::splitString(search_poses, ';');
-            if (poses_in.size() == 0) {
-                throw BT::RuntimeError("invalid input)");
-            } else {
-            	for (unsigned i = 0; i < poses_in.size(); i++) {
-            		poses.push_back(BT::convertFromString<RobotSeekGame::SearchPose>(poses_in[i]));
-            	}
-            }
-            if (poses.size() == 0) {
-                throw BT::RuntimeError("invalid input)");
-            }
+        	std::stringstream ss;
+        	ss << dir << "/" << game_file;
+        	cout << "Game filepath: " << ss.str();
 
-            std::vector<geometry_msgs::msg::PoseStamped> path_poses;
-            cout << "Parsed poses:" << endl;
-            for (auto& it : poses) {
-            	geometry_msgs::msg::PoseStamped msg;
-            	msg.header.frame_id = "map";
-            	msg.header.stamp = rclcpp::Time();
-            	msg.pose.position.x = it.x;
-            	msg.pose.position.y = it.y;
-            	msg.pose.position.z = 0;
-            	msg.pose.orientation = orientationAroundZAxis(it.yaw);
-            	path_poses.push_back(msg);
+        	std::vector<RobotSeekGame::SearchPose> poses;
+        	if (game->Init(node_, ss.str(), cur_pos_x, cur_pos_y, cur_yaw, poses)) {
 
-                cout << "x= " << it.x
-                	 << ", y= " << it.y
-					 << ", yaw= " << it.yaw
-					 << ", spin= " << it.spin
-					 << ", scan= " << it.scan
-					 << endl;
-            }
+                std::vector<geometry_msgs::msg::PoseStamped> path_poses;
+                cout << "Parsed poses:" << endl;
+                for (auto& it : poses) {
+                	geometry_msgs::msg::PoseStamped msg;
+                	msg.header.frame_id = "map";
+                	msg.header.stamp = rclcpp::Time();
+                	msg.pose.position.x = it.x;
+                	msg.pose.position.y = it.y;
+                	msg.pose.position.z = 0;
+                	msg.pose.orientation = orientationAroundZAxis(it.yaw);
+                	path_poses.push_back(msg);
 
-            nav_msgs::msg::Path path;
-            path.header.frame_id = "map";
-            path.header.stamp = rclcpp::Time();
-            path.poses = path_poses;
-            search_path_pub_->publish(path);
+                    cout << "x= " << it.x
+                    	 << ", y= " << it.y
+    					 << ", yaw= " << it.yaw
+    					 << ", spin= " << it.spin
+    					 << ", scan= " << it.scan
+    					 << endl;
+                }
 
-        	rclcpp::spin_some(node_);
+                nav_msgs::msg::Path path;
+                path.header.frame_id = "map";
+                path.header.stamp = rclcpp::Time();
+                path.poses = path_poses;
+                search_path_pub_->publish(path);
 
-        	if (game->Init(node_, poses, cur_pos_x, cur_pos_y, cur_yaw)) {
 #if 0
         		// test
         		double x, y, yaw;

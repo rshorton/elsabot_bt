@@ -18,9 +18,6 @@
 						<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
 					</Fallback>
 				</Sequence>
-				<Sequence>
-					<TextToSpeechActionClient msg="End of loop" msg2="" />
-				</Sequence>
 			</Sequence>
 		</Repeat>
 	</BehaviorTree>

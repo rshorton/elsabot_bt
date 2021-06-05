@@ -25,7 +25,7 @@
 
              <Fallback name="pick_action">
                <Sequence>
-                 <SpeechTextCompareClient text="{said}" ck_for=""/>
+                 <TextCompareAction text="{said}" ck_for=""/>
                  <TextToSpeechActionClient msg="I'm sorry, but I didn't hear a response" />
                </Sequence>
                <Sequence>
@@ -34,15 +34,15 @@
                  </Sequence>
                  <Fallback>
                    <Sequence>
-                     <SpeechTextCompareClient text="{said}" ck_for=".*(hide|seek).*"/>
+                     <TextCompareAction text="{said}" ck_for=".*(hide|seek).*"/>
                      <TextToSpeechActionClient msg="Ok, let's play hide and seek together" />
                    </Sequence>
                    <Sequence>
-                     <SpeechTextCompareClient text="{said}" ck_for=".*(simon|says).*"/>
+                     <TextCompareAction text="{said}" ck_for=".*(simon|says).*"/>
                      <TextToSpeechActionClient msg="Ok, let's play simon says" />
                    </Sequence>
                    <Sequence>
-                     <SpeechTextCompareClient text="{said}" ck_for=".*(stop).*"/>
+                     <TextCompareAction text="{said}" ck_for=".*(stop).*"/>
                      <TextToSpeechActionClient msg="Ok, let's play again later" />
                      <SetBlackboard output_key="output_key" value="0" />
                    </Sequence>

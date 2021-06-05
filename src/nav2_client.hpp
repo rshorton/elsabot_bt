@@ -55,7 +55,8 @@ class Nav2Client : public BT::AsyncActionNode
 {
 public:
     Nav2Client(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::AsyncActionNode(name, config)
+        : BT::AsyncActionNode(name, config),
+		 _aborted(false)
     {
     }
 
@@ -88,7 +89,7 @@ public:
 
         Pose2D goal = BT::convertFromString<Pose2D>(goal_in);
 
-        _aborted = false;
+        //_aborted = false;
 
         RCLCPP_INFO(node_->get_logger(), "Sending goal %f %f %f", goal.x, goal.y, goal.yaw);
 
@@ -153,6 +154,7 @@ public:
         }
 
         if (!bSuccess && _aborted) {
+        	_aborted = false;
         	RCLCPP_INFO(node_->get_logger(), "canceling nav after abort");
 
         	auto future_cancel = action_client->async_cancel_goal(goal_handle);
@@ -167,6 +169,7 @@ public:
 
 #endif
         if (_aborted) {
+        	_aborted = false;
             // this happens only if method halt() was invoked
             //_client.cancelAllGoals();
             RCLCPP_INFO(node_->get_logger(), "Nav aborted");
@@ -196,7 +199,6 @@ public:
 
     virtual void halt() override {
     	RCLCPP_INFO(node_->get_logger(), "requesting nav abort");
-
         _aborted = true;
     }
 private:

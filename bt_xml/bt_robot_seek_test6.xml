@@ -1,0 +1,85 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Repeat num_cycles="10">
+			<Sequence>
+				<Delay delay_msec="1000">
+					<PoseDetectionControlAction enable="true" />
+				</Delay>
+				<Nav2ClearGlobalCostMap />
+				<RobotSeekInitAction game_file="robot_seek_1.json" />
+				<TrackAction mode="None" rate="2" />
+				<TextToSpeechActionClient msg="Let's play hide and seek!" />
+				<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
+				<RobotSpin angle="180" velocity="0.8" />
+				<TrackAction mode="LookDown" rate="2" />
+				<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
+				<TrackAction mode="Scan" rate="2" />
+				<RobotSpin angle="-180" velocity="0.8" />
+
+				<SetBlackboard output_key="found" value="0" />
+				<Fallback>
+					<KeepRunningUntilFailure>
+						<ReactiveSequence>
+							<Fallback>
+								<Inverter>
+									<Fallback ID="Detection">
+										<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85"
+											min_detect_count="4" />
+										<!--   -->HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
+											detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+											pose_right_speech="{pose_right_speech}" / -->
+									</Fallback>
+								</Inverter>
+								<ForceFailure>
+									<SetBlackboard output_key="found" value="1" />
+								</ForceFailure>
+							</Fallback>
+							<Sequence>
+								<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
+									spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
+								<TrackAction mode="Scan" rate="1" />
+								<SubTree ID="MoveRobot" target="next_goal" />
+								<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
+								<TextToSpeechActionClient msg="Are you over here?" />
+								<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
+									<Sequence>
+										<TrackAction mode="Off" rate="0" />
+										<RobotSpin angle="359" velocity="0.5" />
+									</Sequence>
+								</BlackboardCheckInt>
+								<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
+									<Sequence>
+										<TrackAction mode="Scan" rate="2" />
+										<ScanWaitAction />
+									</Sequence>
+								</BlackboardCheckInt>
+								<TextToSpeechActionClient msg="I don't see you." />
+							</Sequence>
+						</ReactiveSequence>
+					</KeepRunningUntilFailure>
+					<Sequence>
+						<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
+							<Sequence>
+								<TrackAction mode="Track" rate="3" />
+								<TextToSpeechActionClient msg="Yay, I found you!" />
+							</Sequence>
+						</BlackboardCheckInt>
+					</Sequence>
+				</Fallback>
+				<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
+					<Sequence>
+						<TextToSpeechActionClient msg="Come out come out where ever you are!" />
+					</Sequence>
+				</BlackboardCheckInt>
+			</Sequence>
+		</Repeat>
+	</BehaviorTree>
+
+	<BehaviorTree ID="MoveRobot">
+		<Sequence name="SetGoal">
+			<Nav2Client goal="{target}" />
+		</Sequence>
+	</BehaviorTree>
+</root>
+
+
