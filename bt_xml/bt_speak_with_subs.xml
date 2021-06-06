@@ -1,0 +1,10 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <KeepRunningUntilFailure>
+              <Sequence>
+                 <TextToSpeechActionClient msg="Hello (player)" />
+                 <TextToSpeechActionClient msg="How are you?" />
+              </Sequence>
+        </KeepRunningUntilFailure>
+    </BehaviorTree>
+</root>

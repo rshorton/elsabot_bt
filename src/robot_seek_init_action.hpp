@@ -89,7 +89,7 @@ class RobotSeekInitAction : public BT::SyncActionNode
 
 			const char* dir = std::getenv("GAME_DATA_DIR");
 			if (!dir) {
-				throw BT::RuntimeError("Please env var GAME_DATA_DIR to the directory holding the game data files.");
+				throw BT::RuntimeError("Please env var GAME_DATA_DIR to the directory holding the game data/settings files.");
 			}
 
         	std::string game_file;

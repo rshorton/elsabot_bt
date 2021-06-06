@@ -28,8 +28,6 @@ namespace ns {
 
 static RobotSeekGame* game = nullptr;
 
-const std::string pose_json_file = "./robot_says_poses.json";
-
 RobotSeekGame* RobotSeekGame::GetRobotSeekGame()
 {
 	return game;

@@ -12,13 +12,13 @@
 
 	<BehaviorTree ID="Terminate">
 		<Sequence>
-			<TextToSpeechActionClient msg="Goodbye" />
+			<TextToSpeechActionClient msg="Goodbye (player)" />
 		</Sequence>
 	</BehaviorTree>
 
 	<BehaviorTree ID="Greet">
 		<Sequence>
-			<TextToSpeechActionClient msg="Hi there" />
+			<TextToSpeechActionClient msg="Hi there (player)" />
 			<Delay delay_msec="500">
 				<SmileAction level="3" duration_ms="2000" />
 			</Delay>
@@ -101,18 +101,18 @@
 										<ForceSuccess>
 											<Sequence>
 												<TextCompareAction text="{pose_lr_check}" ck_for="right" />
-												<AntennaAction rate="5" intensity="10" left_blink_pattern="00" right_blink_pattern="110" />
+												<AntennaAction rate="5" intensity="10" left_blink_pattern="000" right_blink_pattern="110" />
 											</Sequence>
 										</ForceSuccess>
 										<ForceSuccess>
 											<Sequence>
 												<TextCompareAction text="{pose_lr_check}" ck_for="any" />
-												<AntennaAction rate="5" intensity="10" left_blink_pattern="110" right_blink_pattern="011" />
+												<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
 											</Sequence>
 										</ForceSuccess>
 
 										<TextToSpeechActionClient msg="{pose_speech}" />
-										<Delay delay_msec="2500">
+										<Delay delay_msec="3000">
 											<SetBlackboard output_key="dummy" value="0" />
 										</Delay>
 
@@ -163,6 +163,7 @@
 
 									<Fallback>
 										<Sequence>
+                      <AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
 											<RobotSaysNextPassAction level_desc="{level_desc}" />
 											<TextToSpeechActionClient msg="Let's play the next level, " msg2="{level_desc}" />
 											<SmileAction level="3" duration_ms="2000" />
@@ -173,7 +174,7 @@
 										</Sequence>
 										<ForceFailure>
 											<Sequence>
-												<TextToSpeechActionClient msg="You finished playing the game. Great job!" />
+												<TextToSpeechActionClient msg="You finished playing the game. Great job (player)!" />
 												<SmileAction level="3" duration_ms="2000" />
 												<Delay delay_msec="2500">
 													<SetBlackboard output_key="dummy" value="0" />
@@ -206,7 +207,7 @@
 
 	<BehaviorTree ID="RobotSeek">
 		<Sequence>
-			<TextToSpeechActionClient msg="Hold on while get ready. " />
+			<TextToSpeechActionClient msg="Hold on while I get ready. " />
 			<PoseDetectionControlAction enable="true" />
 			<Nav2ClearGlobalCostMap />
 			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
@@ -217,7 +218,7 @@
 			<RobotSpin angle="180" velocity="0.8" />
 			<TrackAction mode="LookDown" rate="2"  detect_voice="0" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
-			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
+			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
 			<TrackAction mode="Scan" rate="2" detect_voice="0" />
 			<RobotSpin angle="180" velocity="0.8" />
@@ -245,7 +246,7 @@
 							<TrackAction mode="Scan" rate="1" detect_voice="0" />
 							<SubTree ID="MoveRobot" target="next_goal" />
 							<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
-							<TextToSpeechActionClient msg="Are you over here?" />
+							<TextToSpeechActionClient msg="Are you over here (player)?" />
 							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<TrackAction mode="Off" rate="0" detect_voice="0" />
@@ -258,7 +259,7 @@
 									<ScanWaitAction />
 								</Sequence>
 							</BlackboardCheckInt>
-							<TextToSpeechActionClient msg="I don't see you." />
+							<TextToSpeechActionClient msg="I don't see you (player)." />
 						</Sequence>
 					</ReactiveSequence>
 				</KeepRunningUntilFailure>
@@ -267,14 +268,14 @@
 						<Sequence>
 							<TrackAction mode="Track" rate="3" detect_voice="1" />
 							<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
-							<TextToSpeechActionClient msg="Yay, I found you!" />
+							<TextToSpeechActionClient msg="Yay, I found you (player)!" />
 						</Sequence>
 					</BlackboardCheckInt>
 				</Sequence>
 			</Fallback>
 			<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
 				<Sequence>
-					<TextToSpeechActionClient msg="Come out come out where ever you are!" />
+					<TextToSpeechActionClient msg="Come out come out where ever you are (player)!" />
 				</Sequence>
 			</BlackboardCheckInt>
 		</Sequence>
@@ -346,7 +347,7 @@
 							<BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
 								<Sequence>
 									<SetBlackboard output_key="first" value="0" />
-									<TextToSpeechActionClient msg="Would you like to hear the list again?" />
+									<TextToSpeechActionClient msg="Would you like to hear the list again (player)?" />
 									<SpeechToTextActionClient text="{said}" />
 									<TextCompareAction text="{said}" ck_for=".*(no|nope|nah).*" />
 									<SetBlackboard output_key="break" value="1" />
@@ -451,7 +452,6 @@
 									<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
 									<SetBlackboard output_key="do_greeting" value="1" />
 									<SetBlackboard output_key="do_menu" value="1" />
-									<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
 								</Sequence>
 								<SetBlackboard output_key="dummy" value="1" />
 							</IfThenElse>

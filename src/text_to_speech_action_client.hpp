@@ -17,6 +17,8 @@
 #include "std_msgs/msg/header.hpp"
 #include "behaviortree_cpp_v3/action_node.h"
 
+#include "game_settings.hpp"
+
 class TextToSpeechActionClient : public BT::SyncActionNode
 {
 public:
@@ -90,6 +92,16 @@ public:
 
     	msg += " ";
     	msg += msg2;
+
+    	// Substitute placeholders
+    	auto & settings = GameSettings::getInstance();
+    	std::map<std::string, std::string> text_map;
+    	if (settings.GetStringMapProperty("speech_sub_map", text_map)) {
+    		// Fix - search for placeholders and then get replacement from map - simple for now
+			for (auto const& item: text_map) {
+		    	ReplaceAllOccurrences(item.first, item.second, msg);
+			}
+    	}
 
         // Unescape any SSML in the string(s)
         UnescapeXML(msg);

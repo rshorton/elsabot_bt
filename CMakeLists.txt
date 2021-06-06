@@ -71,6 +71,7 @@ add_executable(bt_ros2
   src/robot_says_game.cpp
   src/robot_seek_game.cpp
   src/nav2_compute_path_client_util.cpp
+  src/game_settings.cpp
 )
 ament_target_dependencies(bt_ros2
 	${dependencies}

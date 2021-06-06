@@ -28,11 +28,9 @@ class HumanPoseDetect : public BT::SyncActionNode
                 "/head/detected_pose",
 				rclcpp::SystemDefaultsQoS(),
 				std::bind(&HumanPoseDetect::poseCallback, this, std::placeholders::_1));
-
             speech_strings_ = createPoseToSpeechMap();
 
             //RCLCPP_INFO(node_->get_logger(), "Created HumanPoseDetect node (%p)", this);
-
         }
 
         static BT::PortsList providedPorts()

@@ -31,7 +31,11 @@
 #include <behaviortree_cpp_v3/loggers/bt_file_logger.h>
 #include <behaviortree_cpp_v3/loggers/bt_zmq_publisher.h>
 
-#define DEFAULT_BT_XML "/home/ros/bt_ros2_ws/src/BT_ros2/bt_xml/bt_nav_mememan.xml"
+#include "game_settings.hpp"
+
+#define DEFAULT_BT_XML ""
+
+#define GAME_SETTINGS_FILENAME	"game_settings.json"
 
 using namespace BT;
 
@@ -41,10 +45,38 @@ int main(int argc, char **argv)
     rclcpp::init(argc, argv);
 
     auto nh = rclcpp::Node::make_shared("robot_bt");
-    nh->declare_parameter("bt_xml", rclcpp::ParameterValue(std::string(DEFAULT_BT_XML)));
+    nh->declare_parameter<std::string>("bt_xml", DEFAULT_BT_XML);
+    nh->declare_parameter<std::string>("bt_settings", "");
+
     std::string bt_xml;
     nh->get_parameter("bt_xml", bt_xml);
     RCLCPP_INFO(nh->get_logger(), "Loading XML : %s", bt_xml.c_str());
+
+    std::string bt_settings;
+    nh->get_parameter("bt_settings", bt_settings);
+    RCLCPP_INFO(nh->get_logger(), "Settings : %s", bt_settings.c_str());
+
+    auto & settings = GameSettings::getInstance(GAME_SETTINGS_FILENAME);
+    settings.Set(bt_settings);
+
+#if 0 // Not working
+    // Subscribe to changes in the settings parameter
+    auto param_subscriber = std::make_shared<rclcpp::ParameterEventHandler>(nh);
+
+	auto cb1 = [&nh, &settings](const rclcpp::Parameter & p) {
+
+	  cout << "got callback" << std::endl;
+
+	  RCLCPP_INFO(
+		nh->get_logger(),
+		"cb1: Received an update to parameter [%s]: [%s]",
+		p.get_name().c_str(),
+		p.as_string().c_str());
+
+	  	settings.Set(p.as_string());
+	};
+	auto handle1 = param_subscriber->add_parameter_callback("bt_settings", cb1);
+#endif
 
     // We use the BehaviorTreeFactory to register our custom nodes
     BehaviorTreeFactory factory;
@@ -73,8 +105,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSpin>("RobotSpin");
     factory.registerNodeType<ObjectDetectionAction>("ObjectDetectionAction");
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
-
-    // Check the template type above since you probably copy and pasted and forgot to change it!!!!
+    // New action not working? Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
@@ -89,10 +120,19 @@ int main(int argc, char **argv)
     NodeStatus status = NodeStatus::RUNNING;
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
-        status = tree.tickRoot();
+    	rclcpp::spin_some(nh);
+    	status = tree.tickRoot();
+
+    	// Workaround - the parameter callback above does't appear to work...?
+    	std::string param;
+    	nh->get_parameter("bt_settings", param);
+    	if (param != bt_settings) {
+    		bt_settings = param;
+    		settings.Set(bt_settings);
+    	}
+
         // Sleep 100 milliseconds
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-
     return 0;
 }
