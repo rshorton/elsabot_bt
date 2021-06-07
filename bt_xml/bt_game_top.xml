@@ -39,12 +39,16 @@
 		<Sequence>
 			<TextToSpeechActionClient
 				msg="Here's how to play robot says. I'll tell you where to put your hands and arms and then you try to do that. If you want to stop, just say hey robot." />
-			<SetBlackboard output_key="break" value="0" />
+      <Delay delay_msec="3000">
+			 <SetBlackboard output_key="break" value="0" />
+			</Delay>
+			<SetBlackboard output_key="say_fun_msg" value="1" />
 			<RobotSaysInitAction level_start="0" level_end="3" />
 			<ForceSuccess>
 				<KeepRunningUntilFailure>
 					<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
 						<Fallback>
+							<!-- Check for wake word and if detected speak the game menu and get the response -->
 							<Sequence>
 								<SetBlackboard output_key="dummy" value="0" />
 								<WakeWordDetected since_sec="3.0" />
@@ -86,8 +90,10 @@
 								</Fallback>
 							</Sequence>
 
+							<!-- Main Game flow -->
 							<Sequence>
 								<Fallback>
+									<!-- Get the next pose, blink the antenna leds and voice the pose request -->
 									<Sequence>
 										<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
 											pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
@@ -112,11 +118,15 @@
 										</ForceSuccess>
 
 										<TextToSpeechActionClient msg="{pose_speech}" />
+
+										<!-- Give the player time to show the pose -->
 										<Delay delay_msec="3000">
 											<SetBlackboard output_key="dummy" value="0" />
 										</Delay>
 
+										<!-- Check for the pose and react accordingly -->
 										<Fallback>
+											<!-- If pose detected, then voice praise and blink the leds excitedly -->
 											<Sequence>
 												<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
 													pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
@@ -126,7 +136,10 @@
 													options="Fabulous!|Good!|Nice!|Cool!|Super!|Great!|That's Great|Wonderful!|Fantastic!|Nice going!|Groovy baby|Splendid"
 													selected="{to_say}" />
 												<TextToSpeechActionClient msg="{to_say}" />
+
 											</Sequence>
+											<!-- If pose not detected, turn off antenna leds. Verify that the player is still visible. If not then voice prompt
+												and retry a limited number of times to detect the player. If player detected, continue with game. -->
 											<Sequence>
 												<AntennaAction rate="0" intensity="10" left_blink_pattern="0" right_blink_pattern="0" />
 												<TextCompareAction text="{detected_person}" ck_for="no" />
@@ -159,19 +172,48 @@
 												<SetBlackboard output_key="dummy" value="0" />
 											</Sequence>
 										</Fallback>
+
+                    <!-- Say a friendly "I'm having fun message" at most once per round -->
+                    <ForceSuccess>
+                      <BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
+                        <Sequence>
+                          <GetRandomSelectionAction
+                            options="I'm having fun playing with you (player)! I hope you're having fun too.|nothing|nothing" selected="{to_say}" />
+			                    <Delay delay_msec="2000">
+			                      <SetBlackboard output_key="dummy" value="0" />
+			                    </Delay>
+                          <ForceSuccess>
+                            <Sequence>
+                              <Inverter>
+                                <TextCompareAction text="{to_say}" ck_for="nothing" />
+                              </Inverter>
+                              <Delay delay_msec="1500">
+                                <HeadTiltAction angle="20" dwell_ms="1500" />
+                              </Delay>
+                              <TextToSpeechActionClient msg="{to_say}" />
+                              <SetBlackboard output_key="say_fun_msg" value="0" />
+                            </Sequence>
+                          </ForceSuccess>
+                        </Sequence>
+                      </BlackboardCheckInt>
+                    </ForceSuccess>
+
 									</Sequence>
 
+									<!-- This fallback is run if no more poses left for the current game round. In that case, try to get the next round
+										if more left. If no more, voice the end-of-game message and exit game. -->
 									<Fallback>
 										<Sequence>
-                      <AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
+											<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
 											<RobotSaysNextPassAction level_desc="{level_desc}" />
 											<TextToSpeechActionClient msg="Let's play the next level, " msg2="{level_desc}" />
 											<SmileAction level="3" duration_ms="2000" />
 											<Delay delay_msec="2500">
 												<SetBlackboard output_key="dummy" value="0" />
 											</Delay>
-
+											<SetBlackboard output_key="say_fun_msg" value="1" />
 										</Sequence>
+										<!-- No more game passes, end of game. -->
 										<ForceFailure>
 											<Sequence>
 												<TextToSpeechActionClient msg="You finished playing the game. Great job (player)!" />
@@ -216,7 +258,7 @@
 			<TextToSpeechActionClient msg="Let's play!" />
 			<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
 			<RobotSpin angle="180" velocity="0.8" />
-			<TrackAction mode="LookDown" rate="2"  detect_voice="0" />
+			<TrackAction mode="LookDown" rate="2" detect_voice="0" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
 			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
