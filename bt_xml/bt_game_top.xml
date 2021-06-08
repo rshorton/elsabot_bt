@@ -263,7 +263,7 @@
 			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
 			<TrackAction mode="Scan" rate="2" detect_voice="0" />
-			<RobotSpin angle="180" velocity="0.8" />
+			<RobotSpin angle="-180" velocity="0.8" />
 
 			<SetBlackboard output_key="found" value="0" />
 			<Fallback>
@@ -376,7 +376,7 @@
 				<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
 					<Fallback>
 						<Sequence>
-							<SetBlackboard output_key="game_name" value="Do you want play Robot Seek" />
+							<SetBlackboard output_key="game_name" value="Do you want to play Robot Seek" />
 							<SubTree ID="AskGame" game_name="game_name" />
 							<SubTree ID="RobotSeek" stop_key="stop_key" />
 						</Sequence>
