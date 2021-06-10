@@ -248,6 +248,7 @@
 	</BehaviorTree>
 
 	<BehaviorTree ID="RobotSeek">
+	  <KeepRunningUntilFailure>
 		<Sequence>
 			<TextToSpeechActionClient msg="Hold on while I get ready. " />
 			<PoseDetectionControlAction enable="true" />
@@ -320,7 +321,13 @@
 					<TextToSpeechActionClient msg="Come out come out where ever you are (player)!" />
 				</Sequence>
 			</BlackboardCheckInt>
+      <Sequence>
+        <TextToSpeechActionClient msg="Would you like to play again?" />
+        <SpeechToTextActionClient text="{said}" />
+        <TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+      </Sequence>
 		</Sequence>
+		</KeepRunningUntilFailure>
 	</BehaviorTree>
 
 	<BehaviorTree ID="MoveRobot">
