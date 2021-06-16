@@ -275,8 +275,8 @@
 								<Fallback ID="Detection">
 									<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85"
 										min_detect_count="4" />
-									<!-- HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
-										pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" / -->
+									<HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
+										pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
 								</Fallback>
 							</Inverter>
 							<ForceFailure>
@@ -289,7 +289,7 @@
 							<TrackAction mode="Scan" rate="1" detect_voice="0" />
 							<SubTree ID="MoveRobot" target="next_goal" />
 							<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
-							<TextToSpeechActionClient msg="Are you over here (player)?" />
+							<TextToSpeechActionClient msg="Are you over here?" />
 							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<TrackAction mode="Off" rate="0" detect_voice="0" />
@@ -298,11 +298,11 @@
 							</BlackboardCheckInt>
 							<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
-									<TrackAction mode="Scan" rate="2" detect_voice="0" />
+									<TrackAction mode="Scan" rate="1" detect_voice="0" />
 									<ScanWaitAction />
 								</Sequence>
 							</BlackboardCheckInt>
-							<TextToSpeechActionClient msg="I don't see you (player)." />
+							<TextToSpeechActionClient msg="I'm still looking for you (player)." />
 						</Sequence>
 					</ReactiveSequence>
 				</KeepRunningUntilFailure>
