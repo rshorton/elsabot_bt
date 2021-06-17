@@ -1,19 +1,13 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 #include <chrono>
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-
-//#include "std_msgs/msg/header.hpp"
-//#include "geometry_msgs/msg/pose.hpp"
-//#include "geometry_msgs/msg/quaternion.hpp"
-//#include "tf2/transform_datatypes.h"
-//#include "tf2/LinearMath/Quaternion.h"
-//#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include "tf2/utils.h"
 #include "tf2/LinearMath/Quaternion.h"
@@ -37,7 +31,9 @@ class RobotSpin : public BT::AsyncActionNode
 			  prev_yaw_(0.0),
 			  relative_yaw_(0.0)
         {
-			node_ = rclcpp::Node::make_shared("robot_spin_action_node");
+			std::stringstream ss;
+			ss << "robot_spin_action_node" << getInstanceCnt();
+			node_ = rclcpp::Node::make_shared(ss.str());
 
             pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
               "/robot_pose",
@@ -137,6 +133,12 @@ class RobotSpin : public BT::AsyncActionNode
         }
 
     private:
+        static unsigned getInstanceCnt()
+        {
+        	static unsigned cnt = 0;
+        	return ++cnt;
+        }
+
         bool _aborted;
         rclcpp::Node::SharedPtr node_;
 

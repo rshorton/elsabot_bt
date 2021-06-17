@@ -38,7 +38,7 @@
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
 			<TextToSpeechActionClient
-				msg="Here's how to play robot says. I'll tell you where to put your hands and arms and then you try to do that. If you want to stop, just say hey robot." />
+				msg="Here's how to play robot says. I'll tell you where to put your hands and arms and then you try to do that. If you want to stop, just say hey Elsa bot." />
       <Delay delay_msec="3000">
 			 <SetBlackboard output_key="break" value="0" />
 			</Delay>
@@ -178,7 +178,7 @@
                       <BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
                         <Sequence>
                           <GetRandomSelectionAction
-                            options="I'm having fun playing with you (player)! I hope you're having fun too.|nothing|nothing" selected="{to_say}" />
+                            options="I'm having fun playing with you (player)! I hope you're having fun too.|You're doing great!|This is fun" selected="{to_say}" />
 			                    <Delay delay_msec="2000">
 			                      <SetBlackboard output_key="dummy" value="0" />
 			                    </Delay>
@@ -191,7 +191,9 @@
                                 <HeadTiltAction angle="20" dwell_ms="1500" />
                               </Delay>
                               <TextToSpeechActionClient msg="{to_say}" />
-                              <SetBlackboard output_key="say_fun_msg" value="0" />
+                              <Delay delay_msec="1000">
+                                <SetBlackboard output_key="say_fun_msg" value="0" />
+                              </Delay>
                             </Sequence>
                           </ForceSuccess>
                         </Sequence>
@@ -251,7 +253,7 @@
 	  <KeepRunningUntilFailure>
 		<Sequence>
 			<TextToSpeechActionClient msg="Hold on while I get ready. " />
-			<PoseDetectionControlAction enable="true" />
+			<PoseDetectionControlAction enable="1" />
 			<Nav2ClearGlobalCostMap />
 			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
 			<RobotSeekInitAction game_file="robot_seek_1.json" />
@@ -466,7 +468,7 @@
 			<SetBlackboard output_key="do_greeting" value="0" />
 			<SetBlackboard output_key="do_menu" value="0" />
 			<SetBlackboard output_key="person_detected" value="0" />
-			<PoseDetectionControlAction enable="true" />
+			<PoseDetectionControlAction enable="1" />
 			<TrackAction mode="Track" rate="3" detect_voice="1" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
 

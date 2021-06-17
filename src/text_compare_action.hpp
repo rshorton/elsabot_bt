@@ -15,10 +15,9 @@
 class TextCompareAction : public BT::SyncActionNode
 {
     public:
-	TextCompareAction(const std::string& name, const BT::NodeConfiguration& config)
+		TextCompareAction(const std::string& name, const BT::NodeConfiguration& config)
 				: BT::SyncActionNode(name, config)
 		{
-			node_ = rclcpp::Node::make_shared("text_compare_action");
 			setlocale(LC_ALL, "");
 		}
 
@@ -42,7 +41,7 @@ class TextCompareAction : public BT::SyncActionNode
 			ToLower(ckFor);
 			ToLower(text);
 
-			RCLCPP_INFO(node_->get_logger(), "Checking [%s] for [%s]", text.c_str(), ckFor.c_str());
+			//RCLCPP_INFO(node_->get_logger(), "Checking [%s] for [%s]", text.c_str(), ckFor.c_str());
 
 			if (ckFor.length() == 0) {
 				if (text.length() == 0) {
@@ -51,7 +50,6 @@ class TextCompareAction : public BT::SyncActionNode
 					return BT::NodeStatus::FAILURE;
 				}
 			} else if (std::regex_match (text, std::regex(ckFor) )) {
-//			} else if (text.find(ckFor) !=std::string::npos) {
 				return BT::NodeStatus::SUCCESS;
 			} else {
 				return BT::NodeStatus::FAILURE;
@@ -65,6 +63,5 @@ class TextCompareAction : public BT::SyncActionNode
 		}
 
     private:
-		rclcpp::Node::SharedPtr node_;
 };
 

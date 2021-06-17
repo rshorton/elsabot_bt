@@ -4,15 +4,50 @@
 #include "face_control_interfaces/msg/antenna.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
+// Single for publishing the antenna control state - shared by all AntennaActionNode instances
+class AntennaActionROSNodeIf
+{
+public:
+	AntennaActionROSNodeIf(AntennaActionROSNodeIf const&) = delete;
+	AntennaActionROSNodeIf& operator=(AntennaActionROSNodeIf const&) = delete;
+
+    static std::shared_ptr<AntennaActionROSNodeIf> instance(rclcpp::Node::SharedPtr node)
+    {
+    	static std::shared_ptr<AntennaActionROSNodeIf> s{new AntennaActionROSNodeIf(node)};
+        return s;
+    }
+
+    void setAntennaState(uint32_t rate, uint32_t intensity, std::string left_blink_pattern,
+    					 std::string right_blink_pattern)
+    {
+    	RCLCPP_INFO(node_->get_logger(), "Set Antenna: rate= %d, intensity= %d, left pattern= %s, right pattern= %s",
+    				rate, intensity, left_blink_pattern.c_str(), right_blink_pattern.c_str());
+
+    	auto message = face_control_interfaces::msg::Antenna();
+        message.rate = rate;
+        message.intensity = intensity;
+        message.left_blink_pattern = left_blink_pattern;
+        message.right_blink_pattern = right_blink_pattern;
+        antenna_publisher_->publish(message);
+    }
+
+private:
+    AntennaActionROSNodeIf(rclcpp::Node::SharedPtr node):
+		node_(node)
+	{
+        antenna_publisher_ = node_->create_publisher<face_control_interfaces::msg::Antenna>("/head/antenna", 2);
+    }
+    rclcpp::Node::SharedPtr node_;
+    rclcpp::Publisher<face_control_interfaces::msg::Antenna>::SharedPtr antenna_publisher_;
+};
+
 class AntennaAction : public BT::SyncActionNode
 {
     public:
-	AntennaAction(const std::string& name, const BT::NodeConfiguration& config)
+		AntennaAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
-            node_ = rclcpp::Node::make_shared("bt_antenna_action_node");
-
-            antenna_publisher_ = node_->create_publisher<face_control_interfaces::msg::Antenna>("/head/antenna", 2);
+			node_if_ = AntennaActionROSNodeIf::instance(node);
         }
 
         static BT::PortsList providedPorts()
@@ -41,20 +76,10 @@ class AntennaAction : public BT::SyncActionNode
     			throw BT::RuntimeError("missing right_blink_pattern");
     		}
 
-        	RCLCPP_INFO(node_->get_logger(), "Set Antenna: rate= %d, intensity= %d, left pattern= %s, right pattern= %s",
-        				rate, intensity, left_blink_pattern.c_str(), right_blink_pattern.c_str());
-
-        	auto message = face_control_interfaces::msg::Antenna();
-            message.rate = rate;
-            message.intensity = intensity;
-            message.left_blink_pattern = left_blink_pattern;
-            message.right_blink_pattern = right_blink_pattern;
-            antenna_publisher_->publish(message);
-
+        	node_if_->setAntennaState(rate, intensity, left_blink_pattern, right_blink_pattern);
             return BT::NodeStatus::SUCCESS;
         }
 
     private:
-        rclcpp::Node::SharedPtr node_;
-        rclcpp::Publisher<face_control_interfaces::msg::Antenna>::SharedPtr antenna_publisher_;
+        std::shared_ptr<AntennaActionROSNodeIf> node_if_;
 };

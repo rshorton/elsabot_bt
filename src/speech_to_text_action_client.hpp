@@ -21,9 +21,10 @@ public:
 	using Recognize = speech_action_interfaces::action::Recognize;
 	using GoalHandleRecognize = rclcpp_action::ClientGoalHandle<Recognize>;
 
-    SpeechToTextActionClient(const std::string& name, const BT::NodeConfiguration& config)
+    SpeechToTextActionClient(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
         : BT::SyncActionNode(name, config)
     {
+    	node_ = node;
     }
 
     static BT::PortsList providedPorts()
@@ -38,7 +39,7 @@ public:
     		const std::lock_guard<std::mutex> lock(_mutex);
     		node_name << "speech_to_text_action_client" << instance++;
     	}
-        node_ = rclcpp::Node::make_shared(node_name.str());
+        //node_ = rclcpp::Node::make_shared(node_name.str());
 
         auto action_client = rclcpp_action::create_client<speech_action_interfaces::action::Recognize>(node_, "recognize");
         // if no server is present, fail after 10 seconds

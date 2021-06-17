@@ -25,9 +25,10 @@ public:
 	using Speak = speech_action_interfaces::action::Speak;
 	using GoalHandleSpeak = rclcpp_action::ClientGoalHandle<Speak>;
 
-    TextToSpeechActionClient(const std::string& name, const BT::NodeConfiguration& config)
+    TextToSpeechActionClient(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
         : BT::SyncActionNode(name, config)
     {
+    	node_ = node;
         ///node_ = rclcpp::Node::make_shared("text_to_speech_action_client");
     }
 
@@ -80,7 +81,7 @@ public:
     		node_name << "text_to_speech_action_client" << instance++;
     	}
 
-        node_ = rclcpp::Node::make_shared(node_name.str());
+        //node_ = rclcpp::Node::make_shared(node_name.str());
         auto action_client = rclcpp_action::create_client<speech_action_interfaces::action::Speak>(node_, "speak");
         // if no server is present, fail after 10 seconds
         if (!action_client->wait_for_action_server(std::chrono::seconds(10))) {

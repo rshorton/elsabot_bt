@@ -16,7 +16,9 @@ class WakeWordDetected : public BT::SyncActionNode
 	WakeWordDetected(const std::string& name, const BT::NodeConfiguration& config)
             : BT::SyncActionNode(name, config)
         {
-            node_ = rclcpp::Node::make_shared("wake_word_det_node");
+			std::stringstream ss;
+			ss << "wake_word_det_node" << getInstanceCnt();
+			node_ = rclcpp::Node::make_shared(ss.str());
 
             ww_sub_ = node_->create_subscription<speech_action_interfaces::msg::Wakeword>(
               "speech_detect/wakeword",
@@ -58,6 +60,12 @@ class WakeWordDetected : public BT::SyncActionNode
         }
 
     private:
+        static unsigned getInstanceCnt()
+		{
+			static unsigned cnt = 0;
+			return ++cnt;
+		}
+
         rclcpp::Node::SharedPtr node_;
         rclcpp::Subscription<speech_action_interfaces::msg::Wakeword>::SharedPtr ww_sub_;
         std::string ww;

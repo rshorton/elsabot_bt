@@ -83,15 +83,7 @@ int main(int argc, char **argv)
 
     factory.registerNodeType<Nav2Client>("Nav2Client");
     factory.registerNodeType<TextCompareAction>("TextCompareAction");
-    factory.registerNodeType<SpeechToTextActionClient>("SpeechToTextActionClient");
-    factory.registerNodeType<TextToSpeechActionClient>("TextToSpeechActionClient");
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
-    factory.registerNodeType<HumanPoseDetect>("HumanPoseDetect");
-    factory.registerNodeType<PoseDetectionControlAction>("PoseDetectionControlAction");
-    factory.registerNodeType<SmileAction>("SmileAction");
-    factory.registerNodeType<AntennaAction>("AntennaAction");
-    factory.registerNodeType<TrackAction>("TrackAction");
-    factory.registerNodeType<HeadTiltAction>("HeadTiltAction");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");
     factory.registerNodeType<RobotSaysInitAction>("RobotSaysInitAction");
     factory.registerNodeType<RobotSaysNextPassAction>("RobotSaysNextPassAction");
@@ -106,6 +98,70 @@ int main(int argc, char **argv)
     factory.registerNodeType<ObjectDetectionAction>("ObjectDetectionAction");
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
     // New action not working? Check the template type above since you probably copy and pasted and forgot to change both!!!!
+
+    // Node builder for AntennaAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_AntennaAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<AntennaAction>(name, config, nh);
+    };
+    factory.registerBuilder<AntennaAction>( "AntennaAction", builder_AntennaAction);
+
+    // Node builder for TrackAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_TrackAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<TrackAction>(name, config, nh);
+    };
+    factory.registerBuilder<TrackAction>( "TrackAction", builder_TrackAction);
+
+    // Node builder for HeadTiltAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_HeadTiltAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<HeadTiltAction>(name, config, nh);
+    };
+    factory.registerBuilder<HeadTiltAction>( "HeadTiltAction", builder_HeadTiltAction);
+
+    // Node builder for SmileAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_SmileAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<SmileAction>(name, config, nh);
+    };
+    factory.registerBuilder<SmileAction>( "SmileAction", builder_SmileAction);
+
+    // Node builder for PoseDetectionControlAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_PoseDetectionControlAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<PoseDetectionControlAction>(name, config, nh);
+    };
+    factory.registerBuilder<PoseDetectionControlAction>( "PoseDetectionControlAction", builder_PoseDetectionControlAction);
+
+    // Node builder for SpeechToTextActionClient node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_SpeechToTextActionClient =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<SpeechToTextActionClient>(name, config, nh);
+    };
+    factory.registerBuilder<SpeechToTextActionClient>( "SpeechToTextActionClient", builder_SpeechToTextActionClient);
+
+    // Node builder for TextToSpeechActionClient node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_TextToSpeechActionClient =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<TextToSpeechActionClient>(name, config, nh);
+    };
+    factory.registerBuilder<TextToSpeechActionClient>( "TextToSpeechActionClient", builder_TextToSpeechActionClient);
+
+    // Node builder for HumanPoseDetect node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_HumanPoseDetect =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<HumanPoseDetect>(name, config, nh);
+    };
+    factory.registerBuilder<HumanPoseDetect>( "HumanPoseDetect", builder_HumanPoseDetect);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
