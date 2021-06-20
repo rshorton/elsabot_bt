@@ -20,15 +20,16 @@ public:
         return s;
     }
 
-    void setTrackState(std::string mode, std::string rate, bool detect_voice)
+    void setTrackState(std::string mode, std::string rate, bool detect_voice, bool turn_base)
     {
-    	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, detect_voice= %d",
-    				mode.c_str(), rate.c_str(), detect_voice);
-    	auto message = face_control_interfaces::msg::Track();
-        message.mode = mode;
-        message.rate = rate;
-        message.voice_detect = detect_voice;
-        track_publisher_->publish(message);
+    	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, detect_voice= %d, turn_base= %d",
+    				mode.c_str(), rate.c_str(), detect_voice, turn_base);
+    	auto msg = face_control_interfaces::msg::Track();
+    	msg.mode = mode;
+        msg.rate = rate;
+        msg.voice_detect = detect_voice;
+        msg.turn_base = turn_base;
+        track_publisher_->publish(msg);
         std::this_thread::sleep_for(100ms);
     }
 
@@ -55,7 +56,8 @@ class TrackAction : public BT::SyncActionNode
         {
         	return { BT::InputPort<std::string>("mode"),
         			 BT::InputPort<std::string>("rate"),
-					 BT::InputPort<bool>("detect_voice")};
+					 BT::InputPort<bool>("detect_voice"),
+        			 BT::InputPort<bool>("turn_base")};
         }
 
         virtual BT::NodeStatus tick() override
@@ -63,17 +65,18 @@ class TrackAction : public BT::SyncActionNode
         	std::string mode;
         	std::string rate;
         	bool detect_voice = false;
+        	bool turn_base = false;
         	if (!getInput<std::string>("mode", mode)) {
     			throw BT::RuntimeError("missing mode");
     		}
         	if (!getInput<std::string>("rate", rate)) {
     			throw BT::RuntimeError("missing rate");
     		}
-        	if (!getInput<bool>("detect_voice", detect_voice)) {
-    			throw BT::RuntimeError("missing detect_voice");
+        	if (!getInput<bool>("turn_base", turn_base)) {
+    			throw BT::RuntimeError("missing turn_base");
     		}
 
-        	node_if_->setTrackState(mode, rate, detect_voice);
+        	node_if_->setTrackState(mode, rate, detect_voice, turn_base);
             return BT::NodeStatus::SUCCESS;
         }
 

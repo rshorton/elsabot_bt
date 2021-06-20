@@ -257,15 +257,15 @@
 			<Nav2ClearGlobalCostMap />
 			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
 			<RobotSeekInitAction game_file="robot_seek_1.json" />
-			<TrackAction mode="None" rate="2" detect_voice="0" />
+			<TrackAction mode="None" rate="2" detect_voice="0" turn_base="0" />
 			<TextToSpeechActionClient msg="Let's play!" />
 			<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
 			<RobotSpin angle="180" velocity="0.8" />
-			<TrackAction mode="LookDown" rate="2" detect_voice="0" />
+			<TrackAction mode="LookDown" rate="2" detect_voice="0" turn_base="0" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
 			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
-			<TrackAction mode="Scan" rate="2" detect_voice="0" />
+			<TrackAction mode="Scan" rate="2" detect_voice="0" turn_base="0" />
 			<RobotSpin angle="-180" velocity="0.8" />
 
 			<SetBlackboard output_key="found" value="0" />
@@ -288,19 +288,19 @@
 						<Sequence>
 							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
 								spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
-							<TrackAction mode="Scan" rate="1" detect_voice="0" />
+							<TrackAction mode="Scan" rate="1" detect_voice="0" turn_base="0" />
 							<SubTree ID="MoveRobot" target="next_goal" />
 							<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
 							<TextToSpeechActionClient msg="Are you over here?" />
 							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
-									<TrackAction mode="Off" rate="0" detect_voice="0" />
+									<TrackAction mode="Off" rate="0" detect_voice="0" turn_base="0" />
 									<RobotSpin angle="359" velocity="0.5" />
 								</Sequence>
 							</BlackboardCheckInt>
 							<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
-									<TrackAction mode="Scan" rate="1" detect_voice="0" />
+									<TrackAction mode="Scan" rate="1" detect_voice="0" turn_base="0" />
 									<ScanWaitAction />
 								</Sequence>
 							</BlackboardCheckInt>
@@ -311,7 +311,7 @@
 				<Sequence>
 					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
 						<Sequence>
-							<TrackAction mode="Track" rate="3" detect_voice="1" />
+							<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
 							<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
 							<TextToSpeechActionClient msg="Yay, I found you (player)!" />
 						</Sequence>
@@ -388,6 +388,7 @@
 							<SetBlackboard output_key="game_name" value="Do you want to play Robot Seek" />
 							<SubTree ID="AskGame" game_name="game_name" />
 							<SubTree ID="RobotSeek" stop_key="stop_key" />
+							<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="1" />
 						</Sequence>
 						<Sequence>
 							<SetBlackboard output_key="game_name" value="How about Robot Says?" />
@@ -469,7 +470,7 @@
 			<SetBlackboard output_key="do_menu" value="0" />
 			<SetBlackboard output_key="person_detected" value="0" />
 			<PoseDetectionControlAction enable="1" />
-			<TrackAction mode="Track" rate="3" detect_voice="1" />
+			<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="0" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
 
 			<!-- SubTree ID="RobotSays" / -->
