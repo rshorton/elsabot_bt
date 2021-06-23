@@ -34,16 +34,19 @@ public:
     }
 
     rclcpp::Node::SharedPtr node_;
+    bool valid_;
     bool detected_;
     int num_points_;
     std::string cur_pose_left_;
     std::string cur_pose_right_;
+    std::chrono::time_point<std::chrono::high_resolution_clock> last_time_;
 
 private:
     HumanPoseDetectROSNodeIf(rclcpp::Node::SharedPtr node):
     	node_(node),
     	detected_(false),
-		num_points_(0)
+		num_points_(0),
+		last_time_(std::chrono::high_resolution_clock::now())
 	{
         detected_pose_sub_ = node_->create_subscription<human_pose_interfaces::msg::DetectedPose>(
             "/head/detected_pose",
@@ -53,10 +56,13 @@ private:
 
     void poseCallback(human_pose_interfaces::msg::DetectedPose::SharedPtr msg)
     {
+    	valid_ = true;
     	cur_pose_left_ = msg->left;
     	cur_pose_right_ = msg->right;
     	detected_ = msg->detected;
     	num_points_ = msg->num_points;
+        last_time_ = std::chrono::high_resolution_clock::now();
+
 		RCLCPP_INFO(node_->get_logger(), "Got pose callback [%s], [%s]", cur_pose_left_.c_str(), cur_pose_right_.c_str());
     }
 
@@ -110,7 +116,21 @@ class HumanPoseDetect : public BT::SyncActionNode
 
 		virtual BT::NodeStatus tick() override
 		{
+			auto now = std::chrono::high_resolution_clock::now();
+			auto elapsed = now - node_if_->last_time_;
+			node_if_->last_time_ = now;
+			typedef std::chrono::duration<float> float_seconds;
+			auto seconds = std::chrono::duration_cast<float_seconds>(elapsed);
+			if (seconds.count() > 0.5) {
+				node_if_->valid_ = false;
+			}
+
 			node_if_->update();
+
+			if (!node_if_->valid_) {
+				return BT::NodeStatus::FAILURE;
+			}
+			node_if_->valid_ = false;
 
 			setOutput("pose_left", node_if_->cur_pose_left_);
 			setOutput("pose_left", node_if_->cur_pose_right_);
