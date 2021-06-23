@@ -275,8 +275,7 @@
 						<Fallback>
 							<Inverter>
 								<Fallback ID="Detection">
-									<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85"
-										min_detect_count="4" />
+									<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
 									<HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
 										pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
 								</Fallback>

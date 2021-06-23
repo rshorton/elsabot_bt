@@ -95,7 +95,6 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
-    factory.registerNodeType<ObjectDetectionAction>("ObjectDetectionAction");
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
     // New action not working? Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
@@ -130,6 +129,14 @@ int main(int argc, char **argv)
         return std::make_unique<SmileAction>(name, config, nh);
     };
     factory.registerBuilder<SmileAction>( "SmileAction", builder_SmileAction);
+
+    // Node builder for ObjectDetectionAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_ObjectDetectionAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<ObjectDetectionAction>(name, config, nh);
+    };
+    factory.registerBuilder<ObjectDetectionAction>( "ObjectDetectionAction", builder_ObjectDetectionAction);
 
     // Node builder for PoseDetectionControlAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_PoseDetectionControlAction =
