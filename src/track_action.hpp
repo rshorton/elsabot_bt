@@ -72,6 +72,9 @@ class TrackAction : public BT::SyncActionNode
         	if (!getInput<std::string>("rate", rate)) {
     			throw BT::RuntimeError("missing rate");
     		}
+        	if (!getInput<bool>("detect_voice", detect_voice)) {
+    			throw BT::RuntimeError("missing detect_voice");
+    		}
         	if (!getInput<bool>("turn_base", turn_base)) {
     			throw BT::RuntimeError("missing turn_base");
     		}
