@@ -9,12 +9,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
-//#include "geometry_msgs/msg/pose.hpp"
-//#include "geometry_msgs/msg/quaternion.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-//#include "tf2/transform_datatypes.h"
-//#include "tf2/LinearMath/Quaternion.h"
-//#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/geometry_utils.hpp"
 
@@ -74,7 +69,6 @@ public:
             // RCLCPP_ERROR(node_->get_logger(), "Action server not available after waiting");
             return BT::NodeStatus::FAILURE;
         }
-        // Take the goal from the InputPort of the Node
 
         // optional
         std::string behavior_tree;
@@ -82,14 +76,10 @@ public:
 
         std::string goal_in;
         if (!getInput<std::string>("goal", goal_in)) {
-            // if I can't get this, there is something wrong with your BT.
-            // For this reason throw an exception instead of returning FAILURE
             throw BT::RuntimeError("missing required input [goal]");
         }
 
         Pose2D goal = BT::convertFromString<Pose2D>(goal_in);
-
-        //_aborted = false;
 
         RCLCPP_INFO(node_->get_logger(), "Sending goal %f %f %f", goal.x, goal.y, goal.yaw);
 
@@ -103,7 +93,6 @@ public:
         goal_msg.behavior_tree = behavior_tree;
 
         RCLCPP_INFO(node_->get_logger(), "orientation %f %f %f %f", goal_msg.pose.pose.orientation.x, goal_msg.pose.pose.orientation.y, goal_msg.pose.pose.orientation.z, goal_msg.pose.pose.orientation.w);
-
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
