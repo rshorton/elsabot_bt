@@ -29,12 +29,38 @@ public:
         : BT::SyncActionNode(name, config)
     {
     	node_ = node;
-        ///node_ = rclcpp::Node::make_shared("text_to_speech_action_client");
+
+    	ssml_ = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"https://www.w3.org/2001/mstts\" xml:lang=\"en-US\">" \
+    				"<voice name=\"VOICE\">" \
+						"<mstts:express-as style=\"STYLE\">" \
+						"<prosody rate=\"RATE%\" pitch=\"PITCH%\" contour=\"CONTOUR\">" \
+		    		        "TEXT" \
+			    	    "</prosody>" \
+						"</mstts:express-as>" \
+					"</voice>" \
+				"</speak>";
+#if 0
+    	ssml_ = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"https://www.w3.org/2001/mstts\" xml:lang=\"en-US\">" \
+    				"<voice name=\"en-US-JennyNeural\">" \
+						"<mstts:express-as style=\"chat\">" \
+						"<prosody rate=\"-15%\" pitch=\"21%\">" \
+		    		        "TEXT" \
+			    	    "</prosody>" \
+						"</mstts:express-as>" \
+					"</voice>" \
+				"</speak>";
+#endif
     }
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<std::string>("msg"), BT::InputPort<std::string>("msg2") };
+        return{ BT::InputPort<std::string>("msg"),
+        	    BT::InputPort<std::string>("msg2"),
+        		BT::InputPort<std::string>("voice"),
+        		BT::InputPort<std::string>("style"),
+        		BT::InputPort<std::string>("rate"),
+        		BT::InputPort<std::string>("pitch"),
+        		BT::InputPort<std::string>("contour")};
     }
 
     void ReplaceAllOccurrences(std::string search, std::string replace, std::string &str)
@@ -63,15 +89,35 @@ public:
     	ReplaceAllOccurrences("$amp;",  "&", str);
     }
 
+    void ReplaceField(std::string &str, std::string place_holder, std::string replacement)
+    {
+		size_t pos = 0;
+		pos = str.find(place_holder);
+		if (pos != std::string::npos) {
+			str = str.replace(pos, place_holder.length(), replacement);
+		}
+    }
+
     virtual BT::NodeStatus tick() override
     {
     	std::string msg;
     	std::string msg2;
+    	std::string voice = "en-US-JennyNeural";
+    	std::string style = "chat";
+    	std::string rate = "-15";
+    	std::string pitch = "21";
+    	std::string contour = "(0%, +0%) (100%, +0%)";
+
     	if (!getInput<std::string>("msg", msg)) {
 			throw BT::RuntimeError("missing msg to say");
 		}
     	// optional
     	getInput<std::string>("msg2", msg2);
+    	getInput<std::string>("voice", voice);
+    	getInput<std::string>("style", style);
+    	getInput<std::string>("rate", rate);
+    	getInput<std::string>("pitch", pitch);
+    	getInput<std::string>("contour", contour);
 
     	//RCLCPP_INFO(node_->get_logger(), "msg [%s], msg2[%s]", msg.c_str(), msg2.c_str());
 
@@ -109,23 +155,27 @@ public:
 
 		std::cout << "Unescaped text: " << msg << std::endl;
 
+		std::string ssml;
+#if defined(READ_SSML_FILE)
     	std::ifstream file("./ssml.xml");
     	std::string ssml_in, str;
     	while (std::getline(file, str))
     	{
-    		ssml_in += str;
-    		ssml_in.push_back('\n');
+    		ssml += str;
+    		ssml.push_back('\n');
     	}
+#else
+    	ssml = ssml_;
+#endif
 
-    	size_t pos = 0;
-    	std::string ssml;
-    	std::string place_holder = "TEXT";
-    	pos = ssml_in.find(place_holder);
-    	if (pos != std::string::npos) {
-        	ssml = ssml_in.replace(pos, place_holder.length(), msg);
-    	}
-        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech cmd [%s]", msg.c_str());
-//        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech ssml cmd [%s]", ssml.c_str());
+    	ReplaceField(ssml, "TEXT", msg);
+    	ReplaceField(ssml, "VOICE", voice);
+    	ReplaceField(ssml, "STYLE", style);
+    	ReplaceField(ssml, "RATE", rate);
+    	ReplaceField(ssml, "PITCH", pitch);
+    	ReplaceField(ssml, "CONTOUR", contour);
+//        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech cmd [%s]", msg.c_str());
+        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech ssml cmd [%s]", ssml.c_str());
 
         auto goal_msg = Speak::Goal();
         goal_msg.text = ssml;
@@ -186,6 +236,7 @@ public:
     }
 #endif
 private:
+    std::string ssml_;
     bool _aborted;
     rclcpp::Node::SharedPtr node_;
     std::mutex _mutex;
