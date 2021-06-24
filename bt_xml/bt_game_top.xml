@@ -39,8 +39,8 @@
 		<Sequence>
 			<TextToSpeechActionClient
 				msg="Here's how to play robot says. I'll tell you where to put your hands and arms and then you try to do that. If you want to stop, just say hey Elsa bot." />
-      <Delay delay_msec="3000">
-			 <SetBlackboard output_key="break" value="0" />
+			<Delay delay_msec="3000">
+				<SetBlackboard output_key="break" value="0" />
 			</Delay>
 			<SetBlackboard output_key="say_fun_msg" value="1" />
 			<RobotSaysInitAction level_start="0" level_end="3" />
@@ -173,32 +173,33 @@
 											</Sequence>
 										</Fallback>
 
-                    <!-- Say a friendly "I'm having fun message" at most once per round -->
-                    <ForceSuccess>
-                      <BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
-                        <Sequence>
-                          <GetRandomSelectionAction
-                            options="I'm having fun playing with you (player)! I hope you're having fun too.|You're doing great!|This is fun" selected="{to_say}" />
-			                    <Delay delay_msec="2000">
-			                      <SetBlackboard output_key="dummy" value="0" />
-			                    </Delay>
-                          <ForceSuccess>
-                            <Sequence>
-                              <Inverter>
-                                <TextCompareAction text="{to_say}" ck_for="nothing" />
-                              </Inverter>
-                              <Delay delay_msec="1500">
-                                <HeadTiltAction angle="20" dwell_ms="1500" />
-                              </Delay>
-                              <TextToSpeechActionClient msg="{to_say}" />
-                              <Delay delay_msec="1000">
-                                <SetBlackboard output_key="say_fun_msg" value="0" />
-                              </Delay>
-                            </Sequence>
-                          </ForceSuccess>
-                        </Sequence>
-                      </BlackboardCheckInt>
-                    </ForceSuccess>
+										<!-- Say a friendly "I'm having fun message" at most once per round -->
+										<ForceSuccess>
+											<BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
+												<Sequence>
+													<GetRandomSelectionAction
+														options="I'm having fun playing with you (player)! I hope you're having fun too.|You're doing great!|This is fun"
+														selected="{to_say}" />
+													<Delay delay_msec="2000">
+														<SetBlackboard output_key="dummy" value="0" />
+													</Delay>
+													<ForceSuccess>
+														<Sequence>
+															<Inverter>
+																<TextCompareAction text="{to_say}" ck_for="nothing" />
+															</Inverter>
+															<Delay delay_msec="1500">
+																<HeadTiltAction angle="20" dwell_ms="1500" />
+															</Delay>
+															<TextToSpeechActionClient msg="{to_say}" />
+															<Delay delay_msec="1000">
+																<SetBlackboard output_key="say_fun_msg" value="0" />
+															</Delay>
+														</Sequence>
+													</ForceSuccess>
+												</Sequence>
+											</BlackboardCheckInt>
+										</ForceSuccess>
 
 									</Sequence>
 
@@ -250,84 +251,101 @@
 	</BehaviorTree>
 
 	<BehaviorTree ID="RobotSeek">
-	  <KeepRunningUntilFailure>
-		<Sequence>
-			<TextToSpeechActionClient msg="Hold on while I get ready. " />
-			<PoseDetectionControlAction enable="1" />
-			<Nav2ClearGlobalCostMap />
-			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
-			<RobotSeekInitAction game_file="robot_seek_1.json" />
-			<TrackAction mode="None" rate="2" detect_voice="0" turn_base="0" />
-			<TextToSpeechActionClient msg="Let's play!" />
-			<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
-			<RobotSpin angle="180" velocity="0.8" />
-			<TrackAction mode="LookDown" rate="2" detect_voice="0" turn_base="0" />
-			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
-			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
-			<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
-			<TrackAction mode="Scan" rate="2" detect_voice="0" turn_base="0" />
-			<RobotSpin angle="-180" velocity="0.8" />
-
-			<SetBlackboard output_key="found" value="0" />
-			<Fallback>
-				<KeepRunningUntilFailure>
-					<ReactiveSequence>
-						<Fallback>
-							<Inverter>
-								<Fallback ID="Detection">
-									<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
-									<HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
-										pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+		<KeepRunningUntilFailure>
+			<Sequence>
+				<TextToSpeechActionClient msg="Hold on while I get ready. " />
+				<PoseDetectionControlAction enable="1" />
+				<Nav2ClearGlobalCostMap />
+				<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
+				<RobotSeekInitAction game_file="robot_seek_short.json" />
+				<TrackAction mode="None" rate="2" detect_voice="0" turn_base="0" />
+				<TextToSpeechActionClient msg="Let's play!" />
+				<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
+				<RobotSpin angle="180" velocity="0.8" />
+				<TrackAction mode="LookDown" rate="2" detect_voice="0" turn_base="0" />
+				<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
+				<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
+				<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
+				<TrackAction mode="Scan" rate="2" detect_voice="0" turn_base="0" />
+				<RobotSpin angle="-180" velocity="0.8" />
+				<SetBlackboard output_key="found" value="0" />
+				<ForceSuccess>
+					<Fallback>
+						<KeepRunningUntilFailure>
+							<ReactiveSequence>
+								<Fallback>
+									<Inverter>
+										<Fallback ID="Detection">
+											<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
+											<HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left=""
+												expected_pose_right="" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+												pose_right_speech="{pose_right_speech}" />
+										</Fallback>
+									</Inverter>
+									<ForceFailure>
+										<SetBlackboard output_key="found" value="1" />
+									</ForceFailure>
 								</Fallback>
-							</Inverter>
-							<ForceFailure>
-								<SetBlackboard output_key="found" value="1" />
-							</ForceFailure>
-						</Fallback>
-						<Sequence>
-							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
-								spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
-							<TrackAction mode="Scan" rate="1" detect_voice="0" turn_base="0" />
-							<SubTree ID="MoveRobot" target="next_goal" />
-							<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
-							<TextToSpeechActionClient msg="Are you over here?" />
-							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
-									<TrackAction mode="Off" rate="0" detect_voice="0" turn_base="0" />
-									<RobotSpin angle="359" velocity="0.5" />
-								</Sequence>
-							</BlackboardCheckInt>
-							<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
-								<Sequence>
+									<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
+										spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
 									<TrackAction mode="Scan" rate="1" detect_voice="0" turn_base="0" />
-									<ScanWaitAction />
+									<SubTree ID="MoveRobot" target="next_goal" />
+									<!-- TextToSpeechActionClient msg="{goal_speech}" / -->
+									<TextToSpeechActionClient msg="Are you over here?" />
+									<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
+										<Sequence>
+											<TrackAction mode="Off" rate="0" detect_voice="0" turn_base="0" />
+											<RobotSpin angle="359" velocity="0.5" />
+										</Sequence>
+									</BlackboardCheckInt>
+									<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
+										<Sequence>
+											<TrackAction mode="Scan" rate="1" detect_voice="0" turn_base="0" />
+											<ScanWaitAction />
+										</Sequence>
+									</BlackboardCheckInt>
+									<TextToSpeechActionClient msg="I'm still looking for you (player)." />
+								</Sequence>
+							</ReactiveSequence>
+						</KeepRunningUntilFailure>
+						<Sequence>
+							<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
+								<Sequence>
+									<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
+									<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
+									<TextToSpeechActionClient msg="Yay, I found you (player)!" />
 								</Sequence>
 							</BlackboardCheckInt>
-							<TextToSpeechActionClient msg="I'm still looking for you (player)." />
 						</Sequence>
-					</ReactiveSequence>
-				</KeepRunningUntilFailure>
+					</Fallback>
+				</ForceSuccess>
+				<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
+					<Sequence>
+						<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
+						<TextToSpeechActionClient msg="Come out come out where ever you are (player)!" />
+						<ForceSuccess>
+							<Timeout msec="20000">
+								<KeepRunningUntilFailure>
+									<Inverter>
+										<Fallback ID="Detection">
+											<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
+											<HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left=""
+												expected_pose_right="" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+												pose_right_speech="{pose_right_speech}" />
+										</Fallback>
+									</Inverter>
+								</KeepRunningUntilFailure>
+							</Timeout>
+            </ForceSuccess>
+					</Sequence>
+				</BlackboardCheckInt>
 				<Sequence>
-					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
-						<Sequence>
-							<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
-							<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
-							<TextToSpeechActionClient msg="Yay, I found you (player)!" />
-						</Sequence>
-					</BlackboardCheckInt>
+					<TextToSpeechActionClient msg="Would you like to play again?" />
+					<SpeechToTextActionClient text="{said}" />
+					<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
 				</Sequence>
-			</Fallback>
-			<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
-				<Sequence>
-					<TextToSpeechActionClient msg="Come out come out where ever you are (player)!" />
-				</Sequence>
-			</BlackboardCheckInt>
-      <Sequence>
-        <TextToSpeechActionClient msg="Would you like to play again?" />
-        <SpeechToTextActionClient text="{said}" />
-        <TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
-      </Sequence>
-		</Sequence>
+			</Sequence>
 		</KeepRunningUntilFailure>
 	</BehaviorTree>
 
@@ -469,7 +487,7 @@
 			<SetBlackboard output_key="do_menu" value="0" />
 			<SetBlackboard output_key="person_detected" value="0" />
 			<PoseDetectionControlAction enable="1" />
-			<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="0" />
+			<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
 
 			<!-- SubTree ID="RobotSays" / -->
@@ -520,6 +538,7 @@
 										<SubTree ID="GameMenu" stop_key="stop_key" />
 									</ForceSuccess>
 									<SetBlackboard output_key="do_menu" value="0" />
+									<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
 								</Sequence>
 							</BlackboardCheckInt>
 
