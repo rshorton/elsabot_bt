@@ -55,6 +55,7 @@ set(dependencies
   face_control_interfaces
   human_pose_interfaces
   object_detection_msgs
+  face_control_interfaces
   nav2_util
   nav_msgs
 )

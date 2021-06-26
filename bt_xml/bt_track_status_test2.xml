@@ -1,0 +1,33 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>
+		  <SetBlackboard output_key="person_detected" value="0" />
+
+			<Repeat num_cycles="99999">
+				<Fallback>
+					<BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="FAILURE">
+						<ForceSuccess>
+							<Sequence>
+								<ObjectTrackerStatusAction ck_state="1" min_duration="2" />
+								<Sequence>
+									<SetBlackboard output_key="person_detected" value="1" />
+                  <TextToSpeechActionClient msg="Detected" />
+								</Sequence>
+							</Sequence>
+						</ForceSuccess>
+					</BlackboardCheckInt>
+
+					<ForceSuccess>
+						<Sequence>
+							<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
+							<Sequence>
+								<SetBlackboard output_key="person_detected" value="0" />
+                <TextToSpeechActionClient msg="Not Detected" />
+							</Sequence>
+						</Sequence>
+					</ForceSuccess>
+				</Fallback>
+			</Repeat>
+  	</Sequence>
+	</BehaviorTree>
+</root>

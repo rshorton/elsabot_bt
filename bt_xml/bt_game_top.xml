@@ -28,13 +28,6 @@
 		</Sequence>
 	</BehaviorTree>
 
-	<BehaviorTree ID="DetectPerson">
-		<Sequence>
-			<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
-				detected_person="{detected_person}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-		</Sequence>
-	</BehaviorTree>
-
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
 			<TextToSpeechActionClient
@@ -496,22 +489,31 @@
 					<ForceSuccess>
 						<Sequence>
 
-							<!-- Update person detection status and enable greeting and menu if person now detected -->
-							<IfThenElse>
-								<Delay delay_msec="200">
-									<SubTree ID="DetectPerson" />
-								</Delay>
-								<!-- Detected -->
-								<BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="SUCCESS">
-									<Sequence>
-										<SetBlackboard output_key="person_detected" value="1" />
-										<SetBlackboard output_key="do_greeting" value="1" />
-										<SetBlackboard output_key="do_menu" value="1" />
-									</Sequence>
-								</BlackboardCheckInt>
-								<!-- Not Detected -->
-								<SetBlackboard output_key="person_detected" value="0" />
-							</IfThenElse>
+							<!-- Update person detection status and enable greeting and menu if person now detected.
+							     Apply some hystersis... -->
+						  <Fallback>
+                <BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="FAILURE">
+	                <ForceSuccess>
+		                <Sequence>
+		                  <ObjectTrackerStatusAction ck_state="1" min_duration="2" />
+		                  <Sequence>
+		                    <SetBlackboard output_key="person_detected" value="1" />
+		                    <SetBlackboard output_key="do_greeting" value="1" />
+		                    <SetBlackboard output_key="do_menu" value="1" />
+		                  </Sequence>
+		                </Sequence>
+	                </ForceSuccess>
+                </BlackboardCheckInt>
+
+                <ForceSuccess>
+                  <Sequence>
+                    <ObjectTrackerStatusAction ck_state="0" min_duration="4" />
+                    <Sequence>
+                      <SetBlackboard output_key="person_detected" value="0" />
+                    </Sequence>
+                  </Sequence>
+                </ForceSuccess>
+               </Fallback>
 
 							<!-- Update wake word detection and enable greeting and menu if heard -->
 							<IfThenElse>
@@ -525,6 +527,7 @@
 								<SetBlackboard output_key="dummy" value="1" />
 							</IfThenElse>
 
+              <!--  Do the greeting and menu if a newly detected person, or the wakeword heard -->
 							<BlackboardCheckInt value_A="{do_greeting}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<SubTree ID="Greet" />
