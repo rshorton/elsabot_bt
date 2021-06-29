@@ -54,7 +54,7 @@ private:
     	objArray_ = *msg;
     	detected_ = true;
         last_time_ = std::chrono::high_resolution_clock::now();
-    	RCLCPP_INFO(node_->get_logger(), "Got detected objects");
+    	//RCLCPP_INFO(node_->get_logger(), "Got detected objects");
     }
 
     rclcpp::Subscription<object_detection_msgs::msg::ObjectDescArray>::SharedPtr detected_obj_sub_;

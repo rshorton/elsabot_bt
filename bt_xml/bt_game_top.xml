@@ -250,7 +250,7 @@
 				<PoseDetectionControlAction enable="1" />
 				<Nav2ClearGlobalCostMap />
 				<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
-				<RobotSeekInitAction game_file="robot_seek_short.json" />
+				<RobotSeekInitAction game_file="robot_seek_1.json" />
 				<TrackAction mode="None" rate="2" detect_voice="0" turn_base="0" />
 				<TextToSpeechActionClient msg="Let's play!" />
 				<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />

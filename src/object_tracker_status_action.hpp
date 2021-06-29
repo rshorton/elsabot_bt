@@ -50,7 +50,7 @@ private:
     {
     	tracker_status_ = *msg;
     	valid_ = true;
-		RCLCPP_INFO(node_->get_logger(), "Got detected objects");
+		//RCLCPP_INFO(node_->get_logger(), "Got detected objects");
     }
 };
 
