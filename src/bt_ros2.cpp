@@ -26,6 +26,7 @@
 #include "object_detection_action.hpp"
 #include "scan_wait_action.hpp"
 #include "object_tracker_status_action.hpp"
+#include "save_image.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -178,6 +179,14 @@ int main(int argc, char **argv)
         return std::make_unique<ObjectTrackerStatusAction>(name, config, nh);
     };
     factory.registerBuilder<ObjectTrackerStatusAction>( "ObjectTrackerStatusAction", builder_ObjectTrackerStatusAction);
+
+    // Node builder for SaveImageAction node so ROS node pointer can be passed to the action node
+    NodeBuilder builder_SaveImageAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<SaveImageAction>(name, config, nh);
+    };
+    factory.registerBuilder<SaveImageAction>( "SaveImageAction", builder_SaveImageAction);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the

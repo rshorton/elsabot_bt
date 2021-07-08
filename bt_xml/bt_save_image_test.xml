@@ -1,0 +1,37 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Sequence>
+				<SetBlackboard output_key="pose_name_l" value="TouchingNeck" />
+				<SetBlackboard output_key="pose_name_r" value="TouchingNeck" />
+				<SetBlackboard output_key="pose_lr_check" value="any" />
+				<AntennaAction rate="0" intensity="0" left_blink_pattern="0" right_blink_pattern="0" />
+			</Sequence>
+
+			<KeepRunningUntilFailure>
+				<Sequence>
+
+					<ForceSuccess>
+						<Sequence>
+							<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}"
+								pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+								pose_right_speech="{pose_right_speech}" />
+              <AntennaAction rate="0" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
+              <SaveImageAction filename="image#.jpg" directory="/home/ubuntu/saved_images" />
+    					<TextToSpeechActionClient msg="Saved" />
+              <AntennaAction rate="0" intensity="0" left_blink_pattern="0" right_blink_pattern="0" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="1000">
+							<SetBlackboard output_key="dummy" value="0" />
+						</Delay>
+					</Sequence>
+				</Sequence>
+
+			</KeepRunningUntilFailure>
+		</Sequence>
+
+	</BehaviorTree>
+</root>
