@@ -33,16 +33,25 @@
 			<PoseDetectionControlAction enable="true" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
 			<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+      <SetBlackboard output_key="challenging" value="0" />
+
+      <TextToSpeechActionClient msg="Do you want to play the more challenging version?" />
+      <SpeechToTextActionClient text="{said}" />
+      <ForceSuccess>
+        <Sequence>
+          <TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+          <TextToSpeechActionClient msg="Ok, we will play the challenging version." />
+          <SetBlackboard output_key="challenging" value="1" />
+        </Sequence>
+      </ForceSuccess>
 
 			<!-- Spin a bit to get better localized in the case the initial pose was just set -->
 			<TextToSpeechActionClient
-				msg="Hold on while I make sure I know exactly where I am in the house." />
+				msg="Hold on while I get into position." />
 			<RobotSpin angle="-180" velocity="0.4" />
 			<RobotSpin angle="180" velocity="0.4" />
-      <TextToSpeechActionClient
-        msg="Okay, I'm ready now." />
 
-			<RobotFindInitAction game_file="robot_find_numbers.json" random_order="0"
+			<RobotFindInitAction game_file="robot_find_numbers.json" random_order="{challenging}"
 				needs_init="{needs_init}" robot_pose="{robot_pose}" />
 
 			<!-- Prompt for game setup if already setup -->
@@ -100,7 +109,7 @@
 
 				<Sequence>
           <Nav2Client goal="{robot_pose}" />
-					<TextToSpeechActionClient msg="Let's play robot number find!" />
+					<TextToSpeechActionClient msg="I'm ready, let's play!" />
 					<!-- Face the middle of the playing field -->
 
 					<ForceSuccess>
