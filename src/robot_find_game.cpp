@@ -39,7 +39,10 @@ RobotFindGame::RobotFindGame():
 	processed_positions_(false),
 	pos_threshold_(0.0),
 	ave_x_(0.0),
-	ave_y_(0.0)
+	ave_y_(0.0),
+	robot_pos_x_(0.0),
+	robot_pos_y_(0.0),
+	robot_yaw_(0.0)
 {
 }
 
@@ -198,6 +201,10 @@ bool RobotFindGame::Load()
 
 	need_setup_ = false;
 
+	robot_pos_x_ = game_data["robot_pos_x"].get<double>();
+	robot_pos_y_ = game_data["robot_pos_y"].get<double>();
+	robot_yaw_ = game_data["robot_yaw"].get<double>();
+
 	for (json::iterator it = game_data["items"].begin(); it != game_data["items"].end(); ++it) {
 		position pos;
 		pos.x = (*it)["x"].get<double>();
@@ -220,6 +227,7 @@ bool RobotFindGame::Load()
 
 bool RobotFindGame::Save()
 {
+	// Fix - add saving of robot position at the time of game setup
 	json data = json::object();
 	data["items"] = json::array();
 

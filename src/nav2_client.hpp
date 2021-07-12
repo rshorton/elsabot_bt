@@ -29,7 +29,7 @@ namespace BT
 template <> inline
 Pose2D convertFromString(StringView key)
 {
-    // three real numbers separated by semicolons
+    // three real numbers separated by commas
     auto parts = BT::splitString(key, ',');
     if (parts.size() != 3)
     {

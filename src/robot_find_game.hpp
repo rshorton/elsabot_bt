@@ -42,6 +42,7 @@ public:
 	bool GetItems(std::vector<RobotFindGame::item> &items);
 
 	void GetAvePosition(position &ave_pos) { ave_pos.x = ave_x_; ave_pos.y = ave_y_; }
+	void GetRobotPosition(double &x, double &y, double &yaw) { x = robot_pos_x_; y = robot_pos_y_; yaw = robot_yaw_; }
 
 protected:
 	bool Load();
@@ -62,6 +63,9 @@ private:
 	double pos_threshold_;
 	double ave_x_;
 	double ave_y_;
+	double robot_pos_x_;
+	double robot_pos_y_;
+	double robot_yaw_;
 };
 
 #endif

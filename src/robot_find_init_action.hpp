@@ -41,7 +41,8 @@ class RobotFindInitAction : public BT::SyncActionNode
         	return { BT::InputPort<std::string>("game_file"),
         		     BT::InputPort<bool>("random_order"),
                      BT::OutputPort<std::string>("needs_init"),
-					 BT::OutputPort<double>("angle_to_field")};
+					 BT::OutputPort<std::string>("robot_pose")};
+					 //BT::OutputPort<double>("angle_to_field")};
         }
 
         void poseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -137,6 +138,15 @@ class RobotFindInitAction : public BT::SyncActionNode
                 path.poses = path_poses;
                 path_pub_->publish(path);
 
+                // Return the robot position for the game
+                double x, y, yaw;
+                game->GetRobotPosition(x, y, yaw);
+                std::stringstream ss;
+                ss << x << "," << y << "," << yaw;
+                cout << "Robot pose: " << ss.str() << std::endl;
+                setOutput("robot_pose", ss.str());
+
+#if 0
                 // Calc how much to rotate robot so that it faces the field of play.
                 // Another BT node will use this delta to rotate the robot.
                 RobotFindGame::position ave;
@@ -147,6 +157,7 @@ class RobotFindInitAction : public BT::SyncActionNode
                 double delta = angle - yaw;
                 cout << "Angle: " << angle << ", yaw: " << yaw << ", delta: " << delta << std::endl;
                 setOutput("angle_to_field", delta);
+#endif
         		return BT::NodeStatus::SUCCESS;
         	} else {
         		return BT::NodeStatus::FAILURE;

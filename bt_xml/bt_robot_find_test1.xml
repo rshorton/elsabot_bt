@@ -12,7 +12,7 @@
 				<RobotSpin angle="180" velocity="0.4" />
 
 				<RobotFindInitAction game_file="robot_find_numbers.json" random_order="0"
-					needs_init="{needs_init}" angle_to_field="{angle_to_field}" />
+					needs_init="{needs_init}" robot_pose="{robot_pose}" />
 
 				<ForceSuccess>
 					<Sequence>
@@ -73,8 +73,8 @@
 					</BlackboardCheckInt>
 
 					<Sequence>
+             <Nav2Client goal="{robot_pose}" />
 					   <TextToSpeechActionClient msg="Let's play the game!" />
-					   <RobotSpin angle="{angle_to_field}" velocity="0.5" />
 
 					   <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
              <ForceSuccess>

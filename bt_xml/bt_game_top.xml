@@ -28,6 +28,113 @@
 		</Sequence>
 	</BehaviorTree>
 
+	<BehaviorTree ID="RobotFindNumbers">
+		<Sequence>
+			<PoseDetectionControlAction enable="true" />
+			<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
+			<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+
+			<!-- Spin a bit to get better localized in the case the initial pose was just set -->
+			<TextToSpeechActionClient
+				msg="Hold on while I make sure I know exactly where I am in the house." />
+			<RobotSpin angle="-180" velocity="0.4" />
+			<RobotSpin angle="180" velocity="0.4" />
+      <TextToSpeechActionClient
+        msg="Okay, I'm ready now." />
+
+			<RobotFindInitAction game_file="robot_find_numbers.json" random_order="0"
+				needs_init="{needs_init}" robot_pose="{robot_pose}" />
+
+			<!-- Prompt for game setup if already setup -->
+			<!-- Omit <ForceSuccess> <Sequence> <BlackboardCheckInt value_A="{needs_init}" value_B="0" return_on_mismatch="FAILURE">
+				<Sequence> <TextToSpeechActionClient msg="Do you want to setup the game?" /> <SpeechToTextActionClient text="{said}" /> <TextCompareAction
+				text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" /> <SetBlackboard output_key="needs_init" value="1" /> </Sequence>
+				</BlackboardCheckInt> </Sequence> </ForceSuccess> -->
+
+			<Fallback>
+				<!-- Perform initialization of the number locations if not already specified. After this finishes you will need to start
+					the game again, and it will use the initialized game values. -->
+				<BlackboardCheckInt value_A="{needs_init}" value_B="1" return_on_mismatch="FAILURE">
+					<Sequence>
+						<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="1" />
+						<TextToSpeechActionClient
+							msg="Game setup. I will ask you to stand at each of the locations.  Put both hands on your hips when you arrive at each location to continue." />
+						<ForceSuccess>
+							<Sequence>
+								<TextToSpeechActionClient
+									msg="Please send in the middle of the game. After the robot aligns to you, put both hands on your hips." />
+								<RetryUntilSuccesful num_attempts="20">
+									<Delay delay_msec="2000">
+										<HumanPoseDetect expected_pose_left="OnHip" expected_pose_right="OnHip" pose_lr_check="both"
+											detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+											pose_right_speech="{pose_right_speech}" />
+									</Delay>
+								</RetryUntilSuccesful>
+								<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+							</Sequence>
+						</ForceSuccess>
+
+						<ForceSuccess>
+							<KeepRunningUntilFailure>
+								<Sequence>
+									<RobotFindNextStepAction item_name="{item_name}" />
+									<TextToSpeechActionClient msg="Please stand on " msg2="{item_name}" />
+									<RetryUntilSuccesful num_attempts="20">
+										<Delay delay_msec="2000">
+											<Sequence>
+												<HumanPoseDetect expected_pose_left="OnHip" expected_pose_right="OnHip" pose_lr_check="both"
+													detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+													pose_right_speech="{pose_right_speech}" />
+												<ObjectLocationStatusAction x="{x}" y="{y}" />
+												<RobotFindSetPositionAction x="{x}" y="{y}" />
+											</Sequence>
+										</Delay>
+									</RetryUntilSuccesful>
+								</Sequence>
+							</KeepRunningUntilFailure>
+						</ForceSuccess>
+						<TextToSpeechActionClient msg="Finished setting up" />
+						<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+					</Sequence>
+				</BlackboardCheckInt>
+
+				<Sequence>
+          <Nav2Client goal="{robot_pose}" />
+					<TextToSpeechActionClient msg="Let's play robot number find!" />
+					<!-- Face the middle of the playing field -->
+
+					<ForceSuccess>
+						<KeepRunningUntilFailure>
+							<Sequence>
+								<RobotFindNextStepAction item_name="{item_name}" />
+								<TextToSpeechActionClient msg="Please stand on " msg2="{item_name}" />
+								<RetryUntilSuccesful num_attempts="200">
+									<Delay delay_msec="1000">
+										<Sequence>
+											<ObjectLocationStatusAction x="{x}" y="{y}" />
+											<RobotFindCheckStepAction x="{x}" y="{y}" />
+											<AntennaAction rate="0" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
+											<GetRandomSelectionAction
+												options="Fabulous!|Good!|Nice!|Cool!|Super!|Great!|That's Great|Wonderful!|Fantastic!|Nice going!|Groovy baby|Splendid"
+												selected="{to_say}" />
+											<TextToSpeechActionClient msg="{to_say}" />
+											<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
+										</Sequence>
+									</Delay>
+								</RetryUntilSuccesful>
+							</Sequence>
+						</KeepRunningUntilFailure>
+					</ForceSuccess>
+					<TextToSpeechActionClient msg="Great Job! You finished the game!" />
+					<SmileAction level="3" duration_ms="2000" />
+					<Delay delay_msec="2500">
+						<SetBlackboard output_key="dummy" value="0" />
+					</Delay>
+				</Sequence>
+			</Fallback>
+		</Sequence>
+	</BehaviorTree>
+
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
 			<TextToSpeechActionClient
@@ -429,6 +536,11 @@
 							<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="1" />
 						</Sequence>
 						<Sequence>
+							<SetBlackboard output_key="game_name" value="How about Robot Find Numbers?" />
+							<SubTree ID="AskGame" game_name="game_name" />
+							<SubTree ID="RobotFindNumbers" stop_key="stop_key" />
+						</Sequence>
+						<Sequence>
 							<SetBlackboard output_key="game_name" value="How about Robot Says?" />
 							<SubTree ID="AskGame" game_name="game_name" />
 							<SubTree ID="RobotSays" stop_key="stop_key" />
@@ -510,6 +622,7 @@
 			<PoseDetectionControlAction enable="1" />
 			<TrackAction mode="Track" rate="3" detect_voice="1" turn_base="1" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
+
 
 			<!-- SubTree ID="RobotSays" / -->
 			<KeepRunningUntilFailure>
