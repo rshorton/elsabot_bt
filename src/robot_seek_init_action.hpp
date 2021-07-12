@@ -67,7 +67,6 @@ class RobotSeekInitAction : public BT::SyncActionNode
 
         virtual BT::NodeStatus tick() override
         {
-
         	for (int t = 0; t < 100; t++) {
             	rclcpp::spin_some(node_);
 

@@ -24,9 +24,14 @@
 #include "robot_seek_next_pose.hpp"
 #include "robot_spin.hpp"
 #include "object_detection_action.hpp"
+#include "object_location_status_action.hpp"
 #include "scan_wait_action.hpp"
 #include "object_tracker_status_action.hpp"
 #include "save_image.hpp"
+#include "robot_find_init_action.hpp"
+#include "robot_find_next_step.hpp"
+#include "robot_find_check_step.hpp"
+#include "robot_find_set_position.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -98,9 +103,15 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
+    factory.registerNodeType<RobotFindInitAction>("RobotFindInitAction");
+    factory.registerNodeType<RobotFindNextStepAction>("RobotFindNextStepAction");
+    factory.registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
+    factory.registerNodeType<RobotFindSetPositionAction>("RobotFindSetPositionAction");
+
+
     // New action not working? Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
-    // Node builder for AntennaAction node so ROS node pointer can be passed to the action node
+    // The follow are node builders for those actions that need the ROS node pointer
     NodeBuilder builder_AntennaAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -108,7 +119,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<AntennaAction>( "AntennaAction", builder_AntennaAction);
 
-    // Node builder for TrackAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_TrackAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -116,7 +126,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<TrackAction>( "TrackAction", builder_TrackAction);
 
-    // Node builder for HeadTiltAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_HeadTiltAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -124,7 +133,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<HeadTiltAction>( "HeadTiltAction", builder_HeadTiltAction);
 
-    // Node builder for SmileAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_SmileAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -132,7 +140,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<SmileAction>( "SmileAction", builder_SmileAction);
 
-    // Node builder for ObjectDetectionAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_ObjectDetectionAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -140,7 +147,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<ObjectDetectionAction>( "ObjectDetectionAction", builder_ObjectDetectionAction);
 
-    // Node builder for PoseDetectionControlAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_PoseDetectionControlAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -148,7 +154,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<PoseDetectionControlAction>( "PoseDetectionControlAction", builder_PoseDetectionControlAction);
 
-    // Node builder for SpeechToTextActionClient node so ROS node pointer can be passed to the action node
     NodeBuilder builder_SpeechToTextActionClient =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -156,7 +161,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<SpeechToTextActionClient>( "SpeechToTextActionClient", builder_SpeechToTextActionClient);
 
-    // Node builder for TextToSpeechActionClient node so ROS node pointer can be passed to the action node
     NodeBuilder builder_TextToSpeechActionClient =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -164,7 +168,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<TextToSpeechActionClient>( "TextToSpeechActionClient", builder_TextToSpeechActionClient);
 
-    // Node builder for HumanPoseDetect node so ROS node pointer can be passed to the action node
     NodeBuilder builder_HumanPoseDetect =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -172,7 +175,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<HumanPoseDetect>( "HumanPoseDetect", builder_HumanPoseDetect);
 
-    // Node builder for ObjectTrackerStatusAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_ObjectTrackerStatusAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -180,13 +182,20 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<ObjectTrackerStatusAction>( "ObjectTrackerStatusAction", builder_ObjectTrackerStatusAction);
 
-    // Node builder for SaveImageAction node so ROS node pointer can be passed to the action node
     NodeBuilder builder_SaveImageAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
         return std::make_unique<SaveImageAction>(name, config, nh);
     };
     factory.registerBuilder<SaveImageAction>( "SaveImageAction", builder_SaveImageAction);
+
+    NodeBuilder builder_ObjectLocationStatusAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<ObjectLocationStatusAction>(name, config, nh);
+    };
+    factory.registerBuilder<ObjectLocationStatusAction>( "ObjectLocationStatusAction", builder_ObjectLocationStatusAction);
+
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
