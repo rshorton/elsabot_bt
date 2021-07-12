@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 
+#include "rclcpp/rclcpp.hpp"
+
 class RobotSeekGame
 {
 private:

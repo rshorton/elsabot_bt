@@ -15,8 +15,6 @@
 #include <nav_msgs/msg/path.hpp>
 #include "nav2_compute_path_client_util.hpp"
 
-//#include <behaviortree_cpp_v3/behavior_tree.h>
-
 #include "robot_seek_game.hpp"
 
 using json = nlohmann::json;
