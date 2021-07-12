@@ -104,11 +104,16 @@ class RobotFindInitAction : public BT::SyncActionNode
         	ss << dir << "/" << game_file;
         	cout << "Game filepath: " << ss.str() << std::endl;
 
+        	// Init the game from the game data file
         	std::vector<RobotFindGame::item> items;
         	if (game->Init(ss.str(), items)) {
         		setOutput("needs_init", game->NeedsSetup()? "1": "0");
         		game->InitGameRound(random_order);
 
+        		// Publish the list of item locations for display via the webui.
+        		// Fix - use a more general message that allows the label to be
+        		// specified.  The path poses message happens to work here since
+        		// the webui displayes a number for each location.
                 std::vector<geometry_msgs::msg::PoseStamped> path_poses;
                 cout << "Parsed items:" << endl;
                 for (auto& it : items) {
@@ -132,7 +137,8 @@ class RobotFindInitAction : public BT::SyncActionNode
                 path.poses = path_poses;
                 path_pub_->publish(path);
 
-                // Calc how much to rotate to point to the field of play
+                // Calc how much to rotate robot so that it faces the field of play.
+                // Another BT node will use this delta to rotate the robot.
                 RobotFindGame::position ave;
                 game->GetAvePosition(ave);
                 double angle = atan2(ave.y - cur_pos_y_, ave.x - cur_pos_y_);
@@ -140,9 +146,7 @@ class RobotFindInitAction : public BT::SyncActionNode
                 double yaw = cur_yaw_*180.0/M_PI;
                 double delta = angle - yaw;
                 cout << "Angle: " << angle << ", yaw: " << yaw << ", delta: " << delta << std::endl;
-
                 setOutput("angle_to_field", delta);
-
         		return BT::NodeStatus::SUCCESS;
         	} else {
         		return BT::NodeStatus::FAILURE;

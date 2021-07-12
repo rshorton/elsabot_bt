@@ -76,7 +76,6 @@ bool RobotFindGame::InitGameRound(bool random)
 	}
 	std::cout << endl;
 	return 0;
-
 }
 
 // Game assumes items positioned on the floor in a grid pattern.
@@ -148,6 +147,8 @@ bool RobotFindGame::SetItemLocation(double x, double y)
 	return false;
 }
 
+// Consider the player at the correct location if 3 position sample received
+// that are within the threshold.
 bool RobotFindGame::CheckRound(double x, double y)
 {
 	if (idx_cur_ < (int)item_names_round_.size()) {
