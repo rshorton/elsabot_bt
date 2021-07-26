@@ -25,8 +25,7 @@ find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
-find_package(face_control_interfaces REQUIRED)
-find_package(human_pose_interfaces REQUIRED)
+find_package(robot_head_interfaces REQUIRED)
 find_package(object_detection_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -52,10 +51,8 @@ set(dependencies
   nav2_msgs
   behaviortree_cpp_v3
   speech_action_interfaces
-  face_control_interfaces
-  human_pose_interfaces
+  robot_head_interfaces
   object_detection_msgs
-  face_control_interfaces
   nav2_util
   nav_msgs
 )

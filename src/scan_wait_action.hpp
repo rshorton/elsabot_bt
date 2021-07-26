@@ -1,6 +1,22 @@
+/*
+Copyright 2021 Scott Horton
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "face_control_interfaces/msg/scan_status.hpp"
+#include "robot_head_interfaces/msg/scan_status.hpp"
 
 #include "behaviortree_cpp_v3/bt_factory.h"
 
@@ -14,13 +30,13 @@ class ScanWaitAction: public CoroActionNode
     {
         node_ = rclcpp::Node::make_shared("scan_wait_action");
 
-        sub_ = node_->create_subscription<face_control_interfaces::msg::ScanStatus>(
+        sub_ = node_->create_subscription<robot_head_interfaces::msg::ScanStatus>(
             "/head/scan_status",
 			rclcpp::SystemDefaultsQoS(),
 			std::bind(&ScanWaitAction::scanStatusCallback, this, std::placeholders::_1));
     }
 
-    void scanStatusCallback(face_control_interfaces::msg::ScanStatus::SharedPtr msg)
+    void scanStatusCallback(robot_head_interfaces::msg::ScanStatus::SharedPtr msg)
     {
     	msg_ = *msg;
     	received_ = true;
@@ -31,7 +47,7 @@ class ScanWaitAction: public CoroActionNode
     NodeStatus tick() override
     {
     	received_ = false;
-    	face_control_interfaces::msg::ScanStatus start_msg;
+    	robot_head_interfaces::msg::ScanStatus start_msg;
 
     	int state = 0;
 
@@ -72,8 +88,8 @@ class ScanWaitAction: public CoroActionNode
 
   private:
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Subscription<face_control_interfaces::msg::ScanStatus>::SharedPtr sub_;
+    rclcpp::Subscription<robot_head_interfaces::msg::ScanStatus>::SharedPtr sub_;
 
-    face_control_interfaces::msg::ScanStatus msg_;
+    robot_head_interfaces::msg::ScanStatus msg_;
     bool received_;
 };

@@ -1,10 +1,26 @@
+/*
+Copyright 2021 Scott Horton
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 #include <chrono>
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-#include "face_control_interfaces/msg/track.hpp"
+#include "robot_head_interfaces/msg/track.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
 // Single for publishing the Track control state - shared by all TrackActionNode instances
@@ -24,7 +40,7 @@ public:
     {
     	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, detect_voice= %d, turn_base= %d",
     				mode.c_str(), rate.c_str(), detect_voice, turn_base);
-    	auto msg = face_control_interfaces::msg::Track();
+    	auto msg = robot_head_interfaces::msg::Track();
     	msg.mode = mode;
         msg.rate = rate;
         msg.voice_detect = detect_voice;
@@ -37,10 +53,10 @@ private:
     TrackActionROSNodeIf(rclcpp::Node::SharedPtr node):
     	node_(node)
 	{
-    	track_publisher_ = node_->create_publisher<face_control_interfaces::msg::Track>("/head/track", 2);
+    	track_publisher_ = node_->create_publisher<robot_head_interfaces::msg::Track>("/head/track", 2);
     }
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<face_control_interfaces::msg::Track>::SharedPtr track_publisher_;
+    rclcpp::Publisher<robot_head_interfaces::msg::Track>::SharedPtr track_publisher_;
 };
 
 class TrackAction : public BT::SyncActionNode

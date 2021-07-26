@@ -1,3 +1,19 @@
+/*
+Copyright 2021 Scott Horton
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 #include <stdio.h>
@@ -8,7 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "human_pose_interfaces/msg/detected_pose.hpp"
+#include "robot_head_interfaces/msg/detected_pose.hpp"
 
 #include <behaviortree_cpp_v3/action_node.h>
 
@@ -48,13 +64,13 @@ private:
 		num_points_(0),
 		last_time_(std::chrono::high_resolution_clock::now())
 	{
-        detected_pose_sub_ = node_->create_subscription<human_pose_interfaces::msg::DetectedPose>(
+        detected_pose_sub_ = node_->create_subscription<robot_head_interfaces::msg::DetectedPose>(
             "/head/detected_pose",
 			rclcpp::SystemDefaultsQoS(),
 			std::bind(&HumanPoseDetectROSNodeIf::poseCallback, this, std::placeholders::_1));
     }
 
-    void poseCallback(human_pose_interfaces::msg::DetectedPose::SharedPtr msg)
+    void poseCallback(robot_head_interfaces::msg::DetectedPose::SharedPtr msg)
     {
     	valid_ = true;
     	cur_pose_left_ = msg->left;
@@ -66,7 +82,7 @@ private:
 		RCLCPP_INFO(node_->get_logger(), "Got pose callback [%s], [%s]", cur_pose_left_.c_str(), cur_pose_right_.c_str());
     }
 
-    rclcpp::Subscription<human_pose_interfaces::msg::DetectedPose>::SharedPtr detected_pose_sub_;
+    rclcpp::Subscription<robot_head_interfaces::msg::DetectedPose>::SharedPtr detected_pose_sub_;
 };
 
 class HumanPoseDetect : public BT::SyncActionNode

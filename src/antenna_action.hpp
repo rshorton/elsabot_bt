@@ -1,7 +1,23 @@
+/*
+Copyright 2021 Scott Horton
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 #include "rclcpp/rclcpp.hpp"
-#include "face_control_interfaces/msg/antenna.hpp"
+#include "robot_head_interfaces/msg/antenna.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
 // Single for publishing the antenna control state - shared by all AntennaActionNode instances
@@ -23,7 +39,7 @@ public:
     	RCLCPP_INFO(node_->get_logger(), "Set Antenna: rate= %d, intensity= %d, left pattern= %s, right pattern= %s",
     				rate, intensity, left_blink_pattern.c_str(), right_blink_pattern.c_str());
 
-    	auto message = face_control_interfaces::msg::Antenna();
+    	auto message = robot_head_interfaces::msg::Antenna();
         message.rate = rate;
         message.intensity = intensity;
         message.left_blink_pattern = left_blink_pattern;
@@ -35,10 +51,10 @@ private:
     AntennaActionROSNodeIf(rclcpp::Node::SharedPtr node):
 		node_(node)
 	{
-        antenna_publisher_ = node_->create_publisher<face_control_interfaces::msg::Antenna>("/head/antenna", 2);
+        antenna_publisher_ = node_->create_publisher<robot_head_interfaces::msg::Antenna>("/head/antenna", 2);
     }
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<face_control_interfaces::msg::Antenna>::SharedPtr antenna_publisher_;
+    rclcpp::Publisher<robot_head_interfaces::msg::Antenna>::SharedPtr antenna_publisher_;
 };
 
 class AntennaAction : public BT::SyncActionNode

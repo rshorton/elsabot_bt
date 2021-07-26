@@ -1,10 +1,24 @@
+/*
+Copyright 2021 Scott Horton
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #include "nav2_client.hpp"
 #include "nav2_compute_path_client.hpp"
 #include "nav2_clear_local_cost_map.hpp"
 #include "nav2_clear_global_cost_map.hpp"
 
-#include "interrupt_event.hpp"
-#include "snapshot_client.hpp"
 #include "text_compare_action.hpp"
 #include "speech_to_text_action_client.hpp"
 #include "text_to_speech_action_client.hpp"
@@ -108,7 +122,6 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
     factory.registerNodeType<RobotFindSetPositionAction>("RobotFindSetPositionAction");
 
-
     // New action not working? Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
     // The follow are node builders for those actions that need the ROS node pointer
@@ -196,7 +209,6 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<ObjectLocationStatusAction>( "ObjectLocationStatusAction", builder_ObjectLocationStatusAction);
 
-
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
     // object "tree" goes out of scope, all the TreeNodes are destroyed
@@ -208,6 +220,7 @@ int main(int argc, char **argv)
     FileLogger logger_file(tree, "bt_trace.fbl");
 
     NodeStatus status = NodeStatus::RUNNING;
+
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
     	rclcpp::spin_some(nh);

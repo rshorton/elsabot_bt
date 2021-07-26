@@ -32,7 +32,7 @@ def generate_launch_description():
     # objects of type 'persion'
     clicked_point = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('nav2_test_utils'), 'launch', 'nav2_test_utils.launch.py'))
+            os.path.join(get_package_share_directory('tracked_object_mapper'), 'launch', 'tracked_object_mapper.launch.py'))
     )
 
     # Launch the web video server for serving-up camera topics as video streams (to web pages)

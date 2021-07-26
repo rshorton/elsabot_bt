@@ -28,7 +28,7 @@
 		</Sequence>
 	</BehaviorTree>
 
-	<BehaviorTree ID="RobotFindNumbers">
+	<BehaviorTree ID="RobotFind">
 		<Sequence>
 			<PoseDetectionControlAction enable="true" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
@@ -51,7 +51,7 @@
 			<RobotSpin angle="-180" velocity="0.4" />
 			<RobotSpin angle="180" velocity="0.4" />
 
-			<RobotFindInitAction game_file="robot_find_numbers.json" random_order="{challenging}"
+			<RobotFindInitAction game_file="robot_find.json" object_type="shapes" random_order="{challenging}"
 				needs_init="{needs_init}" robot_pose="{robot_pose}" />
 
 			<!-- Prompt for game setup if already setup -->
@@ -116,7 +116,7 @@
 						<KeepRunningUntilFailure>
 							<Sequence>
 								<RobotFindNextStepAction item_name="{item_name}" />
-								<TextToSpeechActionClient msg="Please stand on " msg2="{item_name}" />
+								<TextToSpeechActionClient msg="Please stand on the " msg2="{item_name}" />
 								<RetryUntilSuccesful num_attempts="200">
 									<Delay delay_msec="1000">
 										<Sequence>
@@ -539,15 +539,15 @@
 				<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
 					<Fallback>
 						<Sequence>
-							<SetBlackboard output_key="game_name" value="Do you want to play Robot Seek" />
+							<SetBlackboard output_key="game_name" value="Do you want to play Robot Hide and Seek" />
 							<SubTree ID="AskGame" game_name="game_name" />
 							<SubTree ID="RobotSeek" stop_key="stop_key" />
 							<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="1" />
 						</Sequence>
 						<Sequence>
-							<SetBlackboard output_key="game_name" value="How about Robot Find Numbers?" />
+							<SetBlackboard output_key="game_name" value="How about Robot Find" />
 							<SubTree ID="AskGame" game_name="game_name" />
-							<SubTree ID="RobotFindNumbers" stop_key="stop_key" />
+							<SubTree ID="RobotFind" stop_key="stop_key" />
 						</Sequence>
 						<Sequence>
 							<SetBlackboard output_key="game_name" value="How about Robot Says?" />

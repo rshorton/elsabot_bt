@@ -1,3 +1,19 @@
+/*
+Copyright 2021 Scott Horton
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 #pragma once
 
 #include <stdio.h>
@@ -8,7 +24,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include "face_control_interfaces/msg/track_status.hpp"
+#include "robot_head_interfaces/msg/track_status.hpp"
 
 #include <behaviortree_cpp_v3/action_node.h>
 
@@ -32,21 +48,21 @@ public:
 
     rclcpp::Node::SharedPtr node_;
     bool valid_;
-    rclcpp::Subscription<face_control_interfaces::msg::TrackStatus>::SharedPtr tracker_status_sub_;
-    face_control_interfaces::msg::TrackStatus tracker_status_;
+    rclcpp::Subscription<robot_head_interfaces::msg::TrackStatus>::SharedPtr tracker_status_sub_;
+    robot_head_interfaces::msg::TrackStatus tracker_status_;
 
 private:
     ObjectTrackerStatusROSNodeIf(rclcpp::Node::SharedPtr node):
     	node_(node),
 		valid_(false)
 	{
-    	tracker_status_sub_ = node_->create_subscription<face_control_interfaces::msg::TrackStatus>(
+    	tracker_status_sub_ = node_->create_subscription<robot_head_interfaces::msg::TrackStatus>(
     	            "/head/tracked",
     				rclcpp::SystemDefaultsQoS(),
     				std::bind(&ObjectTrackerStatusROSNodeIf::statusCallback, this, std::placeholders::_1));
     }
 
-    void statusCallback(face_control_interfaces::msg::TrackStatus::SharedPtr msg)
+    void statusCallback(robot_head_interfaces::msg::TrackStatus::SharedPtr msg)
     {
     	tracker_status_ = *msg;
     	valid_ = true;
