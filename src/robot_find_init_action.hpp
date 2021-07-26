@@ -55,6 +55,7 @@ class RobotFindInitAction : public BT::SyncActionNode
         static BT::PortsList providedPorts()
         {
         	return { BT::InputPort<std::string>("game_file"),
+        		     BT::InputPort<std::string>("object_type"),
         		     BT::InputPort<bool>("random_order"),
                      BT::OutputPort<std::string>("needs_init"),
 					 BT::OutputPort<std::string>("robot_pose")};
@@ -109,10 +110,15 @@ class RobotFindInitAction : public BT::SyncActionNode
 			}
 
         	std::string game_file;
+        	std::string object_type;
         	bool random_order = false;
 
         	if (!getInput<std::string>("game_file", game_file)) {
-        		throw BT::RuntimeError("missing robot find game file mame");
+        		throw BT::RuntimeError("missing robot find game file name");
+        	}
+
+        	if (!getInput<std::string>("object_type", object_type)) {
+        		throw BT::RuntimeError("missing robot find game object type");
         	}
 
         	getInput<bool>("random_order", random_order);
@@ -122,18 +128,20 @@ class RobotFindInitAction : public BT::SyncActionNode
         	cout << "Game filepath: " << ss.str() << std::endl;
 
         	// Init the game from the game data file
-        	std::vector<RobotFindGame::item> items;
-        	if (game->Init(ss.str(), items)) {
+        	std::vector<RobotFindGame::position_list_item> positions;
+        	if (game->Init(ss.str(), positions)) {
         		setOutput("needs_init", game->NeedsSetup()? "1": "0");
-        		game->InitGameRound(random_order);
+        		if (!game->InitGameRound(object_type, random_order)) {
+        			throw BT::RuntimeError("invalid object type, not supported in find game json");
+        		}
 
         		// Publish the list of item locations for display via the webui.
         		// Fix - use a more general message that allows the label to be
         		// specified.  The path poses message happens to work here since
-        		// the webui displayes a number for each location.
+        		// the webui displays a number for each location.
                 std::vector<geometry_msgs::msg::PoseStamped> path_poses;
-                cout << "Parsed items:" << endl;
-                for (auto& it : items) {
+                cout << "Parsed positions:" << endl;
+                for (auto& it : positions) {
                 	geometry_msgs::msg::PoseStamped msg;
                 	msg.header.frame_id = "map";
                 	msg.header.stamp = rclcpp::Time();

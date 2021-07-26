@@ -1,0 +1,105 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Repeat num_cycles="10">
+			<Sequence>
+				<Delay delay_msec="1000">
+					<PoseDetectionControlAction enable="true" />
+				</Delay>
+				<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+
+				<!-- Spin a bit to get localized in the case the initial pose was just set -->
+				<RobotSpin angle="-180" velocity="0.4" />
+				<RobotSpin angle="180" velocity="0.4" />
+
+				<RobotFindInitAction game_file="robot_find.json" object_type="shapes" random_order="0"
+					needs_init="{needs_init}" robot_pose="{robot_pose}" />
+
+        <!--
+				<ForceSuccess>
+					<Sequence>
+						<BlackboardCheckInt value_A="{needs_init}" value_B="0" return_on_mismatch="FAILURE">
+							<Sequence>
+								<TextToSpeechActionClient msg="Do you want to setup the game?" />
+								<SpeechToTextActionClient text="{said}" />
+								<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+								<SetBlackboard output_key="needs_init" value="1" />
+							</Sequence>
+  					</BlackboardCheckInt>
+					</Sequence>
+				</ForceSuccess>
+        -->
+
+				<Fallback>
+					<BlackboardCheckInt value_A="{needs_init}" value_B="1" return_on_mismatch="FAILURE">
+						<Sequence>
+              <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="1" />
+							<TextToSpeechActionClient
+								msg="Game setup. I will ask you to stand at each of the locations.  Put both hands on your hips when you arrive at each location to continue." />
+              <ForceSuccess>
+                <Sequence>
+	                <TextToSpeechActionClient msg="Please send in the middle of the game. After the robot aligns to you, put both hands on your hips." />
+                  <RetryUntilSuccesful num_attempts="20">
+                    <Delay delay_msec="2000">
+                        <HumanPoseDetect expected_pose_left="OnHip" expected_pose_right="OnHip"
+                          pose_lr_check="both" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+                          pose_right_speech="{pose_right_speech}" />
+                    </Delay>
+                  </RetryUntilSuccesful>
+	                <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+                </Sequence>
+              </ForceSuccess>
+
+							<ForceSuccess>
+								<KeepRunningUntilFailure>
+								  <Sequence>
+										<RobotFindNextStepAction item_name="{item_name}" />
+										<TextToSpeechActionClient msg="Please stand on " msg2="{item_name}" />
+										<RetryUntilSuccesful num_attempts="20">
+											<Delay delay_msec="2000">
+											 <Sequence>
+													<HumanPoseDetect expected_pose_left="OnHip" expected_pose_right="OnHip"
+														pose_lr_check="both" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+														pose_right_speech="{pose_right_speech}" />
+													<ObjectLocationStatusAction x="{x}" y="{y}" />
+													<RobotFindSetPositionAction x="{x}" y="{y}" />
+												</Sequence>
+											</Delay>
+										</RetryUntilSuccesful>
+									</Sequence>
+								</KeepRunningUntilFailure>
+							</ForceSuccess>
+							<TextToSpeechActionClient msg="Finished setting up" />
+              <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+						</Sequence>
+					</BlackboardCheckInt>
+
+					<Sequence>
+             <Nav2Client goal="{robot_pose}" />
+					   <TextToSpeechActionClient msg="Let's play the game!" />
+
+					   <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+             <ForceSuccess>
+               <KeepRunningUntilFailure>
+                 <Sequence>
+                   <RobotFindNextStepAction item_name="{item_name}" />
+                   <TextToSpeechActionClient msg="Please stand on " msg2="{item_name}" />
+                   <RetryUntilSuccesful num_attempts="200">
+                     <Delay delay_msec="1000">
+                      <Sequence>
+                         <ObjectLocationStatusAction x="{x}" y="{y}" />
+                         <RobotFindCheckStepAction x="{x}" y="{y}" />
+                         <TextToSpeechActionClient msg="Good job" />
+                       </Sequence>
+                     </Delay>
+                   </RetryUntilSuccesful>
+                 </Sequence>
+               </KeepRunningUntilFailure>
+             </ForceSuccess>
+             <TextToSpeechActionClient msg="Finished playing the game" />
+             <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+					</Sequence>
+				</Fallback>
+			</Sequence>
+		</Repeat>
+	</BehaviorTree>
+</root>
