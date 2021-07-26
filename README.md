@@ -13,6 +13,14 @@ export DISPLAY=:0;ros2 launch elsabot_bt elsabot_bt.launch.py
 ```
 The DISPLAY export is needed if that command is used with an ssh shell since the **viewer** node needs to open a window for displaying the camera output.
 
+Also, set the venv for the DepthAi python dependencies before running the above command. Example:
+
+````
+pushd ~/depthai/depthai-python/; . venv/bin/activate; popd
+````
+
+This is required for the **robot_head** package.
+
 ## Credits
 
 The bt_ros2 package from Adlink-ROS (https://github.com/Adlink-ROS/BT_ros2.git) was used as the starting point.
