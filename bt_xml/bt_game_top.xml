@@ -33,8 +33,9 @@
 			<PoseDetectionControlAction enable="true" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
 			<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
-      <SetBlackboard output_key="challenging" value="0" />
+      <SetBlackboard output_key="challenging" value="1" />
 
+      <!--
       <TextToSpeechActionClient msg="Do you want to play the more challenging version?" />
       <SpeechToTextActionClient text="{said}" />
       <ForceSuccess>
@@ -44,10 +45,11 @@
           <SetBlackboard output_key="challenging" value="1" />
         </Sequence>
       </ForceSuccess>
+      -->
 
 			<!-- Spin a bit to get better localized in the case the initial pose was just set -->
 			<TextToSpeechActionClient
-				msg="Hold on while I get into position." />
+				msg="Hold on while I check my location." />
 			<RobotSpin angle="-180" velocity="0.4" />
 			<RobotSpin angle="180" velocity="0.4" />
 

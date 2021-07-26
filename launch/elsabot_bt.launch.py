@@ -10,7 +10,7 @@ from launch.conditions import IfCondition
 
 def generate_launch_description():
     # Path
-    bt_xml_dir = os.path.join(get_package_share_directory('bt_ros2'), 'bt_xml')
+    bt_xml_dir = os.path.join(get_package_share_directory('elsabot_bt'), 'bt_xml')
 
     # Parameters
     bt_xml = LaunchConfiguration('bt_xml', default=bt_xml_dir+'/bt_game_top.xml')
@@ -55,8 +55,8 @@ def generate_launch_description():
 
     behavior_tree = Node(
         condition=IfCondition(run_bt),
-        package='bt_ros2',
-        executable='bt_ros2',
+        package='elsabot_bt',
+        executable='elsabot_bt',
         parameters=[{'bt_xml': bt_xml}],
         output='screen'
     )

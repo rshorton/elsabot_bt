@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(bt_ros2)
+project(elsabot_bt)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -57,14 +57,7 @@ set(dependencies
   nav_msgs
 )
 
-add_executable(send_goal
-  src/send_goal
-)
-ament_target_dependencies(send_goal
-	${dependencies}
-)
-
-add_executable(bt_ros2
+add_executable(elsabot_bt
   src/bt_ros2.cpp
   src/robot_says_game.cpp
   src/robot_seek_game.cpp
@@ -72,16 +65,14 @@ add_executable(bt_ros2
   src/nav2_compute_path_client_util.cpp
   src/game_settings.cpp
 )
-ament_target_dependencies(bt_ros2
+ament_target_dependencies(elsabot_bt
 	${dependencies}
 )
 
-# Remove
 include_directories(./thirdparty/nlohmann-json)
 
 install (TARGETS
-  send_goal
-  bt_ros2
+  elsabot_bt
   DESTINATION lib/${PROJECT_NAME}
 )
 
