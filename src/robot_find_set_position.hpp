@@ -34,7 +34,7 @@ class RobotFindSetPositionAction : public BT::SyncActionNode
     		RobotFindGame* game = RobotFindGame::GetRobotFindGame();
     		if (game == nullptr) {
     			std::cout << "Game pointer null" << endl;
-    		} else if (game->SetItemLocation(x, y)) {
+    		} else if (game->SetLocation(x, y)) {
     			cout << "Current item pos (x,y): " << x << ", " << y << endl;
 	            return BT::NodeStatus::SUCCESS;
     		}
