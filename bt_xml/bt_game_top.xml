@@ -40,7 +40,7 @@
       <SpeechToTextActionClient text="{said}" />
       <ForceSuccess>
         <Sequence>
-          <TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+          <TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
           <TextToSpeechActionClient msg="Ok, we will play the challenging version." />
           <SetBlackboard output_key="challenging" value="1" />
         </Sequence>
@@ -59,7 +59,7 @@
 			<!-- Prompt for game setup if already setup -->
 			<!-- Omit <ForceSuccess> <Sequence> <BlackboardCheckInt value_A="{needs_init}" value_B="0" return_on_mismatch="FAILURE">
 				<Sequence> <TextToSpeechActionClient msg="Do you want to setup the game?" /> <SpeechToTextActionClient text="{said}" /> <TextCompareAction
-				text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" /> <SetBlackboard output_key="needs_init" value="1" /> </Sequence>
+				text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" /> <SetBlackboard output_key="needs_init" value="1" /> </Sequence>
 				</BlackboardCheckInt> </Sequence> </ForceSuccess> -->
 
 			<Fallback>
@@ -153,8 +153,8 @@
 			<Delay delay_msec="3000">
 				<SetBlackboard output_key="break" value="0" />
 			</Delay>
-			<SetBlackboard output_key="say_fun_msg" value="1" />
-			<RobotSaysInitAction level_start="0" level_end="3" />
+			<SetBlackboard output_key="say_fun_msg" value="0" />
+			<RobotSaysInitAction easy="1" level_start="0" level_end="3" />
 			<ForceSuccess>
 				<KeepRunningUntilFailure>
 					<BlackboardCheckInt value_A="{break}" value_B="0" return_on_mismatch="FAILURE">
@@ -166,7 +166,7 @@
 									<!-- Get the next pose, blink the antenna leds and voice the pose request -->
 									<Sequence>
 										<RobotSaysNextStepAction pose_name_l="{pose_name_l}" pose_name_r="{pose_name_r}"
-											pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" />
+											pose_lr_check="{pose_lr_check}" pose_speech="{pose_speech}" step_index="{step_index}" />
 
 										<ForceSuccess>
 											<Sequence>
@@ -312,30 +312,39 @@
 
 										<!-- Say a friendly "I'm having fun message" at most once per round -->
 										<ForceSuccess>
-											<BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
-												<Sequence>
-													<GetRandomSelectionAction
-														options="I'm having fun playing with you (player)! I hope you're having fun too.|You're doing great!|This is fun"
-														selected="{to_say}" />
-													<Delay delay_msec="2000">
-														<SetBlackboard output_key="dummy" value="0" />
-													</Delay>
-													<ForceSuccess>
-														<Sequence>
-															<Inverter>
-																<TextCompareAction text="{to_say}" ck_for="nothing" />
-															</Inverter>
-															<Delay delay_msec="1500">
-																<HeadTiltAction angle="20" dwell_ms="1500" />
-															</Delay>
-															<TextToSpeechActionClient msg="{to_say}" />
-															<Delay delay_msec="1000">
-																<SetBlackboard output_key="say_fun_msg" value="0" />
-															</Delay>
-														</Sequence>
-													</ForceSuccess>
-												</Sequence>
-											</BlackboardCheckInt>
+										  <Sequence>
+											  <!-- Enable after 4th step -->
+	                      <ForceSuccess>
+	                        <BlackboardCheckInt value_A="{step_index}" value_B="3" return_on_mismatch="FAILURE">
+	                          <SetBlackboard output_key="say_fun_msg" value="1" />
+	                        </BlackboardCheckInt>
+	                      </ForceSuccess>
+
+												<BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
+													<Sequence>
+														<GetRandomSelectionAction
+															options="I'm having fun playing with you (player)! I hope you're having fun too.|You're doing great!|nothing|nothing"
+															selected="{to_say}" />
+														<Delay delay_msec="2000">
+															<SetBlackboard output_key="dummy" value="0" />
+														</Delay>
+														<ForceSuccess>
+															<Sequence>
+																<Inverter>
+																	<TextCompareAction text="{to_say}" ck_for="nothing" />
+																</Inverter>
+																<Delay delay_msec="1500">
+																	<HeadTiltAction angle="20" dwell_ms="1500" />
+																</Delay>
+																<TextToSpeechActionClient msg="{to_say}" />
+																<Delay delay_msec="1000">
+																	<SetBlackboard output_key="say_fun_msg" value="0" />
+																</Delay>
+															</Sequence>
+														</ForceSuccess>
+													</Sequence>
+												</BlackboardCheckInt>
+                      </Sequence>
 										</ForceSuccess>
 
 									</Sequence>
@@ -351,7 +360,6 @@
 											<Delay delay_msec="2500">
 												<SetBlackboard output_key="dummy" value="0" />
 											</Delay>
-											<SetBlackboard output_key="say_fun_msg" value="1" />
 										</Sequence>
 
 										<!-- No more game passes, end of game. -->
@@ -396,7 +404,7 @@
 				<PoseDetectionControlAction enable="1" />
 				<Nav2ClearGlobalCostMap />
 				<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
-				<RobotSeekInitAction game_file="robot_seek_1.json" />
+				<RobotSeekInitAction game_file="robot_seek_for_video.json" />
 				<TrackAction mode="None" rate="2" detect_voice="0" turn_base="0" />
 				<TextToSpeechActionClient msg="Let's play!" />
 				<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
@@ -444,7 +452,7 @@
 											<ScanWaitAction />
 										</Sequence>
 									</BlackboardCheckInt>
-									<TextToSpeechActionClient msg="I'm still looking for you (player)." />
+									<TextToSpeechActionClient msg="I'm still looking for you, (player)." />
 								</Sequence>
 							</ReactiveSequence>
 						</KeepRunningUntilFailure>
@@ -482,7 +490,7 @@
 				<Sequence>
 					<TextToSpeechActionClient msg="Would you like to play again?" />
 					<SpeechToTextActionClient text="{said}" />
-					<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+					<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
 				</Sequence>
 			</Sequence>
 		</KeepRunningUntilFailure>
@@ -510,7 +518,7 @@
 
 					<Fallback>
 						<ReactiveSequence>
-							<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+							<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
 							<Sequence>
 								<SetBlackboard output_key="result" value="1" />
 								<TextToSpeechActionClient msg="Great! Let's play!" />
@@ -598,7 +606,7 @@
 								<!-- /Sequence -->
 								<Fallback>
 									<Sequence>
-										<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure|yep).*" />
+										<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
 										<TextToSpeechActionClient msg="Ok!" />
 										<ForceSuccess>
 											<SubTree ID="ChooseAndPlayGame" stop_key="stop_key" />

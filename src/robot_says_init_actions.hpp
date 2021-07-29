@@ -34,7 +34,9 @@ class RobotSaysInitAction : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return { BT::InputPort<std::string>("level_start"), BT::InputPort<std::string>("level_end") };
+        	return { BT::InputPort<bool>("easy"),
+        		     BT::InputPort<std::string>("level_start"),
+					 BT::InputPort<std::string>("level_end") };
         }
 
         virtual BT::NodeStatus tick() override
@@ -43,12 +45,15 @@ class RobotSaysInitAction : public BT::SyncActionNode
 			if (game == nullptr) {
 				game = RobotSaysGame::CreateRobotSaysGame();
 			}
+			bool easy = true;
+			getInput<bool>("easy", easy);
+
         	int32_t level_start = game->GetMinDifficulty();
         	int32_t level_end = game->GetMaxDifficulty();
         	getInput<std::int32_t>("level_start", level_start);
         	getInput<std::int32_t>("level_end", level_end);
 
-        	game->Init(level_start, level_end);
+        	game->Init(easy, level_start, level_end);
 //        	game->TestGameData();
             return BT::NodeStatus::SUCCESS;
         }

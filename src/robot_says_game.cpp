@@ -43,8 +43,10 @@ RobotSaysGame* RobotSaysGame::CreateRobotSaysGame()
 }
 
 RobotSaysGame::RobotSaysGame():
+	easy_(true),
 	level_start_(0),
-	level_end_(0)
+	level_end_(0),
+	step_index_(0)
 {
 	speech_[OnHip] = "put your * hand on your hip";
 	speech_[ArmOut] = "stretch your * arm out";
@@ -64,12 +66,14 @@ RobotSaysGame::RobotSaysGame():
 	name_[OHead] = "OnHead";
 	//name_[TNeck] = "TouchingNeck";
 
-	poses_ = {OnHip, ArmOut, ArmToSide, TShoulder, TStomach, AHead, OHead /*, TNeck*/};
+	// Easy mode for Carolyn.  Repeat the simple poses
+	poses_easy_ = {ArmOut, ArmToSide, AHead, ArmOut, ArmToSide, AHead};
+	poses_all_ = {OnHip, ArmOut, ArmToSide, TShoulder, TStomach, AHead, OHead /*, TNeck*/};
 
 	levels_ = {SideAny, Left, Right, LeftAndRight};
 	level_desc_ = {"Either left or right", "Left hand only", "Right hand only", "Left and Right hands"};
 
-	Init(level_start_, level_end_);
+	Init(easy_, level_start_, level_end_);
 }
 
 RobotSaysGame::~RobotSaysGame()
@@ -86,11 +90,13 @@ int RobotSaysGame::NextPass(bool reset, std::string &level_desc)
 		return -1;
 	}
 
-	random_poses_ = poses_;
-
-	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-	shuffle(random_poses_.begin(), random_poses_.end(), std::default_random_engine(seed));
+	if (easy_) {
+		random_poses_ = poses_easy_;
+	} else {
+		random_poses_ = poses_all_;
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		shuffle(random_poses_.begin(), random_poses_.end(), std::default_random_engine(seed));
+	}
 
 	std::cout << "Random pose list: ";
 	for (auto it = random_poses_.begin(); it != random_poses_.end(); it++) {
@@ -98,10 +104,11 @@ int RobotSaysGame::NextPass(bool reset, std::string &level_desc)
 	}
 	std::cout << endl;
 	level_desc = level_desc_[level_cur_];
+	step_index_ = 0;
 	return 0;
 }
 
-int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &pose_lr_check, string &pose_speech)
+int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &pose_lr_check, string &pose_speech, int32_t &step_index)
 {
 	pose_name_l = "";
 	pose_name_r = "";
@@ -120,6 +127,7 @@ int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &po
 	Pose p = random_poses_.back();
 	random_poses_.pop_back();
 	pose_speech = speech_[p];
+	step_index = step_index_++;
 
 	size_t marker =  pose_speech.find ('*');
 	string side;
@@ -155,12 +163,18 @@ int RobotSaysGame::NextStep(string &pose_name_l, string &pose_name_r, string &po
 		}
 		pose_speech.replace(marker, 1, side);
 	}
-	std::cout << "NextStep: pose_name_l= " << pose_name_l << ", pose_name_r= " << pose_name_r << ", pose_speech= " << pose_speech << endl;
+	std::cout << "NextStep: pose_name_l= " << pose_name_l
+			  << ", pose_name_r= " << pose_name_r
+			  << ", pose_speech= " << pose_speech
+			  << ", step_index= " << step_index
+			  << endl;
 	return 0;
 }
 
-void RobotSaysGame::Init(int32_t level_start, int32_t level_end)
+void RobotSaysGame::Init(bool easy, int32_t level_start, int32_t level_end)
 {
+	easy_ = easy;
+
 	if (level_end > GetMaxDifficulty()) {
 		level_end = GetMaxDifficulty();
 	}
@@ -180,8 +194,9 @@ void RobotSaysGame::DumpSteps()
 	string pose_name_r;
 	string pose_lr_check;
 	string pose_speech;
+	int32_t step_index;
 
-	while (!NextStep(pose_name_l, pose_name_r, pose_lr_check, pose_speech)) {
+	while (!NextStep(pose_name_l, pose_name_r, pose_lr_check, pose_speech, step_index)) {
 		std::cout << "NextStep: pose_name_l= " << pose_name_l << ", pose_name_r= " << pose_name_r << ", pose_lr_check= " << pose_lr_check << ", pose_speech= " << pose_speech << endl;
 	}
 	std::cout << endl << endl;

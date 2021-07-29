@@ -54,8 +54,8 @@ public:
 	int NextPass(bool reset, std::string &level_desc);
 
 	// Type: any, l, r, lr
-	int NextStep(string &pose_name_l, string &pose_name_r, string &pose_lr_check, string &pose_speech);
-	void Init(int32_t level_start, int32_t level_end);
+	int NextStep(string &pose_name_l, string &pose_name_r, string &pose_lr_check, string &pose_speech, int32_t &step_index);
+	void Init(bool easy, int32_t level_start, int32_t level_end);
 	void DumpSteps();
 	void TestGameData();
 
@@ -63,7 +63,9 @@ public:
 	int32_t GetMaxDifficulty();
 
 private:
-	vector<enum Pose> poses_;
+	bool easy_;
+	vector<enum Pose> poses_easy_;
+	vector<enum Pose> poses_all_;
 	vector<enum Pose> random_poses_;
 	map<enum Pose, string> speech_;
 	map<enum Pose, string> name_;
@@ -72,6 +74,7 @@ private:
 	int32_t level_start_;
 	int32_t level_end_;
 	int32_t level_cur_;
+	int32_t step_index_;
 };
 
 #endif
