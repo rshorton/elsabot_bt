@@ -23,7 +23,7 @@ limitations under the License.
 #include "robot_head_interfaces/msg/enable_pose_detection.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Single for publishing the pose detection control state - shared by all PoseDetectionControlAction instances
+// Singleton for publishing the pose detection control state - shared by all PoseDetectionControlAction instances
 class PoseDetectionControlActionROSNodeIf
 {
 public:

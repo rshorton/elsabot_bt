@@ -20,7 +20,7 @@ limitations under the License.
 #include "robot_head_interfaces/msg/head_tilt.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Single for publishing the HeadTilt control state - shared by all HeadTiltActionNode instances
+// Singleton for publishing the HeadTilt control state - shared by all HeadTiltActionNode instances
 class HeadTiltActionROSNodeIf
 {
 public:

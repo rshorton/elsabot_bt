@@ -66,8 +66,7 @@ RobotSaysGame::RobotSaysGame():
 	name_[OHead] = "OnHead";
 	//name_[TNeck] = "TouchingNeck";
 
-	// Easy mode for Carolyn.  Repeat the simple poses
-	poses_easy_ = {ArmOut, ArmToSide, AHead, ArmOut, ArmToSide, AHead};
+	poses_easy_ = {ArmOut, ArmToSide, AHead};
 	poses_all_ = {OnHip, ArmOut, ArmToSide, TShoulder, TStomach, AHead, OHead /*, TNeck*/};
 
 	levels_ = {SideAny, Left, Right, LeftAndRight};
@@ -94,9 +93,9 @@ int RobotSaysGame::NextPass(bool reset, std::string &level_desc)
 		random_poses_ = poses_easy_;
 	} else {
 		random_poses_ = poses_all_;
-		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-		shuffle(random_poses_.begin(), random_poses_.end(), std::default_random_engine(seed));
 	}
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	shuffle(random_poses_.begin(), random_poses_.end(), std::default_random_engine(seed));
 
 	std::cout << "Random pose list: ";
 	for (auto it = random_poses_.begin(); it != random_poses_.end(); it++) {

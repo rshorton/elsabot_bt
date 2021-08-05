@@ -20,7 +20,7 @@ limitations under the License.
 #include "robot_head_interfaces/msg/smile.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Single for publishing the smile control state - shared by all SmileActionNode instances
+// Singleton for publishing the smile control state - shared by all SmileActionNode instances
 class SmileActionROSNodeIf
 {
 public:

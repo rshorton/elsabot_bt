@@ -36,6 +36,8 @@ limitations under the License.
 using json = nlohmann::json;
 using namespace std;
 
+#undef USE_POSE_LIST_ORDER_FOR_DEMO
+
 namespace ns {
 	struct SearchPose;
 }
@@ -155,6 +157,10 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, std::string datapath,
         }
     }
 
+#ifdef USE_POSE_LIST_ORDER_FOR_DEMO
+    dir_ = 1;
+    bFirst_ = true;
+#else
     std::vector<SearchPose> pose_tmp = poses_;
 
     sort(pose_tmp.begin(), pose_tmp.end(),
@@ -217,6 +223,7 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, std::string datapath,
     	}
     }
     cout << "Direction= " << dir_ << endl;
+#endif
     poses = poses_;
     return true;
 }

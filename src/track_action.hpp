@@ -23,7 +23,7 @@ limitations under the License.
 #include "robot_head_interfaces/msg/track.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Single for publishing the Track control state - shared by all TrackActionNode instances
+// Singleton for publishing the Track control state - shared by all TrackActionNode instances
 class TrackActionROSNodeIf
 {
 public:
