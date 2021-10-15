@@ -23,7 +23,9 @@
 #include "robot_spin.hpp"
 #include "object_detection_action.hpp"
 #include "object_location_status_action.hpp"
+#if defined(USE_BT_COROUTINES)
 #include "scan_wait_action.hpp"
+#endif
 #include "object_tracker_status_action.hpp"
 #include "save_image.hpp"
 #include "robot_find_init_action.hpp"
@@ -100,7 +102,9 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSpin>("RobotSpin");
+#if defined(USE_BT_COROUTINES)
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
+#endif
     factory.registerNodeType<RobotFindInitAction>("RobotFindInitAction");
     factory.registerNodeType<RobotFindNextStepAction>("RobotFindNextStepAction");
     factory.registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
@@ -200,7 +204,7 @@ int main(int argc, char **argv)
 
     // Create loggers
     StdCoutLogger logger_cout(tree);
-    PublisherZMQ publisher_zmq(tree);
+    //PublisherZMQ publisher_zmq(tree);
     FileLogger logger_file(tree, "bt_trace.fbl");
 
     NodeStatus status = NodeStatus::RUNNING;

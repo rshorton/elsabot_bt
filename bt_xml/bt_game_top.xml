@@ -452,7 +452,9 @@
 									<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 										<Sequence>
 											<TrackAction mode="Scan" rate="1" detect_voice="0" turn_base="0" />
-											<ScanWaitAction />
+											<!-- ScanWaitAction uses a BT Co routine which needs Boost but is not
+											     build for ROS2 galactive.  Fix later if needed. -->
+											<!-- ScanWaitAction / -->
 										</Sequence>
 									</BlackboardCheckInt>
 									<TextToSpeechActionClient msg="I'm still looking for you, (player)." />
