@@ -1,10 +1,10 @@
 <root main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
 		<Sequence>
-		  <PoseDetectionControlAction enable="false" />
+			<PoseDetectionControlAction enable="false" />
 
 			<Delay delay_msec="4000">
-        <TrackAction mode="Scan" rate="3" />
+				<TrackAction mode="Scan" rate="3" />
 			</Delay>
 
 			<SmileAction level="3" duration_ms="2000" />

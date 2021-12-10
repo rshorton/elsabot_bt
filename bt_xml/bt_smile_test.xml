@@ -3,21 +3,21 @@
 		<KeepRunningUntilFailure>
 			<Sequence>
 				<SmileAction level="1" duration_ms="2000" />
-        <Delay delay_msec="3000">
-          <SmileAction level="2" duration_ms="2000" />
-        </Delay>
+				<Delay delay_msec="3000">
+					<SmileAction level="2" duration_ms="2000" />
+				</Delay>
 				<Delay delay_msec="3000">
 					<SmileAction level="3" duration_ms="2000" />
 				</Delay>
-        <Delay delay_msec="3000">
-          <SmileAction level="4" duration_ms="2000" />
-        </Delay>
+				<Delay delay_msec="3000">
+					<SmileAction level="4" duration_ms="2000" />
+				</Delay>
 				<Delay delay_msec="3000">
 					<SmileAction level="0" duration_ms="2000" />
 				</Delay>
-        <Delay delay_msec="3000">
-          <SmileAction level="3" duration_ms="2000" />
-        </Delay>
+				<Delay delay_msec="3000">
+					<SmileAction level="3" duration_ms="2000" />
+				</Delay>
 			</Sequence>
 		</KeepRunningUntilFailure>
 	</BehaviorTree>

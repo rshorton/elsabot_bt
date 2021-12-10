@@ -8,9 +8,9 @@
 				<Delay delay_msec="3000">
 					<AntennaAction rate="5" intensity="100" left_blink_pattern="01" right_blink_pattern="10" />
 				</Delay>
-        <Delay delay_msec="9000">
-          <AntennaAction rate="10" intensity="100" left_blink_pattern="111100000" right_blink_pattern="00001111" />
-        </Delay>
+        		<Delay delay_msec="9000">
+          			<AntennaAction rate="10" intensity="100" left_blink_pattern="111100000" right_blink_pattern="00001111" />
+        		</Delay>
 			</Sequence>
 		</KeepRunningUntilFailure>
 	</BehaviorTree>

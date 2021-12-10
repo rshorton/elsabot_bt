@@ -1,13 +1,13 @@
 <root main_tree_to_execute = "MainTree">
     <BehaviorTree ID="MainTree">
         <Repeat num_cycles="1">
-              <Sequence>
-                 <RobotSpin angle="180" velocity="0.5"/>
-                 <RobotSpin angle="-180" velocity="0.5"/>
-                 <RobotSpin angle="-90" velocity="0.5"/>
-                 <RobotSpin angle="90" velocity="0.5"/>
-                 <RobotSpin angle="360" velocity="0.5"/>
-              </Sequence>
+            <Sequence>
+                <RobotSpin angle="180" velocity="0.5"/>
+                <RobotSpin angle="-180" velocity="0.5"/>
+                <RobotSpin angle="-90" velocity="0.5"/>
+                <RobotSpin angle="90" velocity="0.5"/>
+                <RobotSpin angle="360" velocity="0.5"/>
+            </Sequence>
         </Repeat>
     </BehaviorTree>
 </root>

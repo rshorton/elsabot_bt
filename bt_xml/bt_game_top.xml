@@ -33,23 +33,23 @@
 		<Sequence>
 			<PoseDetectionControlAction enable="true" />
 			<AntennaAction rate="5" intensity="10" left_blink_pattern="1100" right_blink_pattern="0011" />
-      <!-- Only use head tracking -->
+      		<!-- Only use head tracking -->
 			<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
 			<!-- Set challenging mode which just randomly orders the numbers/shapes -->
-      <SetBlackboard output_key="challenging" value="1" />
+			<SetBlackboard output_key="challenging" value="1" />
 
-      <!-- Or Prompt for challenging mode -->
-      <!--
-      <TextToSpeechActionClient msg="Do you want to play the more challenging version?" />
-      <SpeechToTextActionClient text="{said}" />
-      <ForceSuccess>
-        <Sequence>
-          <TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
-          <TextToSpeechActionClient msg="Ok, we will play the challenging version." />
-          <SetBlackboard output_key="challenging" value="1" />
-        </Sequence>
-      </ForceSuccess>
-      -->
+			<!-- Or Prompt for challenging mode -->
+			<!--
+			<TextToSpeechActionClient msg="Do you want to play the more challenging version?" />
+			<SpeechToTextActionClient text="{said}" />
+			<ForceSuccess>
+				<Sequence>
+				<TextCompareAction text="{said}" ck_for=".*(yes|yeah|okay|ok|sure).*" />
+				<TextToSpeechActionClient msg="Ok, we will play the challenging version." />
+				<SetBlackboard output_key="challenging" value="1" />
+				</Sequence>
+			</ForceSuccess>
+			-->
 
 			<!-- Spin a bit to get better localized in the case the initial pose was just set -->
 			<TextToSpeechActionClient
@@ -57,7 +57,7 @@
 			<RobotSpin angle="-180" velocity="0.4" />
 			<RobotSpin angle="180" velocity="0.4" />
 
-      <!-- Read the json setup for this game -->
+      		<!-- Read the json setup for this game -->
 			<RobotFindInitAction game_file="robot_find.json" object_type="shapes" random_order="{challenging}"
 				needs_init="{needs_init}" robot_pose="{robot_pose}" />
 
@@ -114,10 +114,10 @@
 					</Sequence>
 				</BlackboardCheckInt>
 
-        <!-- Main game sequence -->
+        		<!-- Main game sequence -->
 				<Sequence>
-				  <!-- Move the saved location that faces the playing field -->
-          <Nav2Client goal="{robot_pose}" />
+				  	<!-- Move the saved location that faces the playing field -->
+          			<Nav2Client goal="{robot_pose}" />
 					<TextToSpeechActionClient msg="I'm ready, let's play!" />
 
 					<ForceSuccess>
@@ -154,7 +154,7 @@
 		</Sequence>
 	</BehaviorTree>
 
-  <!-- Robot Say game -->
+  	<!-- Robot Say game -->
 	<BehaviorTree ID="RobotSays">
 		<Sequence>
 			<TextToSpeechActionClient
@@ -199,7 +199,7 @@
 										<TextToSpeechActionClient msg="{pose_speech}" />
 										<SetBlackboard output_key="pose_detected" value="0" />
 
-                    <!-- Give the player time to make the pose. -->
+                    					<!-- Give the player time to make the pose. -->
 										<Timeout msec="60000">
 											<RetryUntilSuccesful num_attempts="60">
 												<Sequence>
@@ -321,13 +321,13 @@
 
 										<!-- Say a friendly "I'm having fun message" at most once per round -->
 										<ForceSuccess>
-										  <Sequence>
-											  <!-- Enable after 4th step -->
-	                      <ForceSuccess>
-	                        <BlackboardCheckInt value_A="{step_index}" value_B="3" return_on_mismatch="FAILURE">
-	                          <SetBlackboard output_key="say_fun_msg" value="1" />
-	                        </BlackboardCheckInt>
-	                      </ForceSuccess>
+										  	<Sequence>
+											  	<!-- Enable after 4th step -->
+												<ForceSuccess>
+													<BlackboardCheckInt value_A="{step_index}" value_B="3" return_on_mismatch="FAILURE">
+													<SetBlackboard output_key="say_fun_msg" value="1" />
+													</BlackboardCheckInt>
+												</ForceSuccess>
 
 												<BlackboardCheckInt value_A="{say_fun_msg}" value_B="1" return_on_mismatch="FAILURE">
 													<Sequence>
@@ -353,7 +353,7 @@
 														</ForceSuccess>
 													</Sequence>
 												</BlackboardCheckInt>
-                      </Sequence>
+                      						</Sequence>
 										</ForceSuccess>
 
 									</Sequence>

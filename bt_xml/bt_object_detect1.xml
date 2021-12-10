@@ -2,16 +2,16 @@
 	<BehaviorTree ID="MainTree">
 		<Repeat num_cycles="9999">
 			<Sequence>
-  			<Fallback>
-	   			<Sequence>
-						 <ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
-             <TextToSpeechActionClient msg="Detected" />
-  				</Sequence>
-          <Sequence>
-              <TextToSpeechActionClient msg="Not Detected" />
-          </Sequence>
+				<Fallback>
+					<Sequence>
+						<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
+						<TextToSpeechActionClient msg="Detected" />
+					</Sequence>
+					<Sequence>
+						<TextToSpeechActionClient msg="Not Detected" />
+					</Sequence>
 
-        </Fallback>
+				</Fallback>
 			</Sequence>
 		</Repeat>
 	</BehaviorTree>

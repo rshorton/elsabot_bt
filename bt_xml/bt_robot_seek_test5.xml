@@ -6,8 +6,7 @@
 			</Delay>
 			<Nav2ClearGlobalCostMap />
 			<!-- RobotSeekInitAction search_poses="-4.3,-4,180.0;-4.7,-6.6,270.0;-6.0,-4.2,206.0" / -->
-			<RobotSeekInitAction
-				search_poses="0.75,-3.7,225.0,0,1;
+			<RobotSeekInitAction search_poses="0.75,-3.7,225.0,0,1;
 			               -2.9,-4.1,230.0,0,1;
 			               -5.6,-4.1,230.0,0,1;
 			               -6.4,-1.2,90.0,0,0;
@@ -36,11 +35,9 @@
 					<ReactiveSequence>
 						<Fallback>
 							<Inverter>
-							  <Fallback ID="Detection">
-  								<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.70"
-	   								min_detect_count="5" />
-			   					<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}"
-					   				pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+								<Fallback ID="Detection">
+									<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.70" min_detect_count="5" />
+									<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right="" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
 								</Fallback>
 							</Inverter>
 							<ForceFailure>
@@ -48,12 +45,11 @@
 							</ForceFailure>
 						</Fallback>
 						<Sequence>
-							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}"
-								spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
+							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
 							<TrackAction mode="Scan" rate="1" />
 							<SubTree ID="MoveRobot" target="next_goal" />
 							<!--  TextToSpeechActionClient msg="{goal_speech}" /-->
-              <TextToSpeechActionClient msg="Are you over here?" />
+							<TextToSpeechActionClient msg="Are you over here?" />
 							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<TrackAction mode="Off" rate="0" />

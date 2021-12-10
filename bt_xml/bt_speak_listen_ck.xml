@@ -1,65 +1,65 @@
 <root main_tree_to_execute = "MainTree">
-    <BehaviorTree ID="MainTree">
-     <Sequence>
+  <BehaviorTree ID="MainTree">
+    <Sequence>
       <Sequence>
-         <TextToSpeechActionClient msg="Hi there" />
-         <Delay delay_msec="500">
-           <SmileAction level="3" duration_ms="2000"/>
-         </Delay>
-         <Delay delay_msec="2000">
-           <SmileAction level="0" duration_ms="1"/>
-         </Delay>
-         <SetBlackboard output_key="output_key" value="1" />
+        <TextToSpeechActionClient msg="Hi there" />
+        <Delay delay_msec="500">
+          <SmileAction level="3" duration_ms="2000"/>
+        </Delay>
+        <Delay delay_msec="2000">
+          <SmileAction level="0" duration_ms="1"/>
+        </Delay>
+        <SetBlackboard output_key="output_key" value="1" />
       </Sequence>
       <Sequence>
         <Repeat num_cycles="10">
           <BlackboardCheckInt value_A="{output_key}" value_B="1" return_on_mismatch="FAILURE">
-          <Sequence>
+            <Sequence>
 
-            <Fallback name="get_answer">
-              <Sequence>
-                 <TextToSpeechActionClient msg="What do you want to do" />
-                 <SpeechToTextActionClient text="{said}" />
-              </Sequence>
-            </Fallback>
+              <Fallback name="get_answer">
+                <Sequence>
+                  <TextToSpeechActionClient msg="What do you want to do" />
+                  <SpeechToTextActionClient text="{said}" />
+                </Sequence>
+              </Fallback>
 
-             <Fallback name="pick_action">
-               <Sequence>
-                 <TextCompareAction text="{said}" ck_for=""/>
-                 <TextToSpeechActionClient msg="I'm sorry, but I didn't hear a response" />
-               </Sequence>
-               <Sequence>
-                 <Sequence>
-                   <TextToSpeechActionClient msg="You said, " msg2="{said}"/>
-                 </Sequence>
-                 <Fallback>
-                   <Sequence>
-                     <TextCompareAction text="{said}" ck_for=".*(hide|seek).*"/>
-                     <TextToSpeechActionClient msg="Ok, let's play hide and seek together" />
-                   </Sequence>
-                   <Sequence>
-                     <TextCompareAction text="{said}" ck_for=".*(simon|says).*"/>
-                     <TextToSpeechActionClient msg="Ok, let's play simon says" />
-                   </Sequence>
-                   <Sequence>
-                     <TextCompareAction text="{said}" ck_for=".*(stop).*"/>
-                     <TextToSpeechActionClient msg="Ok, let's play again later" />
-                     <SetBlackboard output_key="output_key" value="0" />
-                   </Sequence>
-                   <Sequence>
-                     <HeadTiltAction angle="20" dwell_ms="1500" />
-                     <TextToSpeechActionClient msg="I'm sorry, but I don't know how to do that" />
-                   </Sequence>
-                 </Fallback>
-               </Sequence>
-             </Fallback>
-          </Sequence>
-         </BlackboardCheckInt>
+              <Fallback name="pick_action">
+                <Sequence>
+                  <TextCompareAction text="{said}" ck_for=""/>
+                  <TextToSpeechActionClient msg="I'm sorry, but I didn't hear a response" />
+                </Sequence>
+                <Sequence>
+                  <Sequence>
+                    <TextToSpeechActionClient msg="You said, " msg2="{said}"/>
+                  </Sequence>
+                  <Fallback>
+                    <Sequence>
+                      <TextCompareAction text="{said}" ck_for=".*(hide|seek).*"/>
+                      <TextToSpeechActionClient msg="Ok, let's play hide and seek together" />
+                    </Sequence>
+                    <Sequence>
+                      <TextCompareAction text="{said}" ck_for=".*(simon|says).*"/>
+                      <TextToSpeechActionClient msg="Ok, let's play simon says" />
+                    </Sequence>
+                    <Sequence>
+                      <TextCompareAction text="{said}" ck_for=".*(stop).*"/>
+                      <TextToSpeechActionClient msg="Ok, let's play again later" />
+                      <SetBlackboard output_key="output_key" value="0" />
+                    </Sequence>
+                    <Sequence>
+                      <HeadTiltAction angle="20" dwell_ms="1500" />
+                      <TextToSpeechActionClient msg="I'm sorry, but I don't know how to do that" />
+                    </Sequence>
+                  </Fallback>
+                </Sequence>
+              </Fallback>
+            </Sequence>
+          </BlackboardCheckInt>
         </Repeat>
         <Sequence>
           <TextToSpeechActionClient msg="Goodbye" />
         </Sequence>
       </Sequence>
-     </Sequence>
-    </BehaviorTree>
+    </Sequence>
+  </BehaviorTree>
 </root>

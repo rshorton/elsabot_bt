@@ -5,7 +5,6 @@
 			<RobotSeekInitAction game_file="robot_seek_1.json" />
 		</Sequence>
 	</BehaviorTree>
-
 </root>
 
 

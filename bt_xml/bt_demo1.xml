@@ -43,7 +43,7 @@
 												<TextCompareAction text="{said}" ck_for=".*(key components).*" />
 												<TextToSpeechActionClient
 													msg="Ok, I’ll start with my hardware. My key component is the open cv camera, called the oak d, that I use for object detection and human pose detection.  Using this camera I can recognize objects and determine their distance from me.  The human pose detection allows me to recognize body gestures so I can interact with humans.  I use those skills when playing the games I have been taught." />
-                        <TextToSpeechActionClient msg="I have an iRobot Create2 base that I use for moving around. I can easily turn and move about. " />
+                        						<TextToSpeechActionClient msg="I have an iRobot Create2 base that I use for moving around. I can easily turn and move about. " />
 												<TrackAction mode="Track" rate="4" detect_voice="1" turn_base="0" />
 												<RobotSpin angle="30" velocity="0.4" />
 												<Delay delay_msec="1000">
@@ -81,7 +81,7 @@
 												<Delay delay_msec="6000">
 													<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
-                        -->
+                        						-->
 												<TextToSpeechActionClient
 													msg="I also have a servo that allows me to rotate my head a little bit" />
 												<HeadTiltAction angle="10" dwell_ms="2000" />
@@ -116,13 +116,13 @@
 															<Sequence>
 																<ForceFailure>
 																<Sequence>
-			                            <HeadTiltAction angle="10" dwell_ms="2000" />
+			                            							<HeadTiltAction angle="10" dwell_ms="2000" />
 																	<TextToSpeechActionClient
 																		msg="Uh, well, let's try that again.  Please put your left hand on your head." />
-                                  <Delay delay_msec="1000">
-                                    <SetBlackboard output_key="dummy" value="0" />
-                                  </Delay>
-                                  </Sequence>
+                                  									<Delay delay_msec="1000">
+                                    									<SetBlackboard output_key="dummy" value="0" />
+                                  									</Delay>
+                                  								</Sequence>
 																</ForceFailure>
 															</Sequence>
 														</Fallback>
@@ -135,15 +135,15 @@
 													msg="You have already been hearing my speech output.  I use the Microsoft Azure Speech services for Text to speech synthesis, speech recognition, and wake word detection. I use a neural voice for a more natural voice." />
 												<TextToSpeechActionClient msg="I can even change my voice like this."
 													voice="en-US-Aria" style="Cheerful" />
-                        <Delay delay_msec="1000">
-                          <SetBlackboard output_key="dummy" value="0" />
-                        </Delay>
-                        <TextToSpeechActionClient msg="Ok, that was very weird." />
-                        <Delay delay_msec="2000">
-                          <SetBlackboard output_key="dummy" value="0" />
-                        </Delay>
-                        <!--
-  											<TextToSpeechActionClient
+												<Delay delay_msec="1000">
+												<SetBlackboard output_key="dummy" value="0" />
+												</Delay>
+												<TextToSpeechActionClient msg="Ok, that was very weird." />
+												<Delay delay_msec="2000">
+												<SetBlackboard output_key="dummy" value="0" />
+												</Delay>
+                        						<!--
+  												<TextToSpeechActionClient
 													msg="My wake word detection has been used during this demo each time Scott has said ‘Elsa bot’.  Yeah, and he had to fix me so I don’t respond to that when I say it." />
 												<SmileAction level="3" duration_ms="1000" />
 												-->

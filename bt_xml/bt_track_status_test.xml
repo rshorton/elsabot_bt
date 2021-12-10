@@ -2,12 +2,12 @@
 	<BehaviorTree ID="MainTree">
 		<Repeat num_cycles="99999">
 			<Sequence>
-			  <ForceSuccess>
-				<Sequence>
-					<ObjectTrackerStatusAction ck_state="1" min_duration="3" />
-					<TextToSpeechActionClient msg="Detected" />
-				</Sequence>
-        </ForceSuccess>
+				<ForceSuccess>
+					<Sequence>
+						<ObjectTrackerStatusAction ck_state="1" min_duration="3" />
+						<TextToSpeechActionClient msg="Detected" />
+					</Sequence>
+				</ForceSuccess>
 
 				<Sequence>
 					<Delay delay_msec="3000">
@@ -15,12 +15,12 @@
 					</Delay>
 				</Sequence>
 
-        <ForceSuccess>
-				<Sequence>
-					<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
-					<TextToSpeechActionClient msg="Not Detected" />
-				</Sequence>
-        </ForceSuccess>
+				<ForceSuccess>
+					<Sequence>
+						<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
+						<TextToSpeechActionClient msg="Not Detected" />
+					</Sequence>
+				</ForceSuccess>
 
 				<Sequence>
 					<Delay delay_msec="3000">
