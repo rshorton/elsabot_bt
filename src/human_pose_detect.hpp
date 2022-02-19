@@ -149,7 +149,7 @@ class HumanPoseDetect : public BT::SyncActionNode
 			node_if_->valid_ = false;
 
 			setOutput("pose_left", node_if_->cur_pose_left_);
-			setOutput("pose_left", node_if_->cur_pose_right_);
+			setOutput("pose_right", node_if_->cur_pose_right_);
 			setOutput("detected_person", node_if_->detected_? "yes": "no");
 
 			RCLCPP_INFO(node_if_->node_->get_logger(), "[%s], [%s]",
