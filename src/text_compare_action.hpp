@@ -45,14 +45,10 @@ class TextCompareAction : public BT::SyncActionNode
 		virtual BT::NodeStatus tick() override
 		{
 			std::string ckFor;
-			if (!getInput<std::string>("ck_for", ckFor)) {
-				throw BT::RuntimeError("missing text to check for");
-			}
+			getInput<std::string>("ck_for", ckFor);
 
 			std::string text;
-			if (!getInput<std::string>("text", text)) {
-				throw BT::RuntimeError("missing text to be checked");
-			}
+			getInput<std::string>("text", text);
 
 			ToLower(ckFor);
 			ToLower(text);

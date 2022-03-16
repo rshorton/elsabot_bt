@@ -1,24 +1,36 @@
 <root main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
 		<Repeat num_cycles="9999">
-			<Sequence>
+			<Delay delay_msec="1000">
 				<Sequence>
-					<Fallback>
+					<!-- Force success since we don't care if the expected poses where found since
+					     we just want to know if any pose was seen -->
+					<ForceSuccess>
+						<HumanPoseDetect expected_pose_left="" expected_pose_right=""
+							pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+					</ForceSuccess>
+					<!-- Force success so that right-side pose is voiced (if any)-->					
+					<ForceSuccess>
 						<Sequence>
-							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
-								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-						</Sequence>
-						<TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}" />
-					</Fallback>
-					<Fallback>
+							<!-- We care about voicing the pose only if an actual pose was detected (ie. not empty string)-->
+							<Inverter>
+								<TextCompareAction text="{pose_left_speech}" ck_for="" />
+							</Inverter>							
+							<TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}" />
+							<SetBlackboard output_key="{pose_left_speech}" value="" />
+						</Sequence>						
+					</ForceSuccess>
+					<ForceSuccess>
 						<Sequence>
-							<HumanPoseDetect expected_pose_left="" expected_pose_right=""
-								pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
+							<Inverter>
+								<TextCompareAction text="{pose_right_speech}" ck_for="" />
+							</Inverter>
+							<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
+							<SetBlackboard output_key="{pose_right_speech}" value="" />
 						</Sequence>
-						<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
-					</Fallback>
+					</ForceSuccess>
 				</Sequence>
-			</Sequence>
+			</Delay>
 		</Repeat>
 	</BehaviorTree>
 </root>

@@ -53,7 +53,7 @@
 											<Delay delay_msec="2000">
 												<Sequence>
 													<HumanPoseDetect expected_pose_left="OnHip" expected_pose_right="OnHip" pose_lr_check="both" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
-													<ObjectLocationStatusAction x="{x}" y="{y}" />
+													<ObjectTrackerLocationStatusAction x="{x}" y="{y}" />
 													<RobotFindSetPositionAction x="{x}" y="{y}" />
 												</Sequence>
 											</Delay>
@@ -79,7 +79,7 @@
 									<RetryUntilSuccesful num_attempts="200">
 										<Delay delay_msec="1000">
 											<Sequence>
-												<ObjectLocationStatusAction x="{x}" y="{y}" />
+												<ObjectTrackerLocationStatusAction x="{x}" y="{y}" />
 												<RobotFindCheckStepAction x="{x}" y="{y}" />
 												<TextToSpeechActionClient msg="Good job" />
 											</Sequence>

@@ -22,23 +22,39 @@
 #include "robot_seek_next_pose.hpp"
 #include "robot_spin.hpp"
 #include "object_detection_action.hpp"
-#include "object_location_status_action.hpp"
+#include "object_tracker_location_status_action.hpp"
+#include "object_tracker_status_action.hpp"
 #if defined(USE_BT_COROUTINES)
 #include "scan_wait_action.hpp"
 #endif
-#include "object_tracker_status_action.hpp"
 #include "save_image.hpp"
 #include "robot_find_init_action.hpp"
 #include "robot_find_next_step.hpp"
 #include "robot_find_check_step.hpp"
 #include "robot_find_set_position.hpp"
 
+#include "detection_processor_container.hpp"
+#include "detection_processor_create_action.hpp"
+#include "detection_configure_action.hpp"
+#include "detection_command_action.hpp"
+#include "detection_select_action.hpp"
+#include "detection_get_position_action.hpp"
+
+#include "ui_input_action.hpp"
+#include "log_action.hpp"
+#include "move_to_object_action.hpp"
+
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
 #include <behaviortree_cpp_v3/loggers/bt_file_logger.h>
 #include <behaviortree_cpp_v3/loggers/bt_zmq_publisher.h>
 
+#include "transform_helper.hpp"
+#include "robot_status.hpp"
+#include "ui_topics.hpp"
+#include "ros_common.hpp"
 #include "game_settings.hpp"
+
 
 #define DEFAULT_BT_XML ""
 
@@ -85,6 +101,9 @@ int main(int argc, char **argv)
 	auto handle1 = param_subscriber->add_parameter_callback("bt_settings", cb1);
 #endif
 
+    // ROS common helpers and expose node 
+    ROSCommon::Create(nh);
+
     // We use the BehaviorTreeFactory to register our custom nodes
     BehaviorTreeFactory factory;
 
@@ -110,9 +129,22 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
     factory.registerNodeType<RobotFindSetPositionAction>("RobotFindSetPositionAction");
 
-    // New action not working? Check the template type above since you probably copy and pasted and forgot to change both!!!!
+    factory.registerNodeType<UIInputAction>("UIInputAction");
+    factory.registerNodeType<LogAction>("LogAction");
+    factory.registerNodeType<MoveToObjectAction>("MoveToObjectAction");
+
+    factory.registerNodeType<DetectionProcessorCreateAction>("DetectionProcessorCreateAction");
+    factory.registerNodeType<DetectionConfigureAction>("DetectionConfigureAction");
+    factory.registerNodeType<DetectionCommandAction>("DetectionCommandAction");
+    factory.registerNodeType<DetectionGetPositionAction>("DetectionGetPositionAction");
+    factory.registerNodeType<DetectionSelectAction>("DetectionSelectAction");
+
+    // Scratching your head because your new action isn't working?
+    // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
     // The follow are node builders for those actions that need the ROS node pointer
+    // FIX - use new schem that uses a common singleton for accessing the ROS node point...
+    // Why didn't I use that from the get go???
     NodeBuilder builder_AntennaAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -190,12 +222,13 @@ int main(int argc, char **argv)
     };
     factory.registerBuilder<SaveImageAction>( "SaveImageAction", builder_SaveImageAction);
 
-    NodeBuilder builder_ObjectLocationStatusAction =
+    // FIX - fold into the detection_processor functionality
+    NodeBuilder builder_ObjectTrackerLocationStatusAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
-        return std::make_unique<ObjectLocationStatusAction>(name, config, nh);
+        return std::make_unique<ObjectTrackerLocationStatusAction>(name, config, nh);
     };
-    factory.registerBuilder<ObjectLocationStatusAction>( "ObjectLocationStatusAction", builder_ObjectLocationStatusAction);
+    factory.registerBuilder<ObjectTrackerLocationStatusAction>( "ObjectTrackerLocationStatusAction", builder_ObjectTrackerLocationStatusAction);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
@@ -209,6 +242,20 @@ int main(int argc, char **argv)
 
     NodeStatus status = NodeStatus::RUNNING;
 
+    // Create transform helper singleton. Used by various nodes for coordinate transformation
+    // between robot frames
+    TransformHelper::Instance(nh);
+
+    // Create object detector processor container singleton
+    ObjDetProcContainer::Create(nh);
+
+    // Create object for collecting robot status
+    RobotStatus::Create(nh);
+
+    // Create object for receiving UI topic messages
+    UITopics::Create(nh);
+
+    // code that could cause exception
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
     	rclcpp::spin_some(nh);

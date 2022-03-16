@@ -18,7 +18,9 @@
   <depend>behaviortree_cpp_v3</depend>
   <depend>speech_action_interfaces</depend>
   <depend>robot_head_interfaces</depend>
+  <depend>robot_ui_interfaces</depend>
   <depend>object_detection_msgs</depend>
+  <depend>visualization_msgs</depend>
   <depend>nav2_util</depend>
 
   <test_depend>ament_lint_auto</test_depend>

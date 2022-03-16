@@ -10,7 +10,7 @@
 						<Inverter>
 							<ObjectDetectionAction class="person" pose="detected_Pose" />
 						</Inverter>
-						<RobotSpin angle="360" velocity="0.5" />
+						<RobotSpin angle="360" velocity="0.2" />
 					</ReactiveSequence>
 				</Sequence>
 			</Repeat>

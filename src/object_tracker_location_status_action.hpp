@@ -27,16 +27,16 @@ limitations under the License.
 
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Singleton for subscribing to object location message - shared by all ObjectLocationStatusAction node instances
-class ObjectLocationStatusROSNodeIf
+// Singleton for subscribing to object location message - shared by all ObjectTrackerLocationStatusAction node instances
+class ObjectTrackerLocationStatusROSNodeIf
 {
 public:
-	ObjectLocationStatusROSNodeIf(ObjectLocationStatusROSNodeIf const&) = delete;
-	ObjectLocationStatusROSNodeIf& operator=(ObjectLocationStatusROSNodeIf const&) = delete;
+	ObjectTrackerLocationStatusROSNodeIf(ObjectTrackerLocationStatusROSNodeIf const&) = delete;
+	ObjectTrackerLocationStatusROSNodeIf& operator=(ObjectTrackerLocationStatusROSNodeIf const&) = delete;
 
-    static std::shared_ptr<ObjectLocationStatusROSNodeIf> instance(rclcpp::Node::SharedPtr node)
+    static std::shared_ptr<ObjectTrackerLocationStatusROSNodeIf> instance(rclcpp::Node::SharedPtr node)
     {
-    	static std::shared_ptr<ObjectLocationStatusROSNodeIf> s{new ObjectLocationStatusROSNodeIf(node)};
+    	static std::shared_ptr<ObjectTrackerLocationStatusROSNodeIf> s{new ObjectTrackerLocationStatusROSNodeIf(node)};
         return s;
     }
 
@@ -52,16 +52,16 @@ public:
     std::chrono::time_point<std::chrono::high_resolution_clock> last_time_;
 
 private:
-    ObjectLocationStatusROSNodeIf(rclcpp::Node::SharedPtr node):
+    ObjectTrackerLocationStatusROSNodeIf(rclcpp::Node::SharedPtr node):
     	node_(node),
 		valid_(false),
 		last_time_(std::chrono::high_resolution_clock::now())
 	{
     	// Using the goal_update topic for this which is published by the clicked_point_to_pose node
     	location_status_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-    	            "tracked_object_map_position",
+    	            "/head/tracked_mapped",
     				rclcpp::SystemDefaultsQoS(),
-    				std::bind(&ObjectLocationStatusROSNodeIf::statusCallback, this, std::placeholders::_1));
+    				std::bind(&ObjectTrackerLocationStatusROSNodeIf::statusCallback, this, std::placeholders::_1));
     }
 
     void statusCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -73,13 +73,13 @@ private:
     }
 };
 
-class ObjectLocationStatusAction : public BT::SyncActionNode
+class ObjectTrackerLocationStatusAction : public BT::SyncActionNode
 {
     public:
-	ObjectLocationStatusAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+	ObjectTrackerLocationStatusAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
-			node_if_ = ObjectLocationStatusROSNodeIf::instance(node);
+			node_if_ = ObjectTrackerLocationStatusROSNodeIf::instance(node);
         }
 
         static BT::PortsList providedPorts()
@@ -119,5 +119,5 @@ class ObjectLocationStatusAction : public BT::SyncActionNode
         }
 
     private:
-        std::shared_ptr<ObjectLocationStatusROSNodeIf> node_if_;
+        std::shared_ptr<ObjectTrackerLocationStatusROSNodeIf> node_if_;
 };

@@ -127,7 +127,7 @@ class ObjectDetectionAction : public BT::SyncActionNode
 			}
 			node_if_->detected_ = false;
 
-			int closest_person = -1;
+			int closest = -1;
 			float closest_dist = std::numeric_limits<float>::infinity();
 			for (size_t i = 0; i < node_if_->objArray_.objects.size(); i++) {
 				object_detection_msgs::msg::ObjectDesc &obj = node_if_->objArray_.objects[i];
@@ -135,24 +135,24 @@ class ObjectDetectionAction : public BT::SyncActionNode
 					float sqdist = obj.x * obj.x + obj.y * obj.y;
 					if (sqdist < closest_dist) {
 						closest_dist = sqdist;
-						closest_person = i;
+						closest = i;
 					}
 				}
 			}
 
-			if (closest_person != -1) {
+			if (closest != -1) {
 				std::stringstream str;
-				str << node_if_->objArray_.objects[closest_person].x << ","
-					<< node_if_->objArray_.objects[closest_person].y << ",0.0"
+				str << node_if_->objArray_.objects[closest].x << ","
+					<< node_if_->objArray_.objects[closest].y << ",0.0"
 					<< std::endl;
 				setOutput("pose", str.str());
 
-				cout << node_if_->objArray_.objects[closest_person].x << ", "
-					<< node_if_->objArray_.objects[closest_person].y << ", "
-					<< node_if_->objArray_.objects[closest_person].confidence
+				cout << node_if_->objArray_.objects[closest].x << ", "
+					<< node_if_->objArray_.objects[closest].y << ", "
+					<< node_if_->objArray_.objects[closest].confidence
 					<< std::endl;
 
-				if (node_if_->objArray_.objects[closest_person].confidence >= min_confidence) {
+				if (node_if_->objArray_.objects[closest].confidence >= min_confidence) {
 					return BT::NodeStatus::SUCCESS;
 				}
 			}

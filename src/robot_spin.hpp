@@ -61,7 +61,10 @@ class RobotSpin : public BT::AsyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return { BT::InputPort<double>("angle"), BT::InputPort<double>("velocity") };
+        	return { BT::InputPort<double>("angle"),
+					 BT::InputPort<double>("velocity"),
+					 BT::InputPort<std::string>("angular_units")
+				   };
         }
 
         void poseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -97,9 +100,18 @@ class RobotSpin : public BT::AsyncActionNode
         	prev_yaw_ = cur_yaw_;
         	relative_yaw_ = 0.0;
 
+			bool deg = true;
+			std::string angular_units;
+			if (getInput<std::string>("angular_units", angular_units) &&
+				angular_units == "rad") {
+				deg = false;
+			}
+
         	delta_yaw_goal_ = 360.0;
         	getInput<double>("angle", delta_yaw_goal_);
-        	delta_yaw_goal_ *= M_PI/180.0;
+			if (deg) {
+        		delta_yaw_goal_ *= M_PI/180.0;
+			}
 
         	vel_ = 0.1;
         	getInput<double>("velocity", vel_);

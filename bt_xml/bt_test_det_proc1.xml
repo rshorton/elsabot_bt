@@ -1,0 +1,46 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>
+      <Sequence>          
+        <DetectionProcessorCreateAction det="detector1" topic="/head/detected_targets" />
+        <DetectionConfigureAction det="detector1" class_conf_mapping="ball 0.1" 
+          min_det_count="5" drop_det_count="5" det_timeout="5000" spatial_tolerance="0.1"
+          coord_frame="map" pub_topic="/object_list_world" pub_topic_frame="map" />
+      </Sequence>          
+
+      <Sequence>          
+        <Repeat num_cycles="999">
+          <Sequence>
+              <ForceSuccess>
+                <Sequence>
+                  <Delay delay_msec="3000">
+                    <Sequence>
+                      <DetectionSelectAction det="detector1" obj_class="ball" token="test1" obj_id="{obj_id}"/>
+                      <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_link"  pose="{obj_pos}"/>
+                    </Sequence>
+                  </Delay>                    
+                  <LogAction level="info" msg="Checking for run command" arg1="goal" />
+                  <UIInputAction action="ck_changed" property="run" ck_value="true"/>
+                  <LogAction level="info" msg="Run is true" />
+
+    							<ReactiveSequence>
+                    <!-- Get the current position of the selected object relative to the base_link of the robot since the 
+                         MoveToObjectAction controls the robot based on the relative position of the object from the robot -->
+                    <DetectionGetPositionAction det="detector1" obj_id="{obj_id}"  coord_frame="base_link" pose="{obj_pos}"/>
+                    <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.24" />  
+                  </ReactiveSequence>
+                  <LogAction level="info" msg="At goal" />  
+                  
+                  <!-- Nav2Client goal="{goal}" /-->
+                  <!-- RobotSpin angle="{goal_yaw}" angular_units="rad" /-->
+                  <!--RobotMoveToObjectAction det="detector1" obj_id="{obj_id}" velocity="0.02" target_dist="0.24" /-->
+                </Sequence>
+              </ForceSuccess>
+          </Sequence>
+        </Repeat>
+  		</Sequence>
+
+		</Sequence>
+    
+	</BehaviorTree>
+</root>

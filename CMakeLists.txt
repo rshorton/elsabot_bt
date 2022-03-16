@@ -26,9 +26,11 @@ find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
 find_package(robot_head_interfaces REQUIRED)
+find_package(robot_ui_interfaces REQUIRED)
 find_package(object_detection_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 
 if(BUILD_TESTING)
@@ -52,9 +54,11 @@ set(dependencies
   behaviortree_cpp_v3
   speech_action_interfaces
   robot_head_interfaces
+  robot_ui_interfaces
   object_detection_msgs
   nav2_util
   nav_msgs
+  visualization_msgs
 )
 
 add_executable(elsabot_bt
@@ -64,6 +68,12 @@ add_executable(elsabot_bt
   src/robot_find_game.cpp
   src/nav2_compute_path_client_util.cpp
   src/game_settings.cpp
+  src/detection_processor.cpp
+  src/detection_processor_container.cpp
+  src/transform_helper.cpp
+  src/robot_status.cpp
+  src/ui_topics.cpp
+  src/ros_common.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}
