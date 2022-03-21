@@ -23,6 +23,11 @@
   <depend>visualization_msgs</depend>
   <depend>nav2_util</depend>
 
+  <depend>moveit_ros_planning_interface</depend>
+  <depend>moveit_common</depend>
+  <depend>moveit_ros_planning</depend>
+  <depend>moveit</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

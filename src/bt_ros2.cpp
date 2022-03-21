@@ -44,6 +44,8 @@
 #include "log_action.hpp"
 #include "move_to_object_action.hpp"
 
+#include "pick_object_action.hpp"
+
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
 #include <behaviortree_cpp_v3/loggers/bt_file_logger.h>
@@ -67,12 +69,16 @@ int main(int argc, char **argv)
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     rclcpp::init(argc, argv);
 
-    auto nh = rclcpp::Node::make_shared("robot_bt");
-    nh->declare_parameter<std::string>("bt_xml", DEFAULT_BT_XML);
+    // Needed for passing-thru move group related parameters
+    rclcpp::NodeOptions node_options;
+    node_options.automatically_declare_parameters_from_overrides(true);
+ 
     nh->declare_parameter<std::string>("bt_settings", "");
 
-    std::string bt_xml;
-    nh->get_parameter("bt_xml", bt_xml);
+    rclcpp::Parameter bt_xml_param;
+    nh->get_parameter_or("bt_xml", bt_xml_param, rclcpp::Parameter("bt_xml", DEFAULT_BT_XML));
+
+    std::string bt_xml = bt_xml_param.value_to_string();
     RCLCPP_INFO(nh->get_logger(), "Loading XML : %s", bt_xml.c_str());
 
     std::string bt_settings;
@@ -138,6 +144,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<DetectionCommandAction>("DetectionCommandAction");
     factory.registerNodeType<DetectionGetPositionAction>("DetectionGetPositionAction");
     factory.registerNodeType<DetectionSelectAction>("DetectionSelectAction");
+
+    factory.registerNodeType<PickObjectAction>("PickObjectAction");
 
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
