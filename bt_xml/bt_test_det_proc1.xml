@@ -30,15 +30,27 @@
                     <!-- Get the current position of the selected object relative to the base_link of the robot since the 
                          MoveToObjectAction controls the robot based on the relative position of the object from the robot -->
                     <DetectionGetPositionAction det="detector1" obj_id="{obj_id}"  coord_frame="base_link" position="{obj_pos}"/>
-                    <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.280" />
+                    <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.300" />
                   </ReactiveSequence>
                   <LogAction level="info" msg="At goal" />  
-                  <TextToSpeechActionClient msg="I'm at the ball."/>
+                  <TextToSpeechActionClient msg="I'm at the ball.  I'll pick it up."/>
 
                   <!-- This will log the position relative to the base link for debug -->
                   <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_link"  position="{obj_pos}"/>
                   <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="xarm_base_link" position="{obj_pos}"/>
                   <PickObjectAction position="{obj_pos}" drop_position="0.010, 0.0, 0.260"/>
+                  <SetArmPositionAction position="0.0, -0.180, 0.240" orientation="0.0, 0, 0" />
+
+                  <TextToSpeechActionClient msg="I'll put the ball into the bin."/>
+                  <Nav2Client goal="1.34, -1.24, 270.0" />
+
+                  <SetArmPositionAction position="0.0, -0.180, 0.240" orientation="100.0, 0, 0" />
+                  <SetGripperPositionAction position="open" />
+                  <ArmGotoNamedPositionAction position="home" />
+                  <TextToSpeechActionClient msg="Let's do that again!"/>
+
+                  <Nav2Client goal="0.633, -0.981, 45.0" />
+                  <!--TextToSpeechActionClient msg="Click Go when you're ready."/-->
                   
                   <!-- Nav2Client goal="{goal}" /-->
                   <!-- RobotSpin angle="{goal_yaw}" angular_units="rad" /-->

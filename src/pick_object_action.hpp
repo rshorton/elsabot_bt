@@ -13,6 +13,7 @@
 #include "behaviortree_cpp_v3/action_node.h"
 
 #include "bt_custom_type_helpers.hpp"
+#include "ros_common.hpp"
 
 #define TO_RAD(x) ((x)/180.0*M_PI)
 
@@ -34,9 +35,11 @@ public:
               };
     }
 
+    // FIX Refactor this into multiple actions
     virtual BT::NodeStatus tick() override
     {
-        node_ = rclcpp::Node::make_shared("pick_object_client");
+        node_ = ROSCommon::GetInstance()->GetNode();
+        //node_ = rclcpp::Node::make_shared("pick_object_client");
 
         std::string pos_in;
         if (!getInput<std::string>("position", pos_in)) {
@@ -79,7 +82,7 @@ public:
 
         target.position.x = pos.x;
         target.position.y = pos.y;
-        target.position.z = pos.z + 0.200;
+        target.position.z = pos.z + 0.240;
 
         RCLCPP_INFO(node_->get_logger(), "Moving to above object");
         move_group.setPoseTarget(target);
@@ -116,6 +119,15 @@ public:
         }
 
         // Move to above drop point
+        target.position.z = pos.z + 0.220;
+
+        move_group.setPoseTarget(target);
+        move_group.move();
+
+        // Use separate actions for these...
+#if 0
+
+        // Move to above drop point
         q.setRPY(TO_RAD(90.0), TO_RAD(0.0), TO_RAD(90.0));
         target.orientation = tf2::toMsg(q);
 
@@ -147,7 +159,7 @@ public:
         if (_aborted) {
             return BT::NodeStatus::FAILURE;
         }
-
+#endif
         RCLCPP_INFO(node_->get_logger(), "finished");
         return BT::NodeStatus::SUCCESS;
     }

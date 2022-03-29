@@ -47,6 +47,8 @@
 #include "pick_object_action.hpp"
 #include "pick_object_test1_action.hpp"
 #include "arm_goto_named_position_action.hpp"
+#include "set_arm_position_action.hpp"
+#include "set_gripper_position_action.hpp"
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -151,6 +153,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<PickObjectAction>("PickObjectAction");
     factory.registerNodeType<PickObjectTest1Action>("PickObjectTest1Action");
     factory.registerNodeType<ArmGotoNamedPositionAction>("ArmGotoNamedPositionAction");
+    factory.registerNodeType<SetArmPositionAction>("SetArmPositionAction");
+    factory.registerNodeType<SetGripperPositionAction>("SetGripperPositionAction");
 
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
