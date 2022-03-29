@@ -18,10 +18,10 @@
 
 #undef FUTURE_WAIT_BLOCK
 
-class PickObjectAction : public BT::AsyncActionNode
+class PickObjectTest1Action : public BT::AsyncActionNode
 {
 public:
-    PickObjectAction(const std::string& name, const BT::NodeConfiguration& config)
+    PickObjectTest1Action(const std::string& name, const BT::NodeConfiguration& config)
         : BT::AsyncActionNode(name, config),
 		 _aborted(false)
     {
@@ -29,8 +29,7 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<std::string>("position"),
-                BT::InputPort<std::string>("drop_position")
+        return{ BT::InputPort<std::string>("position")
               };
     }
 
@@ -47,26 +46,18 @@ public:
 
         RCLCPP_INFO(node_->get_logger(), "Pick object goal %f %f %f", pos.x, pos.y, pos.z);
 
-        if (pos.z < -0.160) {
-            pos.z = -0.160;
-            RCLCPP_INFO(node_->get_logger(), "Limiting object z to %f", pos.z);
-        }
-
-        std::string pos_drop;
-        if (!getInput<std::string>("drop_position", pos_drop)) {
-            throw BT::RuntimeError("missing required input [drop_position]");
-        }
-
-        Position drop = BT::convertFromString<Position>(pos_drop);
-
-        RCLCPP_INFO(node_->get_logger(), "Pick drop position %f %f %f", drop.x, drop.y, drop.z);
-
         moveit::planning_interface::MoveGroupInterface move_group(node_, "xarm");
         move_group.setMaxVelocityScalingFactor(1.0);
         move_group.setMaxAccelerationScalingFactor(0.10);
         move_group.setNumPlanningAttempts(10);
         move_group.setPlanningTime(5);
         move_group.setGoalTolerance(0.010);
+
+        // Initial test using same procedure used by 'move_group_pick.cpp' of
+        //  xarm_move_group_test package.
+
+        //move_group.setJointValueTarget(move_group.getNamedTargetValues("home"));
+        //move_group.move();
 
         tf2::Quaternion q;
         geometry_msgs::msg::Pose target;
@@ -75,18 +66,16 @@ public:
         q.setRPY(TO_RAD(180.0), TO_RAD(0.0), TO_RAD(0.0));
         target.orientation = tf2::toMsg(q);
 
-        pos.y += 0.03;
+        target.position.x = -0.0;
+        target.position.y = -0.157;
+        target.position.z =  0.085;
 
-        target.position.x = pos.x;
-        target.position.y = pos.y;
-        target.position.z = pos.z + 0.200;
-
-        RCLCPP_INFO(node_->get_logger(), "Moving to above object");
+        RCLCPP_INFO(node_->get_logger(), "Move to above object");
         move_group.setPoseTarget(target);
         move_group.move();
 
         // Open gripper
-        RCLCPP_INFO(node_->get_logger(), "Opening gripper");
+        RCLCPP_INFO(node_->get_logger(), "Open gripper");
         moveit::planning_interface::MoveGroupInterface move_group_eff(node_, "arm_end_effector");
         move_group_eff.setJointValueTarget(move_group_eff.getNamedTargetValues("open"));
         move_group_eff.move();
@@ -96,9 +85,9 @@ public:
         }
 
         // Move downward so that gripper is around object
-        RCLCPP_INFO(node_->get_logger(), "Moving down to object");
+        RCLCPP_INFO(node_->get_logger(), "Move down to object");
         geometry_msgs::msg::Pose target_grab = target;
-        target_grab.position.z = pos.z + 0.150;
+        target_grab.position.z = target.position.z - 0.14;
         move_group.setPoseTarget(target_grab);
         move_group.move();
 
@@ -107,7 +96,7 @@ public:
         }
 
         // Close gripper
-        RCLCPP_INFO(node_->get_logger(), "Closing gripper");
+        RCLCPP_INFO(node_->get_logger(), "Close gripper");
         move_group_eff.setJointValueTarget(move_group_eff.getNamedTargetValues("closed"));
         move_group_eff.move();
 
@@ -119,9 +108,23 @@ public:
         q.setRPY(TO_RAD(90.0), TO_RAD(0.0), TO_RAD(90.0));
         target.orientation = tf2::toMsg(q);
 
-        target.position.x =  drop.x;
-        target.position.y =  drop.y;
-        target.position.z =  drop.z;
+        target.position.x =  0.010;
+        target.position.y =  0.000;
+        target.position.z =  0.260;
+
+        move_group.setPoseTarget(target);
+        move_group.move();
+
+        if (_aborted) {
+            return BT::NodeStatus::FAILURE;
+        }
+
+        // Move to drop point
+        RCLCPP_INFO(node_->get_logger(), "Move to drop location");
+
+        target.position.x =  0.030;
+        target.position.y =  0.000;
+        target.position.z =  0.210;
 
         move_group.setPoseTarget(target);
         move_group.move();
@@ -131,7 +134,7 @@ public:
         }
 
         // Open gripper
-        RCLCPP_INFO(node_->get_logger(), "Opening gripper");
+        RCLCPP_INFO(node_->get_logger(), "Open gripper");
         move_group_eff.setJointValueTarget(move_group_eff.getNamedTargetValues("open"));
         move_group_eff.move();
 
@@ -140,7 +143,7 @@ public:
         }
 
         // Move to home  
-        RCLCPP_INFO(node_->get_logger(), "Moving to home location");
+        RCLCPP_INFO(node_->get_logger(), "Move to home location");
         move_group.setJointValueTarget(move_group.getNamedTargetValues("home"));
         move_group.move();
 
@@ -153,10 +156,11 @@ public:
     }
 
     virtual void halt() override {
-    	RCLCPP_INFO(node_->get_logger(), "requesting pick abort");
+    	RCLCPP_INFO(node_->get_logger(), "requesting nav abort");
         _aborted = true;
     }
 private:
     bool _aborted;
+    // auto node_ = std::make_shared<rclcpp::Node>("nav2_client");
     rclcpp::Node::SharedPtr node_;
 };

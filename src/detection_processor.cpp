@@ -453,8 +453,8 @@ bool ObjDetProc::GetObjectPos(size_t id, double &x, double &y, double &z, const 
 			if (!TransformHelper::Instance(node_).Transform(o.desc.frame, coord_frame, x, y, z)) {
 				return false;
 			}
-			RCLCPP_ERROR(node_->get_logger(), "GetObjectPos: id: [%lu], obj frame [%s], xyz (%s) %f, %f, %f, xyz(%s) %f, %f, %f",
-				id, o.desc.frame.c_str(), coord_frame.c_str(), x, y, z, coord_frame_.c_str(), o.x, o.y, o.z);
+			RCLCPP_ERROR(node_->get_logger(), "GetObjectPos: id: [%lu], xyz(%s) %f, %f, %f, xyz(%s) %f, %f, %f",
+				id, o.desc.frame.c_str(), o.desc.x, o.desc.y, o.desc.z, coord_frame.c_str(), x, y, z);
 			return true;
 		}
 	}

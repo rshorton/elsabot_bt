@@ -57,7 +57,7 @@ class DetectionGetPositionAction : public BT::SyncActionNode
 			BT::InputPort<std::string>("det"),
 			BT::InputPort<size_t>("obj_id"),
 			BT::InputPort<std::string>("coord_frame"),
-			BT::OutputPort<std::string>("pose")
+			BT::OutputPort<std::string>("position")
 		};
 	}
 
@@ -99,8 +99,8 @@ class DetectionGetPositionAction : public BT::SyncActionNode
 		}
 
 		std::stringstream ss;
-		ss << x << ',' << y << ',' << 0.0;
-		setOutput("pose", ss.str());
+		ss << x << ',' << y << ',' << z;
+		setOutput("position", ss.str());
 		RCLCPP_INFO(node->get_logger(), "Object [%lu] pos [%s]", obj_id, ss.str().c_str());
 		return BT::NodeStatus::SUCCESS;
 	}

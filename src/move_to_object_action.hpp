@@ -63,7 +63,7 @@ class MoveToObjectAction : public BT::AsyncActionNode
         	cmd_vel.angular.z = vel_;
         	vel_pub_->publish(cmd_vel);
 
-			double last_rot_vel = 0.0;
+			double last_rot_vel = std::numeric_limits<double>::infinity();
 
         	while (!_aborted && rclcpp::ok()) {
 
@@ -76,6 +76,7 @@ class MoveToObjectAction : public BT::AsyncActionNode
 					throw BT::RuntimeError("missing pose");
 				}
 
+// fix - getting a position now instead of x,y,yaw
 		        Pose2D obj = BT::convertFromString<Pose2D>(pose_str);
 
 				double dist = sqrt(obj.x*obj.x + obj.y*obj.y);
@@ -107,7 +108,7 @@ class MoveToObjectAction : public BT::AsyncActionNode
 					// to it.  This avoids moving forward and the object
 					// falling out of view.
 					xVel = 0.01;
-				} else if (abs(angle) > M_PI/16) {
+				} else if (abs(angle) > M_PI/32) {
 					rot_vel = vel_/2;
 				}
 	        	rot_vel = copysign(rot_vel, angle);
@@ -115,7 +116,8 @@ class MoveToObjectAction : public BT::AsyncActionNode
 
 				bool atPos = false;
 				if (xVel == 0.0 && 
-					(rot_vel == 0.0 || signbit(rot_vel) != signbit(last_rot_vel))) {
+					(rot_vel == 0.0 ||
+					(last_rot_vel != std::numeric_limits<double>::infinity() && signbit(rot_vel) != signbit(last_rot_vel)))) {
 					atPos = true;
 					rot_vel = 0.0;
 				}
