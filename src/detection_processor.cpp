@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 /*
+FIX - revise...
+
 This class subscribes to a specified topic that receives messages of type
 object_detection_msgs::msg::ObjectDescArray.  For each update each
 detected object is mapped to a pre-specified frame and then added/updated
@@ -364,7 +366,7 @@ void ObjDetProc::Transform(object_detection_msgs::msg::ObjectDescArray &list, co
 	}
 }
 
-bool ObjDetProc::Select(const std::string &obj_class, const ObjDetProc::SelectionMetric &metric, const std::string &token)
+bool ObjDetProc::Select(const std::string &obj_class, const ObjDetProc::SelectionMetric &metric, const std::string &token, int &count)
 {
 	DetObj closest;
 	double dist;
@@ -406,6 +408,7 @@ bool ObjDetProc::Select(const std::string &obj_class, const ObjDetProc::Selectio
 		selected_dist_ = dist;
 		selected_token_ = token;
 	}
+	count = active_detections_.size();
 	RCLCPP_ERROR(node_->get_logger(), "Selected object [%lu], x,y,z: %f, %f, %f",
 		selected_.id, selected_.x, selected_.y, selected_.z);
 	return true;

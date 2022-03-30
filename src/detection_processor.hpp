@@ -79,7 +79,8 @@ public:
 	// obj_class - if non-empty, then limit to specified object class
 	// metric - selection metric
 	// token - token to assign to selection
-	bool Select(const std::string &obj_class, const ObjDetProc::SelectionMetric &metric, const std::string &token);
+	// count - returns the total number of objects detected
+	bool Select(const std::string &obj_class, const ObjDetProc::SelectionMetric &metric, const std::string &token, int &count);
 
 	void DeSelect();
 

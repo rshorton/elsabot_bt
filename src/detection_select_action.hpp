@@ -41,6 +41,7 @@ class DetectionSelectAction : public BT::SyncActionNode
 			BT::InputPort<std::string>("obj_class"),
 			BT::InputPort<std::string>("token"),
 			BT::OutputPort<size_t>("obj_id"),
+			BT::OutputPort<std::string>("count"),
 		};
 	}
 
@@ -75,13 +76,17 @@ class DetectionSelectAction : public BT::SyncActionNode
 			return BT::NodeStatus::FAILURE;
 		}
 
+		int count = 0;
 		proc->DeSelect();
-		if (proc->Select(obj_class, ObjDetProc::SelectionMetric::closest, token)) {
+		if (proc->Select(obj_class, ObjDetProc::SelectionMetric::closest, token, count)) {
 			ObjDetProc::Detection det;
 			if (proc->GetSelected(det)) {
 				RCLCPP_INFO(node->get_logger(), "SelectObjectAction: GetSelected returned: id: [%lu], dist: [%f], x,y,z,yaw: %f, %f, %f, %f, token: [%s]",
 					det.id, det.dist, det.pos.x, det.pos.y, det.pos.z, det.yaw, det.token.c_str());	
 				setOutput("obj_id", det.id);
+				std::stringstream ss;
+				ss << count;
+				setOutput("count", ss.str());
 				return BT::NodeStatus::SUCCESS;
 			} else {
 				RCLCPP_INFO(node->get_logger(), "SelectObjectAction: GetSelected failed");	
