@@ -78,8 +78,6 @@ public:
         q.setRPY(TO_RAD(180.0), TO_RAD(0.0), TO_RAD(0.0));
         target.orientation = tf2::toMsg(q);
 
-        pos.y += 0.03;
-
         target.position.x = pos.x;
         target.position.y = pos.y;
         target.position.z = pos.z + 0.240;
@@ -124,42 +122,6 @@ public:
         move_group.setPoseTarget(target);
         move_group.move();
 
-        // Use separate actions for these...
-#if 0
-
-        // Move to above drop point
-        q.setRPY(TO_RAD(90.0), TO_RAD(0.0), TO_RAD(90.0));
-        target.orientation = tf2::toMsg(q);
-
-        target.position.x =  drop.x;
-        target.position.y =  drop.y;
-        target.position.z =  drop.z;
-
-        move_group.setPoseTarget(target);
-        move_group.move();
-
-        if (_aborted) {
-            return BT::NodeStatus::FAILURE;
-        }
-
-        // Open gripper
-        RCLCPP_INFO(node_->get_logger(), "Opening gripper");
-        move_group_eff.setJointValueTarget(move_group_eff.getNamedTargetValues("open"));
-        move_group_eff.move();
-
-        if (_aborted) {
-            return BT::NodeStatus::FAILURE;
-        }
-
-        // Move to home  
-        RCLCPP_INFO(node_->get_logger(), "Moving to home location");
-        move_group.setJointValueTarget(move_group.getNamedTargetValues("home"));
-        move_group.move();
-
-        if (_aborted) {
-            return BT::NodeStatus::FAILURE;
-        }
-#endif
         RCLCPP_INFO(node_->get_logger(), "finished");
         return BT::NodeStatus::SUCCESS;
     }
