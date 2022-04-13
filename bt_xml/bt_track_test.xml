@@ -2,13 +2,13 @@
 	<BehaviorTree ID="MainTree">
 		<Sequence>
 			<Delay delay_msec="4000">
-        <TrackAction mode="Scan" rate="3" />
+        <TrackAction mode="Scan" rate="10" sound_track_mode="any" turn_base="true"/>
 			</Delay>
       <Delay delay_msec="10000">
-        <TrackAction mode="Off" rate="3" />
+        <TrackAction mode="Off" rate="10" sound_track_mode="any" turn_base="true"/>
       </Delay>
       <Delay delay_msec="4000">
-        <TrackAction mode="Track" rate="3" />
+        <TrackAction mode="Track" rate="10" sound_track_mode="any" turn_base="true"/>
       </Delay>
 		</Sequence>
 

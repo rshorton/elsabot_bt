@@ -1,15 +1,16 @@
 <root main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
-		<Sequence>
-			<PoseDetectionControlAction enable="false" />
+		<Repeat num_cycles="99999">
+			<Sequence>
+				<PoseDetectionControlAction enable="false" />
 
-			<Delay delay_msec="4000">
-				<TrackAction mode="Scan" rate="3" />
-			</Delay>
+				<Delay delay_msec="4000">
+					<TrackAction mode="Scan" rate="3" sound_track_mode="any" turn_base="true"/>
+				</Delay>
 
-			<SmileAction level="3" duration_ms="2000" />
-			<HeadTiltAction angle="20" dwell_ms="500" />
-		</Sequence>
-
+				<SmileAction level="3" duration_ms="2000" />
+				<HeadTiltAction angle="20" dwell_ms="500" />
+			</Sequence>
+		</Repeat>
 	</BehaviorTree>
 </root>
