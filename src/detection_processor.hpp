@@ -68,13 +68,11 @@ public:
 	// add_det_count - minimum consecutive detections to consider detected
 	// drop_det_count - number of consecutive loss of detections to consider no longer detected
 	// det_timeout - number of milliseconds of no updates to consider objects no longer present
-	// spatial_tolerance - spatial tolerance in meters for considering whether a consecutive detection is the same object
 	// coord_frame - if non-empty, coordinate frame to map object before performing spatial tolerance testing
 	// pub_topic - if non-empty, then publish currently valid detections to the specified topic
 	// pub_frame - if non-empty, then transform coords to specified frame before publishing
 	bool Configure(const std::map<std::string, double> &objects_to_det, int min_det_count, int drop_det_count,
-		int det_timeout, double spatial_tolerance, const std::string &coord_frame,
-		const std::string &pub_topic, const std::string &pub_frame);
+		int det_timeout, const std::string &pub_topic);
 
 	// obj_class - if non-empty, then limit to specified object class
 	// metric - selection metric
@@ -103,7 +101,6 @@ public:
 	bool GetObjectPos(size_t id, double &x, double &y, double &z, const std::string &coord_frame);
 
 private:
-	void Transform(object_detection_msgs::msg::ObjectDescArray &pub_list, const std::string &frame);
 	void DetectionCallback(object_detection_msgs::msg::ObjectDescArray::SharedPtr msg);
 
 	bool IsActive(DetObj &obj);
@@ -126,10 +123,7 @@ private:
 	int min_det_count_;
 	int drop_det_count_;
 	int det_timeout_;
-	double spatial_tolerance_;
 	std::string coord_frame_;
-	std::string pub_topic_;
-	std::string pub_frame_;
 
 	bool process_;
 

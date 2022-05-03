@@ -4,10 +4,11 @@
       <Sequence>          
         <DetectionProcessorCreateAction det="detector1" topic="/head/detected_targets" />
         <DetectionConfigureAction det="detector1" class_conf_mapping="ball 0.1" 
-          min_det_count="5" drop_det_count="5" det_timeout="5000" spatial_tolerance="0.1"
-          coord_frame="map" pub_topic="/object_list_world" pub_topic_frame="map" />
+          min_det_count="5" drop_det_count="5" det_timeout="5000"
+          pub_topic="/object_list_world" />
         <ArmGotoNamedPositionAction position="home" />
-        <TextToSpeechActionClient msg="All systems are go!"/>
+        <TextToSpeechActionClient msg1="All systems are go!"/>
+
       </Sequence>          
 
       <Sequence>          
@@ -21,7 +22,7 @@
                       <!-- Try to select the closest ball -->
                       <DetectionSelectAction det="detector1" obj_class="ball" token="test1" obj_id="{obj_id}" count="{ball_count}"/>
                       <!-- Get the positions so they get printed in the console for debugging -->
-                      <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_link"  position="{obj_pos}"/>
+                      <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_footprint"  position="{obj_pos}"/>
                       <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="xarm_base_link"  position="{obj_pos}"/>
                     </Sequence>
                   </Delay>
@@ -32,42 +33,47 @@
 
                   <!-- Button was pressed, run the pick and drop routine -->
                   <LogAction level="info" msg="Run is true" />
-                  <TextToSpeechActionClient msg="Looking for balls.  I see" msg2="{ball_count}"/>
-                  <TextToSpeechActionClient msg="Moving to the closest ball."/>
+                  <TextToSpeechActionClient msg1="Looking for balls.  I see" msg2="{ball_count}"/>
+                  <TextToSpeechActionClient msg1="Moving to the closest ball, ball" msg2_ul="{obj_id}"/>
 
                   <!-- Move to the selected ball (action above) -->
     							<ReactiveSequence>
-                    <!-- Get the current position of the selected object relative to the base_link of the robot since the 
+                    <!-- Get the current position of the selected object relative to the base_footprint of the robot since the 
                          MoveToObjectAction controls the robot based on the relative position of the object from the robot -->
-                    <DetectionGetPositionAction det="detector1" obj_id="{obj_id}"  coord_frame="base_link" position="{obj_pos}"/>
-                    <!-- Update the measured position of the select4ed ball.  This action is asynchronous. -->
+                    <DetectionGetPositionAction det="detector1" obj_id="{obj_id}"  coord_frame="base_footprint" position="{obj_pos}"/>
+                    <!-- Update the measured position of the selected ball.  This action is asynchronous. -->
+                    <!--MoveToObjectAction pose="{obj_pos}" velocity="0.15" target_dist="0.290" /-->
                     <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.290" />
                   </ReactiveSequence>
 
                   <LogAction level="info" msg="At ball to be picked" />  
-                  <TextToSpeechActionClient msg="I'm at the ball.  I'll pick it up now."/>
+                  <TextToSpeechActionClient msg1="I'm at the ball.  I'll pick it up now."/>
 
                   <!-- This will log the position relative to the base link for debug -->
-                  <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_link"  position="{obj_pos}"/>
+                  <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_footprint"  position="{obj_pos}"/>
                   <!-- Get the position of the ball relative to the robot arm -->
                   <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="xarm_base_link" position="{obj_pos}"/>
                   <!-- Pickup the ball -->
-                  <PickObjectAction position="{obj_pos}" drop_position="0.010, 0.0, 0.260"/>
+                  <PickObjectAction position="{obj_pos}"/>
                   <!-- Move the arm and ball up away from the floor -->
                   <SetArmPositionAction position="0.0, -0.180, 0.240" orientation="0.0, 0, 0" />
 
-                  <TextToSpeechActionClient msg="I'll move to the ball bin now."/>
+                  <TextToSpeechActionClient msg1="I'll move to the ball bin now."/>
                   <!-- Move to the ball bin -->
                   <Nav2Client goal="1.50, -0.654, 90.0" />
 
-                  <TextToSpeechActionClient msg="I'm at the ball bin and will drop it in."/>
+                  <TextToSpeechActionClient msg1="I'm at the ball bin and will drop it in."/>
                   <!-- Extend the arm over the bin -->
                   <SetArmPositionAction position="0.0, -0.180, 0.240" orientation="100.0, 0, 0" />
                   <!-- Open the gripper and let the ball drop -->
                   <SetGripperPositionAction position="open" />
+
+                  <!-- Close the grip otherwise a finger will be in collision with the body when stowing the arm -->
+                  <SetGripperPositionAction position="close" />
+
                   <!-- Stow the arm out of the way -->
                   <ArmGotoNamedPositionAction position="home" />
-                  <TextToSpeechActionClient msg="Back to the pickup area!"/>
+                  <TextToSpeechActionClient msg1="Back to the pickup area!"/>
 
                   <!-- Move to pick area -->
                   <Nav2Client goal="0.633, -0.981, 90.0" />

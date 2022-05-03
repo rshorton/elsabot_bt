@@ -101,7 +101,7 @@ class DetectionGetPositionAction : public BT::SyncActionNode
 		std::stringstream ss;
 		ss << x << ',' << y << ',' << z;
 		setOutput("position", ss.str());
-		RCLCPP_INFO(node->get_logger(), "Object [%lu] pos [%s]", obj_id, ss.str().c_str());
+		RCLCPP_DEBUG(node->get_logger(), "Object [%lu] pos [%s]", obj_id, ss.str().c_str());
 		return BT::NodeStatus::SUCCESS;
 	}
 

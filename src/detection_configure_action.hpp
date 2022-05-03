@@ -42,10 +42,7 @@ class DetectionConfigureAction : public BT::SyncActionNode
 			BT::InputPort<int>("min_det_count"),
 			BT::InputPort<int>("drop_det_count"),
 			BT::InputPort<int>("det_timeout"),
-			BT::InputPort<double>("spatial_tolerance"),
-			BT::InputPort<std::string>("coord_frame"),
-			BT::InputPort<std::string>("pub_topic"),
-			BT::InputPort<std::string>("pub_topic_frame")
+			BT::InputPort<std::string>("pub_topic")
 		};
 	}
 
@@ -72,22 +69,9 @@ class DetectionConfigureAction : public BT::SyncActionNode
 		int det_timeout = 1000;
 		getInput<int>("det_timeout", det_timeout);
 
-		double spatial_tolerance = 0.100;
-		getInput<double>("spatial_tolerance", spatial_tolerance);
-
-		std::string coord_frame;
-		if (!getInput<std::string>("coord_frame", coord_frame)) {
-			throw BT::RuntimeError("missing coord_frame");
-		}
-
 		std::string pub_topic;
 		if (!getInput<std::string>("pub_topic", pub_topic)) {
 			throw BT::RuntimeError("missing pub_topic");
-		}
-
-		std::string pub_topic_frame;
-		if (!getInput<std::string>("pub_topic_frame", pub_topic_frame)) {
-			throw BT::RuntimeError("missing pub_topic_frame");
 		}
 
 		ObjDetProcContainer *container = ObjDetProcContainer::GetInstance();
@@ -121,19 +105,16 @@ class DetectionConfigureAction : public BT::SyncActionNode
 		}
 
 		RCLCPP_INFO(node->get_logger(), "Configure object detection processor [%s] with class-conf-map [%s], min_det_count [%d], " \
-				"drop_det_count [%d], det_timeout [%d], spatial_tolerance [%f], coord_frame [%s], pub_topic [%s], pub_topic_frame [%s]",
+				"drop_det_count [%d], det_timeout [%d], pub_topic [%s]",
 				det.c_str(),
 				class_conf_mapping.c_str(),
 				min_det_count,
 				drop_det_count,
 				det_timeout,
-				spatial_tolerance,
-				coord_frame.c_str(),
-				pub_topic.c_str(),
-				pub_topic_frame.c_str());
+				pub_topic.c_str());
 
 		if (!proc->ObjDetProc::Configure(objects_to_det, min_det_count, drop_det_count,
-										 det_timeout, spatial_tolerance, coord_frame, pub_topic, pub_topic_frame)) {
+										 det_timeout, pub_topic)) {
 			return BT::NodeStatus::FAILURE;
 		}
 		return BT::NodeStatus::SUCCESS;
