@@ -286,8 +286,8 @@ int main(int argc, char **argv)
     		settings.Set(bt_settings);
     	}
 
-        // Sleep 100 milliseconds
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // Sleep 50 milliseconds
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
     return 0;
 }
