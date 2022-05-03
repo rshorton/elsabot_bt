@@ -30,8 +30,7 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<std::string>("position"),
-                BT::InputPort<std::string>("drop_position")
+        return{ BT::InputPort<std::string>("position")
               };
     }
 
@@ -55,17 +54,8 @@ public:
             RCLCPP_INFO(node_->get_logger(), "Limiting object z to %f", pos.z);
         }
 
-        std::string pos_drop;
-        if (!getInput<std::string>("drop_position", pos_drop)) {
-            throw BT::RuntimeError("missing required input [drop_position]");
-        }
-
-        Position drop = BT::convertFromString<Position>(pos_drop);
-
-        RCLCPP_INFO(node_->get_logger(), "Pick drop position %f %f %f", drop.x, drop.y, drop.z);
-
         moveit::planning_interface::MoveGroupInterface move_group(node_, "xarm");
-        move_group.setMaxVelocityScalingFactor(1.0);
+        move_group.setMaxVelocityScalingFactor(20.0);
         move_group.setMaxAccelerationScalingFactor(0.10);
         move_group.setNumPlanningAttempts(10);
         move_group.setPlanningTime(5);
@@ -80,7 +70,7 @@ public:
 
         target.position.x = pos.x;
         target.position.y = pos.y;
-        target.position.z = pos.z + 0.240;
+        target.position.z = pos.z + 0.260;
 
         RCLCPP_INFO(node_->get_logger(), "Moving to above object");
         move_group.setPoseTarget(target);
@@ -99,7 +89,7 @@ public:
         // Move downward so that gripper is around object
         RCLCPP_INFO(node_->get_logger(), "Moving down to object");
         geometry_msgs::msg::Pose target_grab = target;
-        target_grab.position.z = pos.z + 0.150;
+        target_grab.position.z = pos.z + 0.190;
         move_group.setPoseTarget(target_grab);
         move_group.move();
 
@@ -116,13 +106,7 @@ public:
             return BT::NodeStatus::FAILURE;
         }
 
-        // Move to above drop point
-        target.position.z = pos.z + 0.220;
-
-        move_group.setPoseTarget(target);
-        move_group.move();
-
-        RCLCPP_INFO(node_->get_logger(), "finished");
+        RCLCPP_INFO(node_->get_logger(), "pick action finished");
         return BT::NodeStatus::SUCCESS;
     }
 
