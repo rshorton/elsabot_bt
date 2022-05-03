@@ -18,10 +18,10 @@
 										<Sequence>
 											<SetBlackboard output_key="person_detected" value="1" />
 											<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
-											<TextToSpeechActionClient msg="Hi there, how are you?" />
+											<TextToSpeechActionClient msg1="Hi there, how are you?" />
 											<SpeechToTextActionClient text="{said}" />
 											<TextCompareAction text="{said}" ck_for=".*(good|ok|well).*" />
-											<TextToSpeechActionClient msg="That's great to hear!" />
+											<TextToSpeechActionClient msg1="That's great to hear!" />
 											<AntennaAction rate="5" intensity="10" left_blink_pattern="1000" right_blink_pattern="1000" />
 										</Sequence>
 									</Sequence>
@@ -37,13 +37,13 @@
 											<Sequence>
 												<TextCompareAction text="{said}" ck_for=".*(about yourself).*" />
 												<TextToSpeechActionClient
-													msg="Sure.  I was created by Team Grandplay for the open cv aye, eye 2021 competition.  My purpose is to provide interactive and simple games for small children for education and entertainment. I hope to create a fascination with technology that fuels a future path into science and technology. My current games include Robot Seek and Robot Says.  I will be demonstrating those games in a future video when I play the games with my 3 year old friend Caroline." />
+													msg1="Sure.  I was created by Team Grandplay for the open cv aye, eye 2021 competition.  My purpose is to provide interactive and simple games for small children for education and entertainment. I hope to create a fascination with technology that fuels a future path into science and technology. My current games include Robot Seek and Robot Says.  I will be demonstrating those games in a future video when I play the games with my 3 year old friend Caroline." />
 											</Sequence>
 											<Sequence>
 												<TextCompareAction text="{said}" ck_for=".*(key components).*" />
 												<TextToSpeechActionClient
-													msg="Ok, I’ll start with my hardware. My key component is the open cv camera, called the oak d, that I use for object detection and human pose detection.  Using this camera I can recognize objects and determine their distance from me.  The human pose detection allows me to recognize body gestures so I can interact with humans.  I use those skills when playing the games I have been taught." />
-                        						<TextToSpeechActionClient msg="I have an iRobot Create2 base that I use for moving around. I can easily turn and move about. " />
+													msg1="Ok, I’ll start with my hardware. My key component is the open cv camera, called the oak d, that I use for object detection and human pose detection.  Using this camera I can recognize objects and determine their distance from me.  The human pose detection allows me to recognize body gestures so I can interact with humans.  I use those skills when playing the games I have been taught." />
+                        						<TextToSpeechActionClient msg1="I have an iRobot Create2 base that I use for moving around. I can easily turn and move about. " />
 												<TrackAction mode="Track" rate="4" detect_voice="1" turn_base="0" />
 												<RobotSpin angle="30" velocity="0.4" />
 												<Delay delay_msec="1000">
@@ -51,7 +51,7 @@
 												</Delay>
 												<RobotSpin angle="-30" velocity="0.4" />
 												<TextToSpeechActionClient
-													msg="My head contains the oak, d camera and a custom smile display.  I use the display to express emotions and use it to indicate when I am talking.  I can make a small smile or a very wide smile." />
+													msg1="My head contains the oak, d camera and a custom smile display.  I use the display to express emotions and use it to indicate when I am talking.  I can make a small smile or a very wide smile." />
 												<TrackAction mode="Track" rate="4" detect_voice="1" turn_base="1" />
 												<SmileAction level="0" duration_ms="1500" />
 												<Delay delay_msec="1500">
@@ -61,7 +61,7 @@
 												<Delay delay_msec="2000">
 													<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
-												<TextToSpeechActionClient msg="I mostly smile since I'm a happy robot." />
+												<TextToSpeechActionClient msg1="I mostly smile since I'm a happy robot." />
 												<SmileAction level="2" duration_ms="1000" />
 												<Delay delay_msec="1000">
 													<SetBlackboard output_key="dummy" value="0" />
@@ -69,7 +69,7 @@
 												<AntennaAction rate="1" intensity="10" left_blink_pattern="10100000"
 													right_blink_pattern="00001010" />
 												<TextToSpeechActionClient
-													msg="I also have two antennae with an LED at the top of each.  I use those to express emotion or provide clues when playing games. I can blink them at a programmable rate and sequence." />
+													msg1="I also have two antennae with an LED at the top of each.  I use those to express emotion or provide clues when playing games. I can blink them at a programmable rate and sequence." />
 												<AntennaAction rate="3" intensity="10" left_blink_pattern="1011" right_blink_pattern="1101" />
 												<Delay delay_msec="2000">
 													<SetBlackboard output_key="dummy" value="0" />
@@ -77,29 +77,29 @@
 												<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
 												<!--
 												<TextToSpeechActionClient
-													msg="My head is mounted on a pan and tilt base that allows me to track a person with my camera.   Hey Scott, please stand up and move around." />
+													msg1="My head is mounted on a pan and tilt base that allows me to track a person with my camera.   Hey Scott, please stand up and move around." />
 												<Delay delay_msec="6000">
 													<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
                         						-->
 												<TextToSpeechActionClient
-													msg="I also have a servo that allows me to rotate my head a little bit" />
+													msg1="I also have a servo that allows me to rotate my head a little bit" />
 												<HeadTiltAction angle="10" dwell_ms="2000" />
-												<TextToSpeechActionClient msg="I use that to express emotion." />
+												<TextToSpeechActionClient msg1="I use that to express emotion." />
 												<Delay delay_msec="1500">
 													<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
 												<TextToSpeechActionClient
-													msg="I do my thinking with two Raspberry Pi 4 computers.  Both run Ubuntu 20.04 with Rahs 2 Foxy for the robot framework. My actions are programmed using behavior trees." />
+													msg1="I do my thinking with two Raspberry Pi 4 computers.  Both run Ubuntu 20.04 with Rahs 2 Foxy for the robot framework. My actions are programmed using behavior trees." />
 											</Sequence>
 											<Sequence>
 												<TextCompareAction text="{said}" ck_for=".*(your skills).*" />
-												<TextToSpeechActionClient msg="I would love to." />
+												<TextToSpeechActionClient msg1="I would love to." />
 												<SmileAction level="3" duration_ms="1000" />
 												<TextToSpeechActionClient
-													msg="My camera feed shows that I am detecting you.  I annotate information onto the video that shows your position relative to me.  I also show your body pose overlaid on the video.  In the upper left  I show my interpretation of a few hand and arm positions that I use when playing the Robot Says game." />
+													msg1="My camera feed shows that I am detecting you.  I annotate information onto the video that shows your position relative to me.  I also show your body pose overlaid on the video.  In the upper left  I show my interpretation of a few hand and arm positions that I use when playing the Robot Says game." />
 												<TextToSpeechActionClient
-													msg="Would you please put your left hand on your head?" />
+													msg1="Would you please put your left hand on your head?" />
 												<RetryUntilSuccesful num_attempts="2">
 													<Sequence>
 														<Delay delay_msec="2000">
@@ -110,7 +110,7 @@
 																<HumanPoseDetect expected_pose_left="OnHead" expected_pose_right="" pose_lr_check="left"
 																	detected_person="" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
 																<AntennaAction rate="0" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
-																<TextToSpeechActionClient msg="That's much better!" />
+																<TextToSpeechActionClient msg1="That's much better!" />
 																<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
 															</Sequence>
 															<Sequence>
@@ -118,7 +118,7 @@
 																<Sequence>
 			                            							<HeadTiltAction angle="10" dwell_ms="2000" />
 																	<TextToSpeechActionClient
-																		msg="Uh, well, let's try that again.  Please put your left hand on your head." />
+																		msg1="Uh, well, let's try that again.  Please put your left hand on your head." />
                                   									<Delay delay_msec="1000">
                                     									<SetBlackboard output_key="dummy" value="0" />
                                   									</Delay>
@@ -132,31 +132,31 @@
 													<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
 												<TextToSpeechActionClient
-													msg="You have already been hearing my speech output.  I use the Microsoft Azure Speech services for Text to speech synthesis, speech recognition, and wake word detection. I use a neural voice for a more natural voice." />
-												<TextToSpeechActionClient msg="I can even change my voice like this."
+													msg1="You have already been hearing my speech output.  I use the Microsoft Azure Speech services for Text to speech synthesis, speech recognition, and wake word detection. I use a neural voice for a more natural voice." />
+												<TextToSpeechActionClient msg1="I can even change my voice like this."
 													voice="en-US-Aria" style="Cheerful" />
 												<Delay delay_msec="1000">
 												<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
-												<TextToSpeechActionClient msg="Ok, that was very weird." />
+												<TextToSpeechActionClient msg1="Ok, that was very weird." />
 												<Delay delay_msec="2000">
 												<SetBlackboard output_key="dummy" value="0" />
 												</Delay>
                         						<!--
   												<TextToSpeechActionClient
-													msg="My wake word detection has been used during this demo each time Scott has said ‘Elsa bot’.  Yeah, and he had to fix me so I don’t respond to that when I say it." />
+													msg1="My wake word detection has been used during this demo each time Scott has said ‘Elsa bot’.  Yeah, and he had to fix me so I don’t respond to that when I say it." />
 												<SmileAction level="3" duration_ms="1000" />
 												-->
 											</Sequence>
 											<Sequence>
 												<TextCompareAction text="{said}" ck_for=".*(navigation skills).*" />
 												<TextToSpeechActionClient
-													msg="Ok, I’ll show my skills I use for my Robot Seek game." />
-												<TextToSpeechActionClient msg="For that game I move thru the house searching for my friends.
+													msg1="Ok, I’ll show my skills I use for my Robot Seek game." />
+												<TextToSpeechActionClient msg1="For that game I move thru the house searching for my friends.
 													While moving, I use my object and human pose detection capabilities of my oak, d camera to locate them.
 													Let me show you." />
 												<RobotSeekInitAction game_file="robot_seek_demo1.json" />
-												<TextToSpeechActionClient msg="Off to the first location." />
+												<TextToSpeechActionClient msg1="Off to the first location." />
 												<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
 												<SetBlackboard output_key="first_location" value="1" />
 												<SetBlackboard output_key="found" value="0" />
@@ -174,7 +174,7 @@
 															<BlackboardCheckInt value_A="{first_location}" value_B="0"
 																return_on_mismatch="SUCCESS">
 																<Sequence>
-																	<TextToSpeechActionClient msg="Not over here.  I'll keep looking." />
+																	<TextToSpeechActionClient msg1="Not over here.  I'll keep looking." />
 																</Sequence>
 															</BlackboardCheckInt>
 															<SetBlackboard output_key="first_location" value="0" />
@@ -195,7 +195,7 @@
 																			<Sequence>
 																				<AntennaAction rate="1" intensity="10" left_blink_pattern="10100000"
 																					right_blink_pattern="00001010" />
-																				<TextToSpeechActionClient msg="I found you!" />
+																				<TextToSpeechActionClient msg1="I found you!" />
 																				<Delay delay_msec="1000">
 																					<SetBlackboard output_key="dummy" value="0" />
 																				</Delay>
@@ -206,7 +206,7 @@
 																	</Fallback>
 																	<Sequence>
 																		<Nav2Client goal="{next_goal}" />
-																		<TextToSpeechActionClient msg="I'm here. I'm looking for you!" />
+																		<TextToSpeechActionClient msg1="I'm here. I'm looking for you!" />
 																		<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1"
 																			return_on_mismatch="SUCCESS">
 																			<Sequence>
@@ -227,12 +227,12 @@
 														</Sequence>
 													</KeepRunningUntilFailure>
 												</ForceSuccess>
-												<TextToSpeechActionClient msg="Heading back now!" />
+												<TextToSpeechActionClient msg1="Heading back now!" />
 												<TrackAction mode="Track" rate="4" detect_voice="0" turn_base="0" />
 												<Nav2Client goal="-5.3,-6.7,200.9" />
 												<TrackAction mode="Track" rate="4" detect_voice="0" turn_base="1" />
 												<TextToSpeechActionClient
-													msg="Well, those are my robot seek game skills.  You know, it's a lot more fun playing that game with my friend Caroline!" />
+													msg1="Well, those are my robot seek game skills.  You know, it's a lot more fun playing that game with my friend Caroline!" />
 												<SmileAction level="3" duration_ms="2000" />
 											</Sequence>
 										</Fallback>

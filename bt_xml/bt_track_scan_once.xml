@@ -4,9 +4,9 @@
 		  <PoseDetectionControlAction enable="false" />
 
       <TrackAction mode="Scan" rate="3" />
-      <TextToSpeechActionClient msg="Start" />
+      <TextToSpeechActionClient msg1="Start" />
       <ScanWaitAction />
-      <TextToSpeechActionClient msg="End" />
+      <TextToSpeechActionClient msg1="End" />
       <TrackAction mode="Track" rate="3" />
 
 		</Sequence>

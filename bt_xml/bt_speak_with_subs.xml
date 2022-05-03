@@ -2,8 +2,8 @@
     <BehaviorTree ID="MainTree">
         <KeepRunningUntilFailure>
               <Sequence>
-                 <TextToSpeechActionClient msg="Hello (player)" />
-                 <TextToSpeechActionClient msg="How are you?" />
+                 <TextToSpeechActionClient msg1="Hello (player)" />
+                 <TextToSpeechActionClient msg1="How are you?" />
               </Sequence>
         </KeepRunningUntilFailure>
     </BehaviorTree>

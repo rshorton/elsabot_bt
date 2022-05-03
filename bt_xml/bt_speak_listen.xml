@@ -6,13 +6,13 @@
             <Fallback name="get_answer">
                 <Sequence>
                     <Delay delay_msec="3000">
-                        <Action ID="TextToSpeechActionClient" msg="What's your name?"/>
+                        <Action ID="TextToSpeechActionClient" msg1="What's your name?"/>
                     </Delay>
                     <Action ID="SpeechToTextActionClient" text="{said}"/>
-                    <Action ID="TextToSpeechActionClient" msg="You said"/>
-                    <Action ID="TextToSpeechActionClient" msg="{said}"/>
+                    <Action ID="TextToSpeechActionClient" msg1="You said"/>
+                    <Action ID="TextToSpeechActionClient" msg1="{said}"/>
                 </Sequence>
-                <Action ID="TextToSpeechActionClient" msg="I'm sorry, but I didn't hear a response"/>
+                <Action ID="TextToSpeechActionClient" msg1="I'm sorry, but I didn't hear a response"/>
             </Fallback>
         </Repeat>
     </BehaviorTree>

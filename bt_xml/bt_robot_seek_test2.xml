@@ -8,7 +8,7 @@
 				<Sequence>
 					<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" />
 					<SubTree ID="MoveRobot" target="next_goal" />
-					<TextToSpeechActionClient msg="{goal_speech}" />
+					<TextToSpeechActionClient msg1="{goal_speech}" />
 				</Sequence>
 			</KeepRunningUntilFailure>
 		</Sequence>

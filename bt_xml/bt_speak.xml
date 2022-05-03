@@ -2,9 +2,9 @@
     <BehaviorTree ID="MainTree">
         <Repeat num_cycles="99">
               <Sequence>
-                 <TextToSpeechActionClient msg="1. Hello. How are you today 123?"/>
-                 <!-- TextToSpeechActionClient msg="1. Hello. How are you?" contour="(0%, +0%) (100%, +0%)"/-->
-                 <TextToSpeechActionClient msg="2. Hello. How are you?" contour="(0%, +0Hz) (30%, +0Hz) (70%, +80Hz) (100%, +100Hz)" />
+                 <TextToSpeechActionClient msg1="1. Hello. How are you today 123?"/>
+                 <!-- TextToSpeechActionClient msg1="1. Hello. How are you?" contour="(0%, +0%) (100%, +0%)"/-->
+                 <TextToSpeechActionClient msg1="2. Hello. How are you?" contour="(0%, +0Hz) (30%, +0Hz) (70%, +80Hz) (100%, +100Hz)" />
               </Sequence>
         </Repeat>
     </BehaviorTree>

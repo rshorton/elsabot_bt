@@ -1,0 +1,58 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>
+      <Sequence>          
+        <DetectionProcessorCreateAction det="detector1" topic="/head/detected_targets" />
+        <DetectionConfigureAction det="detector1" class_conf_mapping="ball 0.1" 
+          min_det_count="5" drop_det_count="5" det_timeout="5000"
+          pub_topic="/object_list_world" />
+        <ArmGotoNamedPositionAction position="home" />
+        <TextToSpeechActionClient msg1="All systems are go!"/>
+      </Sequence>          
+
+      <Sequence>          
+        <Repeat num_cycles="999">
+          <Sequence>
+              <ForceSuccess>
+                <Sequence>
+                  <!-- Keep checking for balls in view until one or more are seen -->
+                  <Delay delay_msec="3000">
+                    <Sequence>
+                      <!-- Try to select the closest ball -->
+                      <DetectionSelectAction det="detector1" obj_class="ball" token="test1" obj_id="{obj_id}" count="{ball_count}"/>
+                      <!-- Get the positions so they get printed in the console for debugging -->
+                      <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_footprint"  position="{obj_pos}"/>
+                      <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="xarm_base_link"  position="{obj_pos}"/>
+                    </Sequence>
+                  </Delay>
+
+                  <LogAction level="info" msg="Checking for run command" arg1="goal" />
+                  <!-- Check for the 'Go' button being press via the webui -->
+                  <UIInputAction action="ck_changed" property="run" ck_value="true"/>
+
+                  <!-- Button was pressed, run the pick and drop routine -->
+                  <LogAction level="info" msg="Run is true" />
+                  <TextToSpeechActionClient msg1="Looking for balls.  I see" msg2="{ball_count}"/>
+                  <TextToSpeechActionClient msg1="Moving to the closest ball."/>
+
+                  <!-- Move to the selected ball (action above) -->
+    							<ReactiveSequence>
+                    <!-- Get the current position of the selected object relative to the base_footprint of the robot since the 
+                         MoveToObjectAction controls the robot based on the relative position of the object from the robot -->
+                    <DetectionGetPositionAction det="detector1" obj_id="{obj_id}"  coord_frame="base_footprint" position="{obj_pos}"/>
+                    <!-- Update the measured position of the selected ball.  This action is asynchronous. -->
+                    <!--MoveToObjectAction pose="{obj_pos}" velocity="0.15" target_dist="0.290" /-->
+                    <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.290" />
+                  </ReactiveSequence>
+
+                  <LogAction level="info" msg="At ball to be picked" />  
+                  <TextToSpeechActionClient msg1="I'm at the ball.  How did I do?"/>
+
+                </Sequence>
+              </ForceSuccess>
+          </Sequence>
+        </Repeat>
+  		</Sequence>
+		</Sequence>
+	</BehaviorTree>
+</root>

@@ -55,23 +55,22 @@ public:
 						"</mstts:express-as>" \
 					"</voice>" \
 				"</speak>";
-#if 0
-    	ssml_ = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"https://www.w3.org/2001/mstts\" xml:lang=\"en-US\">" \
-    				"<voice name=\"en-US-JennyNeural\">" \
-						"<mstts:express-as style=\"chat\">" \
-						"<prosody rate=\"-15%\" pitch=\"21%\">" \
-		    		        "TEXT" \
-			    	    "</prosody>" \
-						"</mstts:express-as>" \
-					"</voice>" \
-				"</speak>";
-#endif
     }
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<std::string>("msg"),
+        return{ BT::InputPort<std::string>("msg1"),
+        	    BT::InputPort<unsigned long>("msg1_ul"),
+        	    BT::InputPort<float>("msg1_f"),
         	    BT::InputPort<std::string>("msg2"),
+        	    BT::InputPort<unsigned long>("msg2_ul"),
+        	    BT::InputPort<float>("msg2_f"),
+        	    BT::InputPort<std::string>("msg3"),
+        	    BT::InputPort<unsigned long>("msg3_ul"),
+        	    BT::InputPort<float>("msg3_f"),
+        	    BT::InputPort<std::string>("msg4"),
+        	    BT::InputPort<unsigned long>("msg4_ul"),
+        	    BT::InputPort<float>("msg4_f"),
         		BT::InputPort<std::string>("voice"),
         		BT::InputPort<std::string>("style"),
         		BT::InputPort<std::string>("rate"),
@@ -116,26 +115,42 @@ public:
 
     virtual BT::NodeStatus tick() override
     {
-    	std::string msg;
-    	std::string msg2;
     	std::string voice = "en-US-JennyNeural";
     	std::string style = "chat";
     	std::string rate = "-15";
     	std::string pitch = "21";
     	std::string contour = "(0%, +0%) (100%, +0%)";
 
-    	if (!getInput<std::string>("msg", msg)) {
-			throw BT::RuntimeError("missing msg to say");
+		std::string msg;
+		std::string part;
+		unsigned long part_ul;
+		float part_f;
+
+		std::stringstream m;
+		std::stringstream port;
+
+		for (int i = 0; i < 4; i++) {
+			std::stringstream port;
+			port << "msg" << (i + 1);
+    		if (getInput<std::string>(port.str(), part)) {
+				m << part << " ";
+			}
+
+    		if (getInput<unsigned long>(port.str() + "_ul", part_ul)) {
+				m << part_ul << " ";
+			}
+
+    		if (getInput<float>(port.str() + "_f", part_f)) {
+				m << part_f << " ";
+			}
 		}
-    	// optional
-    	getInput<std::string>("msg2", msg2);
+		msg = m.str();
+		
     	getInput<std::string>("voice", voice);
     	getInput<std::string>("style", style);
     	getInput<std::string>("rate", rate);
     	getInput<std::string>("pitch", pitch);
     	getInput<std::string>("contour", contour);
-
-    	//RCLCPP_INFO(node_->get_logger(), "msg [%s], msg2[%s]", msg.c_str(), msg2.c_str());
 
     	std::stringstream node_name;
     	{
@@ -152,9 +167,6 @@ public:
         }
 
         _aborted = false;
-
-    	msg += " ";
-    	msg += msg2;
 
     	// Substitute placeholders
     	auto & settings = GameSettings::getInstance();

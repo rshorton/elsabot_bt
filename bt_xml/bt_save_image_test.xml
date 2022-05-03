@@ -16,7 +16,7 @@
 							<HumanPoseDetect expected_pose_left="{pose_name_l}" expected_pose_right="{pose_name_r}" pose_lr_check="{pose_lr_check}" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}" pose_right_speech="{pose_right_speech}" />
 							<AntennaAction rate="0" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
 							<SaveImageAction filename="image#.jpg" directory="/home/ubuntu/saved_images" />
-							<TextToSpeechActionClient msg="Saved" />
+							<TextToSpeechActionClient msg1="Saved" />
 							<AntennaAction rate="0" intensity="0" left_blink_pattern="0" right_blink_pattern="0" />
 						</Sequence>
 					</ForceSuccess>

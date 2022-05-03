@@ -9,11 +9,11 @@
                     <LogAction level="info" msg="Checking for run command" arg1="goal" />
                   </Delay>                 
                   <UIInputAction action="ck_changed" property="run" ck_value="true"/>
-                  <Action ID="TextToSpeechActionClient" msg="Here we go!"/>
+                  <Action ID="TextToSpeechActionClient" msg1="Here we go!"/>
                   <LogAction level="info" msg="Run is true" />
                   <PickObjectTest1Action position="0.0, 0.0, 0.0" />
                   <LogAction level="info" msg="Finished pick" />  
-                  <Action ID="TextToSpeechActionClient" msg="I have the ball."/>
+                  <Action ID="TextToSpeechActionClient" msg1="I have the ball."/>
                 </Sequence>
               </ForceSuccess>
           </Sequence>

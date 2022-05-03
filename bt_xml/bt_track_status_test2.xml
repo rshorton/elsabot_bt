@@ -11,7 +11,7 @@
 								<ObjectTrackerStatusAction ck_state="1" min_duration="2" />
 								<Sequence>
 									<SetBlackboard output_key="person_detected" value="1" />
-									<TextToSpeechActionClient msg="Detected" />
+									<TextToSpeechActionClient msg1="Detected" />
 								</Sequence>
 							</Sequence>
 						</ForceSuccess>
@@ -22,7 +22,7 @@
 							<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
 							<Sequence>
 								<SetBlackboard output_key="person_detected" value="0" />
-								<TextToSpeechActionClient msg="Not Detected" />
+								<TextToSpeechActionClient msg1="Not Detected" />
 							</Sequence>
 						</Sequence>
 					</ForceSuccess>

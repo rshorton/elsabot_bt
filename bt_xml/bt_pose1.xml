@@ -16,7 +16,7 @@
 							<Inverter>
 								<TextCompareAction text="{pose_left_speech}" ck_for="" />
 							</Inverter>							
-							<TextToSpeechActionClient msg="Left, " msg2="{pose_left_speech}" />
+							<TextToSpeechActionClient msg1="Left, " msg2="{pose_left_speech}" />
 							<SetBlackboard output_key="{pose_left_speech}" value="" />
 						</Sequence>						
 					</ForceSuccess>
@@ -25,7 +25,7 @@
 							<Inverter>
 								<TextCompareAction text="{pose_right_speech}" ck_for="" />
 							</Inverter>
-							<TextToSpeechActionClient msg="Right, " msg2="{pose_right_speech}" />
+							<TextToSpeechActionClient msg1="Right, " msg2="{pose_right_speech}" />
 							<SetBlackboard output_key="{pose_right_speech}" value="" />
 						</Sequence>
 					</ForceSuccess>

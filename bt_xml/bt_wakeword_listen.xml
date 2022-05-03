@@ -5,7 +5,7 @@
 				<Sequence>
 					<WakeWordDetected since_sec="3.0" />
 					<HeadTiltAction angle="10" dwell_ms="1500" />
-					<TextToSpeechActionClient msg="Hey there." />
+					<TextToSpeechActionClient msg1="Hey there." />
 				</Sequence>
 			</ForceSuccess>
 		</KeepRunningUntilFailure>

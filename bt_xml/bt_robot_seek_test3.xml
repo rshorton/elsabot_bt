@@ -13,7 +13,7 @@
 				<Sequence>
 					<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" />
 					<SubTree ID="MoveRobot" target="next_goal" />
-					<TextToSpeechActionClient msg="{goal_speech}" />
+					<TextToSpeechActionClient msg1="{goal_speech}" />
 					<Sequence>
              <Fallback>
                <Sequence>
@@ -26,14 +26,14 @@
 									<RobotSpin angle="340" velocity="0.5" />
 								</ReactiveSequence>
 								<Sequence>
-                   <TextToSpeechActionClient msg="I didn't see anyone." />
+                   <TextToSpeechActionClient msg1="I didn't see anyone." />
 								</Sequence>
 							</Sequence>
 							<Sequence>
 								<HumanPoseDetect pose_lr_check="presence" expected_pose_left="" expected_pose_right=""
 									detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
 									pose_right_speech="{pose_right_speech}" />
-								<TextToSpeechActionClient msg="Hi there! I found you!" />
+								<TextToSpeechActionClient msg1="Hi there! I found you!" />
 							</Sequence>
 						</Fallback>
 					</Sequence>

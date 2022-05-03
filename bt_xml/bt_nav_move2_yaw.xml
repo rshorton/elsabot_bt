@@ -7,11 +7,11 @@
                 <SetBlackboard output_key="Goal_c" value="-4.79,-6.87,0.0" />
                 <Sequence>
                     <SubTree ID="MoveRobot" target="Goal_a" />
-                    <TextToSpeechActionClient msg="I'm at goal A" />
+                    <TextToSpeechActionClient msg1="I'm at goal A" />
                     <SubTree ID="MoveRobot" target="Goal_b" />
-                    <TextToSpeechActionClient msg="I'm at goal B" />
+                    <TextToSpeechActionClient msg1="I'm at goal B" />
                     <SubTree ID="MoveRobot" target="Goal_c" />
-                    <TextToSpeechActionClient msg="I'm at goal C" />
+                    <TextToSpeechActionClient msg1="I'm at goal C" />
                 </Sequence>
             </Sequence>
         </Repeat>

@@ -4,7 +4,7 @@
 		  <PoseDetectionControlAction enable="false" />
 
       <TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="true" />
-      <TextToSpeechActionClient msg="Enabled tracking with voice detection and base turning enabled." />
+      <TextToSpeechActionClient msg1="Enabled tracking with voice detection and base turning enabled." />
 
 		</Sequence>
 

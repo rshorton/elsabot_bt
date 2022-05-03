@@ -1,7 +1,7 @@
 <root main_tree_to_execute = "MainTree">
     <BehaviorTree ID="MainTree">
         <Sequence>
-            <TextToSpeechActionClient msg="Are we done?  Can I go watch West world now?"/>
+            <TextToSpeechActionClient msg1="Are we done?  Can I go watch West world now?"/>
         </Sequence>
     </BehaviorTree>
 </root>

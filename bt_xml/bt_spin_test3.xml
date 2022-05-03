@@ -5,7 +5,7 @@
 			<TrackAction mode="none" rate="none" />
 			<Repeat num_cycles="3">
 				<Sequence>
-					<TextToSpeechActionClient msg="Starting spin cycle" />
+					<TextToSpeechActionClient msg1="Starting spin cycle" />
 					<ReactiveSequence>
 						<Inverter>
 							<ObjectDetectionAction class="person" pose="detected_Pose" />

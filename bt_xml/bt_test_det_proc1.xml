@@ -7,7 +7,7 @@
           min_det_count="5" drop_det_count="5" det_timeout="5000" spatial_tolerance="0.1"
           coord_frame="map" pub_topic="/object_list_world" pub_topic_frame="map" />
         <ArmGotoNamedPositionAction position="home" />
-        <TextToSpeechActionClient msg="All systems are go!"/>
+        <TextToSpeechActionClient msg1="All systems are go!"/>
       </Sequence>          
 
       <Sequence>          
@@ -25,7 +25,7 @@
                   <LogAction level="info" msg="Checking for run command" arg1="goal" />
                   <UIInputAction action="ck_changed" property="run" ck_value="true"/>
                   <LogAction level="info" msg="Run is true" />
-                  <TextToSpeechActionClient msg="Here we go!"/>
+                  <TextToSpeechActionClient msg1="Here we go!"/>
     							<ReactiveSequence>
                     <!-- Get the current position of the selected object relative to the base_footprint of the robot since the 
                          MoveToObjectAction controls the robot based on the relative position of the object from the robot -->
@@ -33,7 +33,7 @@
                     <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.300" />
                   </ReactiveSequence>
                   <LogAction level="info" msg="At goal" />  
-                  <TextToSpeechActionClient msg="I'm at the ball.  I'll pick it up."/>
+                  <TextToSpeechActionClient msg1="I'm at the ball.  I'll pick it up."/>
 
                   <!-- This will log the position relative to the base link for debug -->
                   <DetectionGetPositionAction det="detector1" obj_id="{obj_id}" coord_frame="base_footprint"  position="{obj_pos}"/>
@@ -41,16 +41,16 @@
                   <PickObjectAction position="{obj_pos}" drop_position="0.010, 0.0, 0.260"/>
                   <SetArmPositionAction position="0.0, -0.180, 0.240" orientation="0.0, 0, 0" />
 
-                  <TextToSpeechActionClient msg="I'll put the ball into the bin."/>
+                  <TextToSpeechActionClient msg1="I'll put the ball into the bin."/>
                   <Nav2Client goal="1.34, -1.24, 270.0" />
 
                   <SetArmPositionAction position="0.0, -0.180, 0.240" orientation="100.0, 0, 0" />
                   <SetGripperPositionAction position="open" />
                   <ArmGotoNamedPositionAction position="home" />
-                  <TextToSpeechActionClient msg="Let's do that again!"/>
+                  <TextToSpeechActionClient msg1="Let's do that again!"/>
 
                   <Nav2Client goal="0.633, -0.981, 45.0" />
-                  <!--TextToSpeechActionClient msg="Click Go when you're ready."/-->
+                  <!--TextToSpeechActionClient msg1="Click Go when you're ready."/-->
                   
                   <!-- Nav2Client goal="{goal}" /-->
                   <!-- RobotSpin angle="{goal_yaw}" angular_units="rad" /-->

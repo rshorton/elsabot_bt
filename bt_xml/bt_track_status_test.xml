@@ -5,7 +5,7 @@
 				<ForceSuccess>
 					<Sequence>
 						<ObjectTrackerStatusAction ck_state="1" min_duration="3" />
-						<TextToSpeechActionClient msg="Detected" />
+						<TextToSpeechActionClient msg1="Detected" />
 					</Sequence>
 				</ForceSuccess>
 
@@ -18,7 +18,7 @@
 				<ForceSuccess>
 					<Sequence>
 						<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
-						<TextToSpeechActionClient msg="Not Detected" />
+						<TextToSpeechActionClient msg1="Not Detected" />
 					</Sequence>
 				</ForceSuccess>
 

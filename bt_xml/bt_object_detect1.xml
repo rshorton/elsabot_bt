@@ -5,10 +5,10 @@
 				<Fallback>
 					<Sequence>
 						<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
-						<TextToSpeechActionClient msg="Detected" />
+						<TextToSpeechActionClient msg1="Detected" />
 					</Sequence>
 					<Sequence>
-						<TextToSpeechActionClient msg="Not Detected" />
+						<TextToSpeechActionClient msg1="Not Detected" />
 					</Sequence>
 
 				</Fallback>

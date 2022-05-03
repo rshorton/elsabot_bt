@@ -5,17 +5,17 @@
 			<Fallback>
 				<Sequence>
 					<Delay delay_msec="3000">
-	          <TextToSpeechActionClient msg="Say something" />
+	          <TextToSpeechActionClient msg1="Say something" />
 					</Delay>
 					<SpeechToTextActionClient text="{said}" />
-					<TextToSpeechActionClient msg="You said" />
-					<TextToSpeechActionClient msg="{said}" />
+					<TextToSpeechActionClient msg1="You said" />
+					<TextToSpeechActionClient msg1="{said}" />
 				</Sequence>
 
-				<TextToSpeechActionClient msg="I'm sorry, but I didn't here you" />
+				<TextToSpeechActionClient msg1="I'm sorry, but I didn't here you" />
 			</Fallback>
 			</Repeat>
-			<TextToSpeechActionClient msg="Goodbye" />
+			<TextToSpeechActionClient msg1="Goodbye" />
 		</Sequence>
 	</BehaviorTree>
 </root>

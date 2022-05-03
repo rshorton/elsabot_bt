@@ -3,9 +3,9 @@
         <Repeat num_cycles="3">
               <Sequence>
                  <SpeechToTextActionClient text="{said}" />
-                 <TextToSpeechActionClient msg="{said}"/>
+                 <TextToSpeechActionClient msg1="{said}"/>
                  <SpeechToTextActionClient text="{said}" />
-                 <TextToSpeechActionClient msg="{said}"/>
+                 <TextToSpeechActionClient msg1="{said}"/>
               </Sequence>
         </Repeat>
     </BehaviorTree>

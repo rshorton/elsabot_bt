@@ -21,11 +21,11 @@
 				-7.3,4.7,263.0,0,0; -5.72,6.25,190.0,0,1" / -->
 
 			<TrackAction mode="None" rate="2" />
-			<TextToSpeechActionClient msg="Let's play hide and seek!" />
-			<TextToSpeechActionClient msg="I'll count to 10 while you go and hide." />
+			<TextToSpeechActionClient msg1="Let's play hide and seek!" />
+			<TextToSpeechActionClient msg1="I'll count to 10 while you go and hide." />
 			<RobotSpin angle="180" velocity="0.8" />
 			<TrackAction mode="LookDown" rate="2" />
-			<TextToSpeechActionClient msg="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
+			<TextToSpeechActionClient msg1="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
 			<TrackAction mode="Scan" rate="2" />
 			<RobotSpin angle="180" velocity="0.8" />
 
@@ -48,8 +48,8 @@
 							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" spin_at_goal="{spin_at_goal}" scan_at_goal="{scan_at_goal}" />
 							<TrackAction mode="Scan" rate="1" />
 							<SubTree ID="MoveRobot" target="next_goal" />
-							<!--  TextToSpeechActionClient msg="{goal_speech}" /-->
-							<TextToSpeechActionClient msg="Are you over here?" />
+							<!--  TextToSpeechActionClient msg1="{goal_speech}" /-->
+							<TextToSpeechActionClient msg1="Are you over here?" />
 							<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 								<Sequence>
 									<TrackAction mode="Off" rate="0" />
@@ -62,7 +62,7 @@
 									<ScanWaitAction />
 								</Sequence>
 							</BlackboardCheckInt>
-							<TextToSpeechActionClient msg="I don't see you." />
+							<TextToSpeechActionClient msg1="I don't see you." />
 						</Sequence>
 					</ReactiveSequence>
 				</KeepRunningUntilFailure>
@@ -70,14 +70,14 @@
 					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
 						<Sequence>
 							<TrackAction mode="Track" rate="3" />
-							<TextToSpeechActionClient msg="Yay, I found you!" />
+							<TextToSpeechActionClient msg1="Yay, I found you!" />
 						</Sequence>
 					</BlackboardCheckInt>
 				</Sequence>
 			</Fallback>
 			<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
 				<Sequence>
-					<TextToSpeechActionClient msg="Come out come out where ever you are!" />
+					<TextToSpeechActionClient msg1="Come out come out where ever you are!" />
 				</Sequence>
 			</BlackboardCheckInt>
 		</Sequence>

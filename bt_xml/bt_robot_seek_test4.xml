@@ -26,15 +26,15 @@
 						<Sequence>
 							<RobotSeekNextSearchPose next_goal="{next_goal}" goal_speech="{goal_speech}" />
 							<SubTree ID="MoveRobot" target="next_goal" />
-							<TextToSpeechActionClient msg="{goal_speech}" />
+							<TextToSpeechActionClient msg1="{goal_speech}" />
 							<RobotSpin angle="359" velocity="0.5" />
-							<TextToSpeechActionClient msg="I didn't see anyone." />
+							<TextToSpeechActionClient msg1="I didn't see anyone." />
 						</Sequence>
 					</ReactiveSequence>
 				</KeepRunningUntilFailure>
 				<Sequence>
 					<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
-						<TextToSpeechActionClient msg="I found you!" />
+						<TextToSpeechActionClient msg1="I found you!" />
 					</BlackboardCheckInt>
 				</Sequence>
 			</Fallback>
