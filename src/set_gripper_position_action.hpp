@@ -46,8 +46,8 @@ public:
         RCLCPP_INFO(node_->get_logger(), "Gripper position goal %s", pos.c_str());
 
         moveit::planning_interface::MoveGroupInterface move_group(node_, "xarm");
-        move_group.setMaxVelocityScalingFactor(1.0);
-        move_group.setMaxAccelerationScalingFactor(0.10);
+        move_group.setMaxVelocityScalingFactor(100.0);
+        move_group.setMaxAccelerationScalingFactor(1);
         move_group.setNumPlanningAttempts(10);
         move_group.setPlanningTime(5);
         move_group.setGoalTolerance(0.010);
