@@ -30,14 +30,6 @@ def generate_launch_description():
             os.path.join(get_package_share_directory('robot_head'), 'launch', 'robot_head.launch.py'))
     )
 
-    # Fix - The BT detection processor can handle this function now. 
-    # Utility to process object detections and publish location of object (currently only looks for
-    # objects of type 'persion'
-    #clicked_point = IncludeLaunchDescription(
-    #    PythonLaunchDescriptionSource(
-    #        os.path.join(get_package_share_directory('tracked_object_mapper'), 'launch', 'tracked_object_mapper.launch.py'))
-    #)
-
     # Launch the web video server for serving-up camera topics as video streams (to web pages)
     web_video_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
