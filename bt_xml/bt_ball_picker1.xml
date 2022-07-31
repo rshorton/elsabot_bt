@@ -34,15 +34,14 @@
                   <!-- Button was pressed, run the pick and drop routine -->
                   <LogAction level="info" msg="Run is true" />
                   <TextToSpeechActionClient msg1="Looking for balls.  I see" msg2="{ball_count}"/>
-                  <TextToSpeechActionClient msg1="Moving to the closest ball, ball" msg2_ul="{obj_id}"/>
+                  <TextToSpeechActionClient msg1="Moving to the closest ball, ball id" msg2_ul="{obj_id}"/>
 
                   <!-- Move to the selected ball (action above) -->
     							<ReactiveSequence>
                     <!-- Get the current position of the selected object relative to the base_footprint of the robot since the 
                          MoveToObjectAction controls the robot based on the relative position of the object from the robot -->
                     <DetectionGetPositionAction det="detector1" obj_id="{obj_id}"  coord_frame="base_footprint" position="{obj_pos}"/>
-                    <!-- Update the measured position of the selected ball.  This action is asynchronous. -->
-                    <!--MoveToObjectAction pose="{obj_pos}" velocity="0.15" target_dist="0.290" /-->
+                     <!--MoveToObjectAction pose="{obj_pos}" velocity="0.15" target_dist="0.290" /-->
                     <MoveToObjectAction pose="{obj_pos}" velocity="0.2" target_dist="0.290" />
                   </ReactiveSequence>
 
