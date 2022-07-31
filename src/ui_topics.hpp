@@ -48,6 +48,8 @@ public:
 	};
 
 	bool GetGeneric(const std::string &name, std::string &type, std::string &value, bool &updated);
+	void SetGeneric(const std::string &name, const std::string &value);
+
 private:
 	UITopics(rclcpp::Node::SharedPtr node);
 	~UITopics() {};

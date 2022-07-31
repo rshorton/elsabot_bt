@@ -72,3 +72,18 @@ bool UITopics::GetGeneric(const std::string &name, std::string &type, std::strin
 	}
 	return false;
 }
+
+void UITopics::SetGeneric(const std::string &name, const std::string &value)
+{
+	auto it = generic_msgs_.find(name);
+	if (it != generic_msgs_.end()) {
+		it->second.msg.value = value;
+		it->second.updated = false;
+	} else {
+		GenericMsg m;
+		m.msg.type = "";
+		m.msg.value = value;
+		m.updated = false;
+		generic_msgs_[name] = m;
+	}
+}

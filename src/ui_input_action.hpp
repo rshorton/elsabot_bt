@@ -35,6 +35,7 @@ public:
             BT::InputPort<std::string>("action"),
             BT::InputPort<std::string>("property"),
             BT::InputPort<std::string>("ck_value"),
+            BT::InputPort<std::string>("set_value"),
             BT::OutputPort<std::string>("value")
         };
     }
@@ -57,6 +58,12 @@ public:
             ck_value_set = true;
         }
 
+        std::string set_value;
+        bool set_value_set = false;
+        if (getInput<std::string>("set_value", set_value)) {
+            set_value_set = true;
+        }
+
         UITopics *ui_topics = UITopics::GetInstance();
         if (!ui_topics) {
             return BT::NodeStatus::FAILURE;
@@ -64,14 +71,34 @@ public:
 
         rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
 
-        std::string type;
-        std::string value;
-        bool updated = false;
-        if (ui_topics->GetGeneric(property, type, value, updated)) {
-            RCLCPP_DEBUG(node->get_logger(), "value: [%s], updated: [%d]", value.c_str(), updated);
+        if (action == "set") {
+            if (set_value_set) {
+                ui_topics->SetGeneric(property, set_value);
+                RCLCPP_INFO(node->get_logger(), "property: [%s], value set: [%s]", property.c_str(), set_value.c_str());
+                return BT::NodeStatus::SUCCESS;
+            } else {
+                RCLCPP_ERROR(node->get_logger(), "set_value not set for action 'set'");
+                return BT::NodeStatus::FAILURE;
+            }
+        } else {
 
-            if (action == "ck_changed") {
-                if (updated) {
+            std::string type;
+            std::string value;
+            bool updated = false;
+            if (ui_topics->GetGeneric(property, type, value, updated)) {
+                RCLCPP_INFO(node->get_logger(), "property: [%s], value: [%s], updated: [%d]", property.c_str(), value.c_str(), updated);
+
+                if (action == "ck_changed") {
+                    if (updated) {
+                        if (ck_value_set) {
+                            if (value == ck_value) {
+                                return BT::NodeStatus::SUCCESS;
+                            }
+                        } else {
+                            return BT::NodeStatus::SUCCESS;            
+                        }
+                    }
+                } else if (action == "ck_value") {
                     if (ck_value_set) {
                         if (value == ck_value) {
                             return BT::NodeStatus::SUCCESS;
@@ -79,9 +106,9 @@ public:
                     } else {
                         return BT::NodeStatus::SUCCESS;            
                     }
-                }
-            }                
+                }                
+            }
+            return BT::NodeStatus::FAILURE;
         }
-        return BT::NodeStatus::FAILURE;
     }
 };
