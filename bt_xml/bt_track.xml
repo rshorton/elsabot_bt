@@ -1,11 +1,9 @@
 <root main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
 		<Sequence>
-		  <PoseDetectionControlAction enable="false" />
-
-      <TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="true" />
-      <TextToSpeechActionClient msg1="Enabled tracking with voice detection and base turning enabled." />
-
+			<PoseDetectionControlAction enable="false" />
+      		<TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="true" />
+      		<TextToSpeechActionClient msg1="Enabled tracking with voice detection and base turning enabled." />
 		</Sequence>
 
 	</BehaviorTree>
