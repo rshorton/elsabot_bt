@@ -1,0 +1,36 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<PoseDetectionControlAction enable="false" />
+      		<TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="false" />
+			<TextToSpeechActionClient msg1="Ready!" />
+			<Repeat num_cycles="99999">
+				<Sequence>
+					<ForceSuccess>
+						<Delay delay_msec="1500">
+							<Sequence>
+								<GetMovementStatusAction type="angular_velocity" x="x"  y="y" z="z" />
+								<Fallback>
+									<Sequence>
+										<NumericComparisonAction comparison="gt" a="{z}" b="0.5" />
+										<Sequence>
+											<HeadTiltAction angle="30" dwell_ms="900" />
+											<TextToSpeechActionClient msg1="woo hoo!" />
+										</Sequence>
+									</Sequence>
+									<Sequence>
+										<NumericComparisonAction comparison="lt" a="{z}" b="-0.5" />
+										<Sequence>
+											<HeadTiltAction angle="-30" dwell_ms="900" />
+											<TextToSpeechActionClient msg1="woo hoo!" />
+										</Sequence>
+									</Sequence>
+								</Fallback>
+							</Sequence>
+						</Delay>							
+					</ForceSuccess>
+				</Sequence>
+			</Repeat>
+		</Sequence>
+	</BehaviorTree>
+</root>
