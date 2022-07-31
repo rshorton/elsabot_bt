@@ -76,6 +76,7 @@ add_executable(elsabot_bt
   src/transform_helper.cpp
   src/robot_status.cpp
   src/ui_topics.cpp
+  src/imu_topic.cpp
   src/ros_common.cpp
 )
 ament_target_dependencies(elsabot_bt

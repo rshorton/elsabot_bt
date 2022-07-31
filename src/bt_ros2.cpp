@@ -39,6 +39,8 @@
 #include "detection_command_action.hpp"
 #include "detection_select_action.hpp"
 #include "detection_get_position_action.hpp"
+#include "get_movement_status_action.hpp"
+#include "numeric_comparison_action.hpp"
 
 #include "ui_input_action.hpp"
 #include "log_action.hpp"
@@ -60,7 +62,7 @@
 #include "ui_topics.hpp"
 #include "ros_common.hpp"
 #include "game_settings.hpp"
-
+#include "imu_topic.hpp"
 
 #define DEFAULT_BT_XML ""
 
@@ -155,12 +157,14 @@ int main(int argc, char **argv)
     factory.registerNodeType<ArmGotoNamedPositionAction>("ArmGotoNamedPositionAction");
     factory.registerNodeType<SetArmPositionAction>("SetArmPositionAction");
     factory.registerNodeType<SetGripperPositionAction>("SetGripperPositionAction");
+    factory.registerNodeType<GetMovementStatusAction>("GetMovementStatusAction");
+    factory.registerNodeType<NumericComparisonAction>("NumericComparisonAction");
 
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
     // The follow are node builders for those actions that need the ROS node pointer
-    // FIX - use new schem that uses a common singleton for accessing the ROS node point...
+    // FIX - use new schem that uses a common singleton for accessing the ROS node pointer...
     // Why didn't I use that from the get go???
     NodeBuilder builder_AntennaAction =
        [nh](const std::string& name, const NodeConfiguration& config)
@@ -271,6 +275,9 @@ int main(int argc, char **argv)
 
     // Create object for receiving UI topic messages
     UITopics::Create(nh);
+
+    // Create object for receiving IMU topic messages
+    IMUTopic::Create(nh);
 
     // code that could cause exception
     // Keep on ticking until you get either a SUCCESS or FAILURE state
