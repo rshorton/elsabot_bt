@@ -1,0 +1,13 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<PoseDetectionControlAction enable="false" />
+      		<TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="false" />
+      		<TextToSpeechActionClient msg1="Enabled tracking with voice detection." />
+			<Delay delay_msec="5000">
+				<TextToSpeechActionClient rate="12" msg1="Hi! I'm Elsabot.  I've learned a new skill.  I can now follow a line on the floor.  See what you think." />
+			</Delay>				
+		</Sequence>
+
+	</BehaviorTree>
+</root>

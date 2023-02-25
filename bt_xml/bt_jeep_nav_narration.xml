@@ -1,0 +1,12 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<PoseDetectionControlAction enable="false" />
+      		<TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="false" />
+			<Delay delay_msec="5000">
+				<TextToSpeechActionClient rate="6" msg1="Hi! I'm Elsabot.  My Jeep robot base has learned a new skill.  I can now navigate using ROSS 2 Navigation!  Here is a simple indoor demo to show you until I have a chance to show you one outdoors.   You'll notice that my very capable assistant used the ROSS R VIZ program to instruct my base to turn around.  Thanks for watching. See you later." />
+			</Delay>				
+		</Sequence>
+
+	</BehaviorTree>
+</root>
