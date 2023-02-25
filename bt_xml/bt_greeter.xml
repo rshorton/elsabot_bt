@@ -1,0 +1,99 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="Terminate">
+		<Sequence>
+			<TextToSpeechActionClient msg1="Goodbye (player)" />
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="Greet">
+		<Sequence>
+			<TextToSpeechActionClient msg1="Happy Halloween!" />
+			<Delay delay_msec="500">
+				<SmileAction level="3" duration_ms="2000" />
+			</Delay>
+			<Delay delay_msec="2000">
+				<SmileAction level="0" duration_ms="1" />
+			</Delay>
+			<TextToSpeechActionClient msg1="I hope my pet spider didn't scare you too much!" />
+			<Delay delay_msec="1000">
+				<SmileAction level="3" duration_ms="1" />
+			</Delay>
+			<Delay delay_msec="1000">
+				<SmileAction level="0" duration_ms="1" />
+			</Delay>
+			<TextToSpeechActionClient msg1="Please help yourself to lots of candy. " />
+			<TextToSpeechActionClient msg1="Happy Halloween!" />
+		</Sequence>
+	</BehaviorTree>
+
+  <!-- Top level tree.  If person detected or the wakeword is spoken, say hi and do the game menu. -->
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<SetBlackboard output_key="exit_key" value="0" />
+			<SetBlackboard output_key="stop_key" value="0" />
+			<SetBlackboard output_key="do_greeting" value="0" />
+			<SetBlackboard output_key="person_detected" value="0" />
+			<TextToSpeechActionClient msg1="Happy Halloween!" />
+
+			<PoseDetectionControlAction enable="1" />
+      		<TrackAction mode="Track" rate="8" sound_track_mode="wakeword" turn_base="false" />
+
+			<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
+
+			<KeepRunningUntilFailure>
+				<BlackboardCheckInt value_A="{exit_key}" value_B="0" return_on_mismatch="FAILURE">
+					<ForceSuccess>
+						<Sequence>
+
+							<!-- Update person detection status and enable greeting and menu if person now detected. Apply some hysteresis... -->
+							<Fallback>
+								<BlackboardCheckInt value_A="{person_detected}" value_B="0" return_on_mismatch="FAILURE">
+									<ForceSuccess>
+										<Sequence>
+											<ObjectTrackerStatusAction ck_state="1" min_duration="2"/>
+											<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" distance="{person_dist}" />
+											<NumericComparisonAction comparison="lt" a="{person_dist}" b="2000" />
+											<Sequence>
+												<SetBlackboard output_key="person_detected" value="1" />
+												<SetBlackboard output_key="do_greeting" value="1" />
+											</Sequence>
+										</Sequence>
+									</ForceSuccess>
+								</BlackboardCheckInt>
+								<ForceSuccess>
+									<Sequence>
+										<Fallback>
+											<Sequence>
+												<ObjectTrackerStatusAction ck_state="0" min_duration="2" />
+												<Sequence>
+													<SetBlackboard output_key="person_detected" value="0" />
+												</Sequence>
+											</Sequence>
+											<Sequence>
+												<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" distance="{person_dist}" />
+												<NumericComparisonAction comparison="gt" a="{person_dist}" b="2500" />
+												<SetBlackboard output_key="person_detected" value="0" />
+											</Sequence>												
+										</Fallback>
+									</Sequence>
+								</ForceSuccess>
+							</Fallback>
+
+							<BlackboardCheckInt value_A="{do_greeting}" value_B="1" return_on_mismatch="SUCCESS">
+								<Sequence>
+									<AntennaAction rate="2" intensity="10" left_blink_pattern="1010" right_blink_pattern="0101" />
+									<SubTree ID="Greet" />
+									<SetBlackboard output_key="do_greeting" value="0" />
+									<AntennaAction rate="5" intensity="10" left_blink_pattern="11110" right_blink_pattern="11110" />
+								</Sequence>
+							</BlackboardCheckInt>
+
+						</Sequence>
+					</ForceSuccess>
+				</BlackboardCheckInt>
+			</KeepRunningUntilFailure>
+			<SubTree ID="Terminate" />
+		</Sequence>
+	</BehaviorTree>
+
+</root>
