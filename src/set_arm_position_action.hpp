@@ -63,7 +63,7 @@ public:
         }
 
         moveit::planning_interface::MoveGroupInterface move_group(node_, "xarm");
-        move_group.setMaxVelocityScalingFactor(1.0);
+        move_group.setMaxVelocityScalingFactor(2.0);
         move_group.setMaxAccelerationScalingFactor(0.10);
         move_group.setNumPlanningAttempts(10);
         move_group.setPlanningTime(5);
