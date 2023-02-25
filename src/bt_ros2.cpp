@@ -257,7 +257,7 @@ int main(int argc, char **argv)
     auto tree = factory.createTreeFromFile(bt_xml);
 
     // Create loggers
-    StdCoutLogger logger_cout(tree);
+    //StdCoutLogger logger_cout(tree);
     //PublisherZMQ publisher_zmq(tree);
     FileLogger logger_file(tree, "bt_trace.fbl");
 
