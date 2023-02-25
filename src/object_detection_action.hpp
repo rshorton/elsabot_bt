@@ -91,7 +91,8 @@ class ObjectDetectionAction : public BT::SyncActionNode
 				BT::InputPort<std::string>("class"),
 				BT::InputPort<float>("min_confidence"),
 				BT::InputPort<int>("min_detect_count"),
-				BT::OutputPort<std::string>("pose")};
+				BT::OutputPort<std::string>("pose"),
+				BT::OutputPort<double>("distance")};
         }
 
         virtual BT::NodeStatus tick() override
@@ -128,11 +129,11 @@ class ObjectDetectionAction : public BT::SyncActionNode
 			node_if_->detected_ = false;
 
 			int closest = -1;
-			float closest_dist = std::numeric_limits<float>::infinity();
+			double closest_dist = std::numeric_limits<double>::infinity();
 			for (size_t i = 0; i < node_if_->objArray_.objects.size(); i++) {
 				object_detection_msgs::msg::ObjectDesc &obj = node_if_->objArray_.objects[i];
 				if (obj.track_status == "TRACKED" && obj.name == object_class) { // && obj.confidence >= min_confidence) {
-					float sqdist = obj.x * obj.x + obj.y * obj.y;
+					double sqdist = obj.x * obj.x + obj.y * obj.y;
 					if (sqdist < closest_dist) {
 						closest_dist = sqdist;
 						closest = i;
@@ -146,9 +147,12 @@ class ObjectDetectionAction : public BT::SyncActionNode
 					<< node_if_->objArray_.objects[closest].y << ",0.0"
 					<< std::endl;
 				setOutput("pose", str.str());
+				closest_dist = sqrt(closest_dist);
+				setOutput("distance", (double)closest_dist);
 
-				cout << node_if_->objArray_.objects[closest].x << ", "
-					<< node_if_->objArray_.objects[closest].y << ", "
+				cout << "x " << node_if_->objArray_.objects[closest].x << ", y "
+					<< node_if_->objArray_.objects[closest].y << ", dist "
+					<< closest_dist	<< ", conf "
 					<< node_if_->objArray_.objects[closest].confidence
 					<< std::endl;
 
