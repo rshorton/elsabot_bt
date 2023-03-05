@@ -23,7 +23,6 @@ def generate_launch_description():
         default_value='True',
         description='Whether to run the behavior tree.  Use False when developing/testing a tree')
 
-
     # Launch the robot head nodes
     robot_head = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -31,9 +30,9 @@ def generate_launch_description():
     )
 
     # Launch the web video server for serving-up camera topics as video streams (to web pages)
-    web_video_server = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(get_package_share_directory('web_video_server'), 'launch', 'web_video_server.launch.py'))
+    web_video_server = Node(
+        package='web_video_server',
+        executable='web_video_server'
     )
 
     # Launch the speech input server
