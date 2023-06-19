@@ -31,8 +31,9 @@ find_package(object_detection_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(moveit_ros_planning REQUIRED)
-find_package(moveit_ros_planning_interface REQUIRED)
+
+#find_package(moveit_ros_planning REQUIRED)
+#find_package(moveit_ros_planning_interface REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -60,8 +61,8 @@ set(dependencies
   nav2_util
   nav_msgs
   visualization_msgs
-  moveit_ros_planning
-  moveit_ros_planning_interface
+  #moveit_ros_planning
+  #moveit_ros_planning_interface
 )
 
 add_executable(elsabot_bt

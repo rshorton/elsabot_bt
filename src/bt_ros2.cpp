@@ -1,4 +1,5 @@
 #include "nav2_client.hpp"
+#include "nav2_client_loop.hpp"
 #include "nav2_compute_path_client.hpp"
 #include "nav2_clear_local_cost_map.hpp"
 #include "nav2_clear_global_cost_map.hpp"
@@ -46,11 +47,13 @@
 #include "log_action.hpp"
 #include "move_to_object_action.hpp"
 
+#if defined(ROBOT_ARM_SUPPORT)
 #include "pick_object_action.hpp"
 #include "pick_object_test1_action.hpp"
 #include "arm_goto_named_position_action.hpp"
 #include "set_arm_position_action.hpp"
 #include "set_gripper_position_action.hpp"
+#endif
 
 #include <behaviortree_cpp_v3/bt_factory.h>
 #include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
@@ -121,6 +124,7 @@ int main(int argc, char **argv)
     BehaviorTreeFactory factory;
 
     factory.registerNodeType<Nav2Client>("Nav2Client");
+    factory.registerNodeType<Nav2ClientLoop>("Nav2ClientLoop");
     factory.registerNodeType<TextCompareAction>("TextCompareAction");
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");
@@ -152,6 +156,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<DetectionGetPositionAction>("DetectionGetPositionAction");
     factory.registerNodeType<DetectionSelectAction>("DetectionSelectAction");
 
+#if defined(ROBOT_ARM_SUPPORT)
     factory.registerNodeType<PickObjectAction>("PickObjectAction");
     factory.registerNodeType<PickObjectTest1Action>("PickObjectTest1Action");
     factory.registerNodeType<ArmGotoNamedPositionAction>("ArmGotoNamedPositionAction");
@@ -159,6 +164,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<SetGripperPositionAction>("SetGripperPositionAction");
     factory.registerNodeType<GetMovementStatusAction>("GetMovementStatusAction");
     factory.registerNodeType<NumericComparisonAction>("NumericComparisonAction");
+#endif    
 
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!

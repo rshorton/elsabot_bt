@@ -1,0 +1,13 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Repeat num_cycles="2">
+            <Sequence>
+                <SetBlackboard output_key="end_pos" value="0.0,0.0,0.0" />
+                <SetBlackboard output_key="intermediate_pos" value="3.14,-0.36,0.0" />
+                <Sequence>
+                    <Nav2ClientLoop loop_end_pos="{end_pos}" loop_intermediate_pos="{intermediate_pos}"/>
+                </Sequence>
+            </Sequence>
+        </Repeat>
+    </BehaviorTree>
+</root>
