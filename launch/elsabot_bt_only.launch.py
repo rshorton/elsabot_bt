@@ -32,6 +32,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        SetParameter(name='use_sim_time', value=True),
+        SetParameter(name='use_sim_time', value=LaunchConfiguration("use_sim_time")),
         behavior_tree
     ])

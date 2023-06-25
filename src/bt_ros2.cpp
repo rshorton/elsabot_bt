@@ -66,6 +66,7 @@
 #include "ros_common.hpp"
 #include "game_settings.hpp"
 #include "imu_topic.hpp"
+#include "get_robot_pose_action.hpp"
 
 #define DEFAULT_BT_XML ""
 
@@ -166,6 +167,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<NumericComparisonAction>("NumericComparisonAction");
 #endif    
 
+    factory.registerNodeType<GetRobotPoseAction>("GetRobotPoseAction");
+
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
@@ -263,7 +266,7 @@ int main(int argc, char **argv)
     auto tree = factory.createTreeFromFile(bt_xml);
 
     // Create loggers
-    //StdCoutLogger logger_cout(tree);
+    StdCoutLogger logger_cout(tree);
     //PublisherZMQ publisher_zmq(tree);
     FileLogger logger_file(tree, "bt_trace.fbl");
 

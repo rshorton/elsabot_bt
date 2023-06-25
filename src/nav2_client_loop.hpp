@@ -90,8 +90,6 @@ public:
         Pose2D loop_intermediate_pos = BT::convertFromString<Pose2D>(loop_intermediate_pos_str);
         Pose2D goal;
 
-        RCLCPP_INFO(node_->get_logger(), "Goal %f %f %f", goal.x, goal.y, goal.yaw);
-
         // Get the current state and determine whether the robot is currently at the loop end position.
         // If so, then set the initial goal to be at an intermeditate point along the loop.  Otherwise
         // make the initial goal the loop end point.
@@ -122,6 +120,8 @@ public:
                 goal = loop_intermediate_pos;
             }
         }
+
+        RCLCPP_INFO(node_->get_logger(), "Goal %f %f %f", goal.x, goal.y, goal.yaw);
 
         nav2_msgs::action::NavigateToPose::Goal goal_msg;
         goal_msg.pose.header.frame_id = "map";
