@@ -2,6 +2,7 @@
     <BehaviorTree ID="MainTree">
         <Sequence>
             <SetBlackboard output_key="pose_set" value="0" />
+            <SetBlackboard output_key="said_pose_waiting" value="0" />
 
             <KeepRunningUntilFailure>
                 <ReactiveSequence>
@@ -47,7 +48,7 @@
                                         <BlackboardCheckInt value_A="{moving}" value_B="1" return_on_mismatch="FAILURE">
                                             <Sequence>
                                                 <SetBlackboard output_key="moving" value="0" />
-                                                <TextToSpeechActionClient msg1="I'm stopping." />    
+                                                <SetBlackboard output_key="go" value="0" />
                                             </Sequence>                                                
                                         </BlackboardCheckInt>
                                     </Sequence>
@@ -61,12 +62,19 @@
                                     <SetBlackboard output_key="pose_set" value="1" />
                                     <TextToSpeechActionClient msg1="I know my position now.  Just say 'elsabot go', for a lap around the yard." />    
                                 </Sequence>                            
-                                <Sequence>                                    
-                                    <TextToSpeechActionClient msg1="Hold on, I'm waiting for my position to be set." />
-                                    <Delay delay_msec="5000">
-                                        <SetBlackboard output_key="dummy" value="0" />
-                                    </Delay>
-                                </Sequence>
+                                <Fallback>
+                                    <BlackboardCheckInt value_A="{said_pose_waiting}" value_B="0" return_on_mismatch="FAILURE">
+                                        <Sequence>
+                                            <TextToSpeechActionClient msg1="Hold on, I'm waiting for my position to be set." />
+                                            <SetBlackboard output_key="said_pose_waiting" value="1" />
+                                        </Sequence>
+                                    </BlackboardCheckInt>                                        
+                                    <Sequence>
+                                        <Delay delay_msec="5000">
+                                            <SetBlackboard output_key="dummy" value="0" />
+                                        </Delay>
+                                    </Sequence>
+                                </Fallback>    
                             </Fallback>
                         </Sequence>
                     </Fallback>
