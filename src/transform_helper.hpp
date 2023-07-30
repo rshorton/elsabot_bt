@@ -22,6 +22,7 @@ limitations under the License.
 #include "rclcpp/rclcpp.hpp"
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 class TransformHelper
 {
@@ -32,6 +33,8 @@ public:
 	}
 	bool Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z);
 	bool Transform(const std::string &frame_from, const std::string &frame_to, std::string &pos);
+
+	bool GetTransform(const std::string &frame_from, const std::string &frame_to, geometry_msgs::msg::TransformStamped &transform);
 
 private:
 	TransformHelper(rclcpp::Node::SharedPtr node);

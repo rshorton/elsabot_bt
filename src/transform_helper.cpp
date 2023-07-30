@@ -35,6 +35,18 @@ TransformHelper::TransformHelper(rclcpp::Node::SharedPtr node)
 	tfl_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer_);
 }
 
+bool TransformHelper::GetTransform(const std::string &frame_from, const std::string &frame_to, geometry_msgs::msg::TransformStamped &transform)
+{
+	try{
+		transform = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0));
+		return true;
+	} catch (tf2::TransformException &ex) {
+		RCLCPP_ERROR(node_->get_logger(), "TransformHelper: Failed to transform from %s to %s",
+			frame_from.c_str(), frame_to.c_str());
+	}
+	return false;
+}
+
 bool TransformHelper::Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z)
 {
 	try{

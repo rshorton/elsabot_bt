@@ -22,10 +22,6 @@ limitations under the License.
 #include "std_msgs/msg/header.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
-#include "tf2/transform_datatypes.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "nav_msgs/msg/path.hpp"
 
 #include <behaviortree_cpp_v3/action_node.h>
@@ -36,17 +32,9 @@ class RobotFindInitAction : public BT::SyncActionNode
 {
     public:
 		RobotFindInitAction(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::SyncActionNode(name, config),
-			  cur_pos_x_(0.0),
-			  cur_pos_y_(0.0),
-			  cur_yaw_(0.0),
-			  valid_pose_(false)
+            : BT::SyncActionNode(name, config)
         {
 			node_ = rclcpp::Node::make_shared("robot_find_init_action_node");
-            pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-              "/robot_pose",
-              rclcpp::SystemDefaultsQoS(),
-              std::bind(&RobotFindInitAction::poseCallback, this, std::placeholders::_1));
 
 			// fix - use a more generic topic for publishing game info on the map
             path_pub_ = node_->create_publisher<nav_msgs::msg::Path> ("robot_seek_game/search_path", 1);
@@ -62,39 +50,27 @@ class RobotFindInitAction : public BT::SyncActionNode
 					 //BT::OutputPort<double>("angle_to_field")};
         }
 
-        void poseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
-        {
-        	cur_pos_x_ = msg->pose.position.x;
-        	cur_pos_y_ = msg->pose.position.y;
-
-        	double quatx = msg->pose.orientation.x;
-        	double quaty = msg->pose.orientation.y;
-        	double quatz = msg->pose.orientation.z;
-        	double quatw = msg->pose.orientation.w;
-
-        	tf2::Quaternion q(quatx, quaty, quatz, quatw);
-        	tf2::Matrix3x3 m(q);
-        	double roll, pitch, yaw;
-        	m.getRPY(roll, pitch, yaw);
-        	cur_yaw_ = yaw;
-
-        	valid_pose_ = true;
-        	cout << "Received pose, x= " << cur_pos_x_ << ", y= " << cur_pos_y_ << endl;
-        }
-
         virtual BT::NodeStatus tick() override
         {
         	// Get the current pose
-        	for (int t = 0; t < 100; t++) {
-            	rclcpp::spin_some(node_);
+			RobotStatus* robot_status = RobotStatus::GetInstance();
+			if (!robot_status) {
+				RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Cannot get robot status for obtaining pose");
+				return BT::NodeStatus::FAILURE;
+			}
 
-        		if (valid_pose_) {
-        			break;
-        		}
+			double cur_x, cur_y, cur_z, cur_yaw = 0.0;
+			auto valid_pose = false;
+
+        	for (int t = 0; t < 20; t++) {
+				valid_pose = robot_status->GetPose(cur_x, cur_y, cur_z, cur_yaw);
+				if (valid_pose) {
+					break;
+				}
         		std::this_thread::sleep_for(100ms);
         		cout << "Waiting for pose..." << endl;
         	}
-        	if (!valid_pose_) {
+        	if (!valid_pose) {
         		RCLCPP_ERROR(node_->get_logger(), "Did not receive current robot pose");
         		return BT::NodeStatus::FAILURE;
         	}
@@ -175,7 +151,7 @@ class RobotFindInitAction : public BT::SyncActionNode
                 // Another BT node will use this delta to rotate the robot.
                 RobotFindGame::position ave;
                 game->GetAvePosition(ave);
-                double angle = atan2(ave.y - cur_pos_y_, ave.x - cur_pos_y_);
+                double angle = atan2(ave.y - cur_pos_y, ave.x - cur_pos_x);
                 angle *= 180.0/M_PI;
                 double yaw = cur_yaw_*180.0/M_PI;
                 double delta = angle - yaw;
@@ -190,12 +166,7 @@ class RobotFindInitAction : public BT::SyncActionNode
 
     private:
         rclcpp::Node::SharedPtr node_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
         double cur_pos_x_;
-        double cur_pos_y_;
-        double cur_yaw_;
-        bool valid_pose_;
-
 };
 

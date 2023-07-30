@@ -26,7 +26,6 @@ limitations under the License.
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
 #include "tf2/utils.h"
-#include "tf2/LinearMath/Quaternion.h"
 
 #include "geometry_msgs/msg/twist.hpp"
 
@@ -39,23 +38,13 @@ class RobotSpin : public BT::AsyncActionNode
     public:
 		RobotSpin(const std::string& name, const BT::NodeConfiguration& config)
             : BT::AsyncActionNode(name, config),
-			  cur_pos_x(0.0),
-			  cur_pos_y(0.0),
-			  valid_pose(false),
 			  strt_yaw_(0.0),
-			  cur_yaw_(0.0),
 			  prev_yaw_(0.0),
 			  relative_yaw_(0.0)
         {
 			std::stringstream ss;
 			ss << "robot_spin_action_node" << getInstanceCnt();
 			node_ = rclcpp::Node::make_shared(ss.str());
-
-            pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-              "/robot_pose",
-              rclcpp::SystemDefaultsQoS(),
-              std::bind(&RobotSpin::poseCallback, this, std::placeholders::_1));
-
             vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);
         }
 
@@ -67,26 +56,26 @@ class RobotSpin : public BT::AsyncActionNode
 				   };
         }
 
-        void poseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
-        {
-        	cur_pos_x = msg->pose.position.x;
-        	cur_pos_y = msg->pose.position.y;
-        	cur_yaw_ = tf2::getYaw(msg->pose.orientation);
-        	valid_pose = true;
-        	//cout << "Received pose, yaw= " << cur_yaw_ << ", x= " << cur_pos_x << ", y= " << cur_pos_y << endl;
-        }
-
         virtual BT::NodeStatus tick() override
         {
         	setStatus(BT::NodeStatus::RUNNING);
         	_aborted = false;
 
-        	for (int t = 0; t < 20; t++) {
-            	rclcpp::spin_some(node_);
+        	// Get the current pose
+			RobotStatus* robot_status = RobotStatus::GetInstance();
+			if (!robot_status) {
+				RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Cannot get robot status for obtaining pose");
+				return BT::NodeStatus::FAILURE;
+			}
 
-        		if (valid_pose) {
-        			break;
-        		}
+			double cur_x, cur_y, cur_z, cur_yaw = 0.0;
+			auto valid_pose = false;
+
+        	for (int t = 0; t < 20; t++) {
+				valid_pose = robot_status->GetPose(cur_x, cur_y, cur_z, cur_yaw);
+				if (valid_pose) {
+					break;
+				}
         		std::this_thread::sleep_for(100ms);
         		cout << "Waiting for pose..." << endl;
         	}
@@ -95,9 +84,8 @@ class RobotSpin : public BT::AsyncActionNode
         		return BT::NodeStatus::FAILURE;
         	}
 
-        	valid_pose = false;
-        	strt_yaw_ = cur_yaw_;
-        	prev_yaw_ = cur_yaw_;
+        	strt_yaw_ = cur_yaw;
+        	prev_yaw_ = cur_yaw;
         	relative_yaw_ = 0.0;
 
 			bool deg = true;
@@ -123,20 +111,21 @@ class RobotSpin : public BT::AsyncActionNode
 
         	rclcpp::Rate rate(20);
         	while (rclcpp::ok()) {
-        		if (valid_pose) {
+        		if (robot_status->GetPose(cur_x, cur_y, cur_z, cur_yaw)) {
+					
                 	// From Nav2_recoveries/plugings/spin.cpp
-                	double delta_yaw = cur_yaw_ - prev_yaw_;
+                	double delta_yaw = cur_yaw - prev_yaw_;
                 	if (abs(delta_yaw) > M_PI) {
                 	    delta_yaw = copysign(2 * M_PI - abs(delta_yaw), prev_yaw_);
                 	}
 
                 	relative_yaw_ += delta_yaw;
-                	prev_yaw_ = cur_yaw_;
+                	prev_yaw_ = cur_yaw;
 
                 	double remaining_yaw = abs(delta_yaw_goal_) - abs(relative_yaw_);
 
                 	//RCLCPP_INFO(node_->get_logger(), "Spin: cur: %.2f, prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
-                	//		cur_yaw_, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
+                	//		cur_yaw, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
 
                 	if (remaining_yaw < 1e-6 || _aborted) {
                     	cmd_vel.angular.z = 0.0;
@@ -171,14 +160,8 @@ class RobotSpin : public BT::AsyncActionNode
         rclcpp::Node::SharedPtr node_;
 
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
-        rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
-
-        double cur_pos_x;
-        double cur_pos_y;
-        bool valid_pose;
 
         double strt_yaw_;
-        double cur_yaw_;
         double prev_yaw_;
         double relative_yaw_;
 

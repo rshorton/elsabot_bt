@@ -28,7 +28,7 @@ limitations under the License.
 #include "tf2/transform_datatypes.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 #include <behaviortree_cpp_v3/action_node.h>
@@ -48,11 +48,6 @@ class RobotSeekInitAction : public BT::SyncActionNode
 			  valid_pose(false)
         {
 			node_ = rclcpp::Node::make_shared("robot_seek_init_action_node");
-            pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-              "/robot_pose",
-              rclcpp::SystemDefaultsQoS(),
-              std::bind(&RobotSeekInitAction::poseCallback, this, std::placeholders::_1));
-
             search_path_pub_ = node_->create_publisher<nav_msgs::msg::Path> ("robot_seek_game/search_path", 1);
         }
 
@@ -83,6 +78,7 @@ class RobotSeekInitAction : public BT::SyncActionNode
 
         virtual BT::NodeStatus tick() override
         {
+
         	for (int t = 0; t < 100; t++) {
             	rclcpp::spin_some(node_);
 
@@ -96,6 +92,20 @@ class RobotSeekInitAction : public BT::SyncActionNode
         		RCLCPP_ERROR(node_->get_logger(), "Did not receive current robot pose");
         		return BT::NodeStatus::FAILURE;
         	}
+
+            RobotStatus* robot_status = RobotStatus::GetInstance();
+            if (!robot_status) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Cannot get robot status for obtaining pose");
+                return BT::NodeStatus::FAILURE;
+            }
+            
+            double x, y, z, yaw;
+            auto got_pose = robot_status->GetPose(x, y, z, yaw);
+            if (!got_pose) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Robot pose not available.");
+                return BT::NodeStatus::FAILURE;
+            }
+
 
         	RobotSeekGame* game = RobotSeekGame::GetRobotSeekGame();
 			if (game == nullptr) {
