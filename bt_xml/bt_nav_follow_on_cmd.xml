@@ -1,0 +1,104 @@
+<!--
+This behavior tree implements a robot follow mode using the Nav2 Follow Point behavior mode (tree).
+The robot_head package is used to detect a track a person.  The position of the person is published
+as a /goal_update by the Tracker node of robot_head.
+
+Following is started or stopped using a voice command.
+To start say:
+ elsabot follow (or come)
+To stop say:
+ elsabot stop (or stay)
+-->
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Sequence>
+			<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="true"/>
+            <SetBlackboard output_key="pose_set" value="0" />
+            <SetBlackboard output_key="said_pose_waiting" value="0" />
+
+            <KeepRunningUntilFailure>
+                <ReactiveSequence>
+                    <ForceSuccess>
+                        <Sequence>
+                            <WakeWordDetected since_sec="3.0" />
+							<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone1.wav"/>
+                            <SpeechToTextActionClient text="{said}" />
+							<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone2.wav"/>
+                            <Fallback>
+                                <Sequence>
+                                    <TextCompareAction text="{said}" ck_for=".*(stop|stay).*" />
+                                    <SetBlackboard output_key="go" value="0" />
+                                </Sequence>                                    
+                                <Sequence>
+                                    <TextCompareAction text="{said}" ck_for=".*(follow|come).*" />
+                                    <SetBlackboard output_key="go" value="1" />
+									<!-- Turn off base turn to sound -->
+									<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="false"/>
+                                </Sequence>                                    
+                            </Fallback>
+                        </Sequence>
+                    </ForceSuccess>                        
+                    <Fallback>
+                        <BlackboardCheckInt value_A="{pose_set}" value_B="1" return_on_mismatch="FAILURE">
+                            <ForceSuccess>
+                                <Fallback>
+                                    <BlackboardCheckInt value_A="{go}" value_B="1" return_on_mismatch="FAILURE" >
+                                        <Sequence>
+                                            <Repeat num_cycles="1">
+                                                <Sequence>
+                                                    <SetBlackboard output_key="end_pos" value="0.0,0.0,0.0" />
+                                                    <SetBlackboard output_key="intermediate_pos" value="3.14,-0.36,0.0" />
+                                                    <TextToSpeechActionClient msg1="You're the leader.  I'll follow you." />
+                                                    <SetBlackboard output_key="moving" value="1" />
+                                                    <ReactiveSequence>
+								                    	<Nav2Client goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
+                                                        <TextToSpeechActionClient msg1="I'll stay here for now." />    
+                                                        <SetBlackboard output_key="go" value="0" />
+                                                        <SetBlackboard output_key="moving" value="0" />
+                                                    </ReactiveSequence>                                            
+                                                </Sequence>
+                                            </Repeat>
+                                        </Sequence>
+                                    </BlackboardCheckInt>
+                                    <Sequence>
+                                        <BlackboardCheckInt value_A="{moving}" value_B="1" return_on_mismatch="FAILURE">
+                                            <Sequence>
+                                                <SetBlackboard output_key="moving" value="0" />
+                                                <SetBlackboard output_key="go" value="0" />
+												<TextToSpeechActionClient msg1="I'll stay here for now." />    
+												<!-- Turn on base turn to sound -->
+												<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="true"/>
+                                            </Sequence>                                                
+                                        </BlackboardCheckInt>
+                                    </Sequence>
+                                </Fallback>                                    
+                            </ForceSuccess>                            
+                        </BlackboardCheckInt>
+                        <Sequence>
+                            <Fallback>
+                                <Sequence>
+                                    <GetRobotPoseAction pose="{robot_pose}" />
+                                    <SetBlackboard output_key="pose_set" value="1" />
+                                    <TextToSpeechActionClient msg1="I know where I am now.  Just say 'elsabot follow', and I'll follow you around." />    
+                                </Sequence>                            
+                                <Fallback>
+                                    <BlackboardCheckInt value_A="{said_pose_waiting}" value_B="0" return_on_mismatch="FAILURE">
+                                        <Sequence>
+                                            <TextToSpeechActionClient msg1="Hold on, I'm waiting for my position to be set." />
+                                            <SetBlackboard output_key="said_pose_waiting" value="1" />
+                                        </Sequence>
+                                    </BlackboardCheckInt>                                        
+                                    <Sequence>
+                                        <Delay delay_msec="5000">
+                                            <SetBlackboard output_key="dummy" value="0" />
+                                        </Delay>
+                                    </Sequence>
+                                </Fallback>    
+                            </Fallback>
+                        </Sequence>
+                    </Fallback>
+                </ReactiveSequence>                    
+            </KeepRunningUntilFailure>            
+        </Sequence>            
+    </BehaviorTree>
+</root>

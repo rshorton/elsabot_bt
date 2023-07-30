@@ -1,17 +1,16 @@
 <root main_tree_to_execute = "MainTree">
     <BehaviorTree ID="MainTree">
         <Sequence>
-          <TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />
+	      <TrackAction mode="Track" rate="3" sound_track_mode="none" turn_base="false"/>
 	        <Repeat num_cycles="3">
 	            <Sequence>
 	                <SmileAction level="3" duration_ms="2000" />
-	                <SetBlackboard output_key="Goal_a" value="-5.40,-5.37,90.0" />
+	                <SetBlackboard output_key="Goal_a" value="0.0, 0.0, 0.0" />
 	                <Sequence>
-	                 <ForceSuccess>
-	                    <Nav2Client goal="{Goal_a}" behavior_tree="/home/ubuntu/robot_ws/follow_point_elsabot.xml" />
-                   </ForceSuccess>
-	                </Sequence>
-
+	                	<ForceSuccess>
+	                    	<Nav2Client goal="{Goal_a}" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
+                   		</ForceSuccess>
+	               </Sequence>
 	            </Sequence>
 	        </Repeat>
         </Sequence>
