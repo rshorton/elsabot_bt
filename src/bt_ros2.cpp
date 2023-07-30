@@ -79,44 +79,27 @@ int main(int argc, char **argv)
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     rclcpp::init(argc, argv);
 
-    // Needed for passing-thru move group related parameters
-    rclcpp::NodeOptions node_options;
-    node_options.automatically_declare_parameters_from_overrides(true);
-    auto nh = rclcpp::Node::make_shared("robot_bt", node_options);
+    auto nh = rclcpp::Node::make_shared("robot_bt");
  
-    nh->declare_parameter<std::string>("bt_settings", "");
+    nh->declare_parameter("bt_use_std_out_logger", false);
+    bool use_std_out_logger = nh->get_parameter("bt_use_std_out_logger").as_bool();
 
-    rclcpp::Parameter bt_xml_param;
-    nh->get_parameter_or("bt_xml", bt_xml_param, rclcpp::Parameter("bt_xml", DEFAULT_BT_XML));
+    nh->declare_parameter("bt_use_zmq_publisher", false);
+    bool use_zmq_publisher = nh->get_parameter("bt_use_zmq_publisher").as_bool();
 
-    std::string bt_xml = bt_xml_param.value_to_string();
+    nh->declare_parameter("bt_log_file", "");
+    std::string log_file = nh->get_parameter("bt_log_file").as_string();
+
+    nh->declare_parameter("bt_xml", DEFAULT_BT_XML);
+    std::string bt_xml = nh->get_parameter("bt_xml").as_string();
     RCLCPP_INFO(nh->get_logger(), "Loading XML : %s", bt_xml.c_str());
 
-    std::string bt_settings;
-    nh->get_parameter("bt_settings", bt_settings);
+    nh->declare_parameter("bt_settings", "");
+    std::string bt_settings = nh->get_parameter("bt_settings").as_string();
     RCLCPP_INFO(nh->get_logger(), "Settings : %s", bt_settings.c_str());
 
     auto & settings = GameSettings::getInstance(GAME_SETTINGS_FILENAME);
     settings.Set(bt_settings);
-
-#if 0 // Not working
-    // Subscribe to changes in the settings parameter
-    auto param_subscriber = std::make_shared<rclcpp::ParameterEventHandler>(nh);
-
-	auto cb1 = [&nh, &settings](const rclcpp::Parameter & p) {
-
-	  cout << "got callback" << std::endl;
-
-	  RCLCPP_INFO(
-		nh->get_logger(),
-		"cb1: Received an update to parameter [%s]: [%s]",
-		p.get_name().c_str(),
-		p.as_string().c_str());
-
-	  	settings.Set(p.as_string());
-	};
-	auto handle1 = param_subscriber->add_parameter_callback("bt_settings", cb1);
-#endif
 
     // ROS common helpers and expose node 
     ROSCommon::Create(nh);
@@ -172,9 +155,8 @@ int main(int argc, char **argv)
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
-    // The follow are node builders for those actions that need the ROS node pointer
+    // The following are node builders for those actions that need the ROS node pointer
     // FIX - use new schem that uses a common singleton for accessing the ROS node pointer...
-    // Why didn't I use that from the get go???
     NodeBuilder builder_AntennaAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -266,9 +248,20 @@ int main(int argc, char **argv)
     auto tree = factory.createTreeFromFile(bt_xml);
 
     // Create loggers
-    StdCoutLogger logger_cout(tree);
-    //PublisherZMQ publisher_zmq(tree);
-    FileLogger logger_file(tree, "bt_trace.fbl");
+    std::shared_ptr<StdCoutLogger> logger;
+    if (use_std_out_logger) {
+        logger = std::make_shared<StdCoutLogger>(tree);
+    }
+
+    std::shared_ptr<FileLogger> file_logger;
+    if (log_file.size()) {
+        file_logger = std::make_shared<FileLogger>(tree, log_file.c_str());
+    }
+
+    std::shared_ptr<PublisherZMQ> zmq_publisher;
+    if (use_zmq_publisher) {
+        zmq_publisher = std::make_shared<PublisherZMQ>(tree);
+    }
 
     NodeStatus status = NodeStatus::RUNNING;
 
@@ -288,19 +281,10 @@ int main(int argc, char **argv)
     // Create object for receiving IMU topic messages
     IMUTopic::Create(nh);
 
-    // code that could cause exception
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
     	rclcpp::spin_some(nh);
     	status = tree.tickRoot();
-
-    	// Workaround - the parameter callback above does't appear to work...?
-    	std::string param;
-    	nh->get_parameter("bt_settings", param);
-    	if (param != bt_settings) {
-    		bt_settings = param;
-    		settings.Set(bt_settings);
-    	}
 
         // Sleep 50 milliseconds
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
