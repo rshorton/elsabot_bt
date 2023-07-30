@@ -48,6 +48,7 @@ public:
 
     	ssml_ = "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xmlns:mstts=\"https://www.w3.org/2001/mstts\" xml:lang=\"en-US\">" \
     				"<voice name=\"VOICE\">" \
+						"AUDIO"
 						"<mstts:express-as style=\"STYLE\">" \
 						"<prosody rate=\"RATE%\" pitch=\"PITCH%\" contour=\"CONTOUR\">" \
 		    		        "TEXT" \
@@ -55,6 +56,8 @@ public:
 						"</mstts:express-as>" \
 					"</voice>" \
 				"</speak>";
+		audio_ssml_ = "<audio src=\"AUDIO_URL\"></audio>";
+
     }
 
     static BT::PortsList providedPorts()
@@ -75,7 +78,10 @@ public:
         		BT::InputPort<std::string>("style"),
         		BT::InputPort<std::string>("rate"),
         		BT::InputPort<std::string>("pitch"),
-        		BT::InputPort<std::string>("contour")};
+        		BT::InputPort<std::string>("contour"),
+				// Audio url accessible by MS Speech sythesis.
+				// (put in Azuze in blob storage)
+				BT::InputPort<std::string>("audio")};
     }
 
     void ReplaceAllOccurrences(std::string search, std::string replace, std::string &str)
@@ -120,6 +126,7 @@ public:
     	std::string rate = "-15";
     	std::string pitch = "21";
     	std::string contour = "(0%, +0%) (100%, +0%)";
+		std::string audio;
 
 		std::string msg;
 		std::string part;
@@ -151,6 +158,7 @@ public:
     	getInput<std::string>("rate", rate);
     	getInput<std::string>("pitch", pitch);
     	getInput<std::string>("contour", contour);
+    	getInput<std::string>("audio", audio);
 
     	std::stringstream node_name;
     	{
@@ -202,6 +210,14 @@ public:
     	ReplaceField(ssml, "RATE", rate);
     	ReplaceField(ssml, "PITCH", pitch);
     	ReplaceField(ssml, "CONTOUR", contour);
+
+		std::string audio_ssml;
+		if (audio.size()) {
+			audio_ssml = audio_ssml_;
+			ReplaceField(audio_ssml, "AUDIO_URL", audio);
+		}
+		ReplaceField(ssml, "AUDIO", audio_ssml);
+
 //        RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech cmd [%s]", msg.c_str());
         RCLCPP_INFO(node_->get_logger(), "Sending text-to-speech ssml cmd [%s]", ssml.c_str());
 
@@ -265,6 +281,7 @@ public:
 #endif
 private:
     std::string ssml_;
+	std::string audio_ssml_;
     bool _aborted;
     rclcpp::Node::SharedPtr node_;
     std::mutex _mutex;

@@ -5,9 +5,11 @@
 			<Fallback>
 				<Sequence>
 					<Delay delay_msec="3000">
-	          <TextToSpeechActionClient msg1="Say something" />
+	          		<TextToSpeechActionClient msg1="Say something" />
 					</Delay>
+	          		<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone1.wav"/>
 					<SpeechToTextActionClient text="{said}" />
+	          		<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone2.wav"/>
 					<TextToSpeechActionClient msg1="You said" />
 					<TextToSpeechActionClient msg1="{said}" />
 				</Sequence>
