@@ -35,17 +35,17 @@ def generate_launch_description():
             description='Whether to run the behavior tree.  Use False when developing/testing a tree'
         ),
 
+        DeclareLaunchArgument(
+            name='cmd_vel_topic', 
+            default_value='cmd_vel',
+            description='Topic to publish cmd_vel messages'
+        ),        
+
         # Launch the robot head nodes
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(get_package_share_directory('robot_head'), 'launch', 'robot_head.launch.py'))
         ),
-
-        # Launch the web video server for serving-up camera topics as video streams (to web pages)
-        #Node(
-        #    package='web_video_server',
-        #    executable='web_video_server'
-        #),
 
         # Launch the speech input server
         IncludeLaunchDescription(
@@ -59,7 +59,6 @@ def generate_launch_description():
                 os.path.join(get_package_share_directory('speech_output_server'), 'launch', 'speech_out.launch.py'))
         ),
 
-
         Node(
             condition=IfCondition(LaunchConfiguration('run_bt')),
             package='elsabot_bt',
@@ -70,6 +69,7 @@ def generate_launch_description():
                 moveit_config.robot_description_semantic,
                 moveit_config.robot_description_kinematics,
             ],
-            output='screen'
+            output='screen',
+            remappings=[('cmd_vel', LaunchConfiguration('cmd_vel_topic'))]
         ),
     ])
