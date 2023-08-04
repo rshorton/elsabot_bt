@@ -44,8 +44,7 @@ class RobotSeekInitAction : public BT::SyncActionNode
             : BT::SyncActionNode(name, config),
 			  cur_pos_x(0.0),
 			  cur_pos_y(0.0),
-			  cur_yaw(0.0),
-			  valid_pose(false)
+			  cur_yaw(0.0)
         {
 			node_ = rclcpp::Node::make_shared("robot_seek_init_action_node");
             search_path_pub_ = node_->create_publisher<nav_msgs::msg::Path> ("robot_seek_game/search_path", 1);
@@ -56,43 +55,8 @@ class RobotSeekInitAction : public BT::SyncActionNode
         	return { BT::InputPort<std::string>("game_file") };
         }
 
-        void poseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
-        {
-        	cur_pos_x = msg->pose.position.x;
-        	cur_pos_y = msg->pose.position.y;
-
-        	double quatx = msg->pose.orientation.x;
-        	double quaty = msg->pose.orientation.y;
-        	double quatz = msg->pose.orientation.z;
-        	double quatw = msg->pose.orientation.w;
-
-        	tf2::Quaternion q(quatx, quaty, quatz, quatw);
-        	tf2::Matrix3x3 m(q);
-        	double roll, pitch, yaw;
-        	m.getRPY(roll, pitch, yaw);
-        	cur_yaw = yaw;
-
-        	valid_pose = true;
-        	cout << "Received pose, x= " << cur_pos_x << ", y= " << cur_pos_y << endl;
-        }
-
         virtual BT::NodeStatus tick() override
         {
-
-        	for (int t = 0; t < 100; t++) {
-            	rclcpp::spin_some(node_);
-
-        		if (valid_pose) {
-        			break;
-        		}
-        		std::this_thread::sleep_for(100ms);
-        		cout << "Waiting for pose..." << endl;
-        	}
-        	if (!valid_pose) {
-        		RCLCPP_ERROR(node_->get_logger(), "Did not receive current robot pose");
-        		return BT::NodeStatus::FAILURE;
-        	}
-
             RobotStatus* robot_status = RobotStatus::GetInstance();
             if (!robot_status) {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Cannot get robot status for obtaining pose");
@@ -105,7 +69,6 @@ class RobotSeekInitAction : public BT::SyncActionNode
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Robot pose not available.");
                 return BT::NodeStatus::FAILURE;
             }
-
 
         	RobotSeekGame* game = RobotSeekGame::GetRobotSeekGame();
 			if (game == nullptr) {
@@ -174,6 +137,5 @@ class RobotSeekInitAction : public BT::SyncActionNode
         double cur_pos_x;
         double cur_pos_y;
         double cur_yaw;
-        bool valid_pose;
 };
 
