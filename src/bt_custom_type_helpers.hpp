@@ -2,6 +2,8 @@
 
 #include "behaviortree_cpp_v3/action_node.h"
 
+// FIX - add reference frame and timestamp to these
+
 // Custom types
 struct Pose2D
 {
