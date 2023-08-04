@@ -20,18 +20,31 @@ def generate_launch_description():
     # The xArm URDF, SRDF and kinematics configs are need by action nodes using move group functionality
     #moveit_config = MoveItConfigsBuilder("xarm").to_moveit_configs()
 
-    behavior_tree = Node(
-        package='elsabot_bt',
-        executable='elsabot_bt',
-        parameters=[{'bt_xml': bt_xml},
-            #moveit_config.robot_description,
-            #moveit_config.robot_description_semantic,
-            #moveit_config.robot_description_kinematics,
-        ],
-        output='screen'
-    )
-
     return LaunchDescription([
-        SetParameter(name='use_sim_time', value=LaunchConfiguration("use_sim_time")),
-        behavior_tree
+        DeclareLaunchArgument(
+            name='use_sim_time',
+            default_value='false',
+            description='Use simulation (Gazebo) clock if true'
+        ),
+
+        DeclareLaunchArgument(
+            name='bt_use_std_out_logger',
+            default_value='false',
+            description='Output tree debug to console'
+        ),
+
+        SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')),
+
+        Node(
+            package='elsabot_bt',
+            executable='elsabot_bt',
+            parameters=[
+                {'bt_xml': bt_xml},
+                {'bt_use_std_out_logger': LaunchConfiguration('bt_use_std_out_logger')}
+                #moveit_config.robot_description,
+                #moveit_config.robot_description_semantic,
+                #moveit_config.robot_description_kinematics,
+            ],
+            output='screen'
+        )
     ])
