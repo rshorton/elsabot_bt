@@ -5,7 +5,7 @@
 				<PoseDetectionControlAction enable="false" />
 
 				<Delay delay_msec="4000">
-					<TrackAction mode="Scan" rate="3" sound_track_mode="any" turn_base="true"/>
+					<TrackAction mode="Scan" rate="8" sound_track_mode="any" turn_base="false"/>
 				</Delay>
 
 				<SmileAction level="3" duration_ms="2000" />
