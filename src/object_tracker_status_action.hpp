@@ -83,7 +83,8 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
         {
 			return{
 				BT::InputPort<bool>("ck_state"),
-				BT::InputPort<float>("min_duration")};
+				BT::InputPort<float>("min_duration"),
+				BT::OutputPort<std::string>("position")};
         }
 
         virtual BT::NodeStatus tick() override
@@ -114,6 +115,13 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
 			// Success if specified state has been active for the specified duration
 			if (ck_state == node_if_->tracker_status_.tracking &&
 					node_if_->tracker_status_.duration > min_duration) {
+
+				// Fix - position should include the frame id
+				std::stringstream str;
+        		str << node_if_->tracker_status_.x_ave << ","
+					<< node_if_->tracker_status_.y_ave << ",0.0"
+					<< std::endl;
+				setOutput("position", str.str());
 				return BT::NodeStatus::SUCCESS;
 			}
 			return BT::NodeStatus::FAILURE;

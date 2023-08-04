@@ -51,6 +51,8 @@ To stop say:
                                                     <TextToSpeechActionClient msg1="You're the leader.  I'll follow you." />
                                                     <SetBlackboard output_key="moving" value="1" />
                                                     <ReactiveSequence>
+            											<ObjectTrackerStatusAction ck_state="1" min_duration="1" position="tracked_position" />
+                                                        <PublishPositionAsGoalAction position="{tracked_position}"/>
 								                    	<Nav2Client goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
                                                         <TextToSpeechActionClient msg1="I'll stay here for now." />    
                                                         <SetBlackboard output_key="go" value="0" />
