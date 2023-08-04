@@ -25,6 +25,8 @@
 #include "object_detection_action.hpp"
 #include "object_tracker_location_status_action.hpp"
 #include "object_tracker_status_action.hpp"
+#include "publish_position_as_goal_action.hpp"
+
 #if defined(USE_BT_COROUTINES)
 #include "scan_wait_action.hpp"
 #endif
@@ -155,8 +157,6 @@ int main(int argc, char **argv)
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
-    // The following are node builders for those actions that need the ROS node pointer
-    // FIX - use new schem that uses a common singleton for accessing the ROS node pointer...
     NodeBuilder builder_AntennaAction =
        [nh](const std::string& name, const NodeConfiguration& config)
     {
@@ -241,6 +241,14 @@ int main(int argc, char **argv)
         return std::make_unique<ObjectTrackerLocationStatusAction>(name, config, nh);
     };
     factory.registerBuilder<ObjectTrackerLocationStatusAction>( "ObjectTrackerLocationStatusAction", builder_ObjectTrackerLocationStatusAction);
+
+    NodeBuilder builder_PublishPositionAsGoalAction =
+       [nh](const std::string& name, const NodeConfiguration& config)
+    {
+        return std::make_unique<PublishPositionAsGoalAction>(name, config, nh);
+    };
+    factory.registerBuilder<PublishPositionAsGoalAction>( "PublishPositionAsGoalAction", builder_PublishPositionAsGoalAction);
+
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
