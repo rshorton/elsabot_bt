@@ -73,7 +73,7 @@ class TrackAction : public BT::SyncActionNode
         {
         	return { BT::InputPort<std::string>("mode"),
         			 BT::InputPort<std::string>("rate"),
-					 BT::InputPort<std::string>("sound_track_mode"),
+					 BT::InputPort<std::string>("sound_track_mode"),	// 'any', 'wakeword', 'none'
         			 BT::InputPort<bool>("turn_base"),
 					 BT::InputPort<std::string>("object_type")};
         }
