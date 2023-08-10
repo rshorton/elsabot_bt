@@ -20,13 +20,15 @@ limitations under the License.
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "behaviortree_cpp_v3/action_node.h"
 
 #include "transform_helper.hpp"
 
 const std::string DEFAULT_SOURCE_FRAME = "oakd";
+
+TransformHelper *TransformHelper::xform_helper_ = nullptr;
 
 TransformHelper::TransformHelper(rclcpp::Node::SharedPtr node)
 	: node_(node),
@@ -38,7 +40,7 @@ TransformHelper::TransformHelper(rclcpp::Node::SharedPtr node)
 bool TransformHelper::GetTransform(const std::string &frame_from, const std::string &frame_to, geometry_msgs::msg::TransformStamped &transform)
 {
 	try{
-		transform = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0));
+		transform = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0.1));
 		return true;
 	} catch (tf2::TransformException &ex) {
 		RCLCPP_ERROR(node_->get_logger(), "TransformHelper: Failed to transform from %s to %s",
@@ -51,7 +53,7 @@ bool TransformHelper::Transform(const std::string &frame_from, const std::string
 {
 	try{
 		geometry_msgs::msg::TransformStamped transformStamped;
-		transformStamped = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0));
+		transformStamped = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0.1));
 
 		geometry_msgs::msg::PointStamped pt;
 		pt.point.x = x;

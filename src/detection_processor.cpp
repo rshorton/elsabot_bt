@@ -107,7 +107,7 @@ void ObjDetProc::DetectionCallback(object_detection_msgs::msg::ObjectDescArray::
 				continue;
 			}
 
-			TransformHelper::Instance(node_).Transform(o.frame, coord_frame_, x, y, z);
+			TransformHelper::GetInstance()->Transform(o.frame, coord_frame_, x, y, z);
 
 			// Try to find an existing detection with Id
 			DetObj *match = nullptr;
@@ -267,7 +267,7 @@ bool ObjDetProc::Select(const std::string &obj_class, const ObjDetProc::Selectio
 
 	// Transform the robot position (in 'map' frame) to the same frame used for the object positions
 	if (coord_frame_ != "map") {
-		if (!TransformHelper::Instance(node_).Transform("map", coord_frame_, x, y, z)) {
+		if (!TransformHelper::GetInstance()->Transform("map", coord_frame_, x, y, z)) {
 			RCLCPP_ERROR(node_->get_logger(), "Failed to transform robot pose to frame: [%s]", coord_frame_.c_str());
 			return false;
 		}
@@ -321,7 +321,7 @@ bool ObjDetProc::LocalObjToDetection(const DetObj &obj, double dist, const std::
 	double x = obj.x;
 	double y = obj.y;
 	double z = obj.z;
-	if (!TransformHelper::Instance(node_).Transform(coord_frame_, ROBOT_BASE, x, y, z)) {
+	if (!TransformHelper::GetInstance()->Transform(coord_frame_, ROBOT_BASE, x, y, z)) {
 		return false;
 	}
 	det.yaw = std::atan2(y, x)*180.0/acos(-1.0);
@@ -335,7 +335,7 @@ bool ObjDetProc::GetObjectPos(size_t id, double &x, double &y, double &z, const 
 			x = o.desc.x;
 			y = o.desc.y;
 			z = o.desc.z;
-			if (!TransformHelper::Instance(node_).Transform(o.desc.frame, coord_frame, x, y, z)) {
+			if (!TransformHelper::GetInstance()->Transform(o.desc.frame, coord_frame, x, y, z)) {
 				return false;
 			}
 			RCLCPP_ERROR(node_->get_logger(), "GetObjectPos: id: [%lu], xyz(%s) %f, %f, %f, xyz(%s) %f, %f, %f",

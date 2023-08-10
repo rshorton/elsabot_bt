@@ -396,7 +396,7 @@
 	<BehaviorTree ID="RobotSeek">
 		<KeepRunningUntilFailure>
 			<Sequence>
-				<TextToSpeechActionClient msg1="Hold on while I get ready. " />
+				<!--TextToSpeechActionClient msg1="Hold on while I get ready. " /-->
 				<PoseDetectionControlAction enable="1" />
 				<Nav2ClearGlobalCostMap />
 				<!-- Load the search positions from the config json file.  This will calculate a path
@@ -404,15 +404,15 @@
 				<!--RobotSeekInitAction game_file="robot_seek_backyard1.json" /-->
 				<RobotSeekInitAction game_file="robot_seek_upstairs1.json" />
 				<TrackAction mode="None" rate="2" sound_track_mode="none" turn_base="0" />
-				<TextToSpeechActionClient msg1="Let's play!" />
+				<!--TextToSpeechActionClient msg1="Let's play!" /-->
 				<TextToSpeechActionClient msg1="I'll count to 10 while you go and hide." />
 				<!-- Turn around and count to 10 -->
 				<RobotSpin angle="180" velocity="1.8" />
 				<TrackAction mode="LookDown" rate="2" sound_track_mode="none" turn_base="0" />
 				<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="10" />
-				<TextToSpeechActionClient msg1="1,2,3,4,5,6,7,8,9,10! Ready or not here I come (player)!" />
+				<TextToSpeechActionClient msg1="1,2,3,4,5,6,7,8,9,10! Ready or not here I come!" />
 				<AntennaAction rate="5" intensity="10" left_blink_pattern="10" right_blink_pattern="01" />
-				<TrackAction mode="Scan" rate="8" sound_track_mode="none" turn_base="0" />
+				<TrackAction mode="Scan" rate="6" sound_track_mode="none" turn_base="0" />
 				<RobotSpin angle="-180" velocity="1.8" />
 				<SetBlackboard output_key="found" value="0" />
 				<ForceSuccess>
@@ -423,12 +423,21 @@
 								<Fallback>
 									<Inverter>
 									  <!-- Both object detection and pose detection are used for best detection results.  -->
-										<Fallback ID="Detection">
-											<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
-											<HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left=""
-												expected_pose_right="" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
-												pose_right_speech="{pose_right_speech}" />
-										</Fallback>
+									  	<Sequence>
+											<!--Fallback ID="Detection" -->
+												<!--ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" /-->
+												<!--HumanPoseDetect pose_lr_check="presence" min_points="12" expected_pose_left=""
+													expected_pose_right="" detected_person="{detected_person}" pose_left_speech="{pose_left_speech}"
+													pose_right_speech="{pose_right_speech}" /-->
+											<!--/Fallback-->
+											<ObjectTrackerStatusAction ck_state="1" min_duration="0.1" position="tracked_position" />
+											<Fallback>
+												<RobotSeekInBoundsCheckAction position="{tracked_position}"/>
+												<!--ForceFailure>
+					                            	<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone2.wav"/>
+												</ForceFailure -->
+											</Fallback>	
+										</Sequence>
 									</Inverter>
 									<ForceFailure>
 										<SetBlackboard output_key="found" value="1" />
@@ -454,11 +463,11 @@
 										<Sequence>
 											<TrackAction mode="Scan" rate="1" sound_track_mode="none" turn_base="0" />
 											<!-- ScanWaitAction uses a BT Co routine which needs Boost but is not
-											     build for ROS2 galactive.  Fix later if needed. -->
+											     build for ROS2 Galactic.  Fix later if needed. -->
 											<!-- ScanWaitAction / -->
 										</Sequence>
 									</BlackboardCheckInt>
-									<TextToSpeechActionClient msg1="I'm still looking for you, (player)." />
+									<TextToSpeechActionClient msg1="I'm still looking for you." />
 								</Sequence>
 							</ReactiveSequence>
 						</KeepRunningUntilFailure>
@@ -466,9 +475,9 @@
 						  <!-- Say a message if player found -->
 							<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
 								<Sequence>
-									<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="1" />
+									<TrackAction mode="TrackScan" rate="3" sound_track_mode="any" turn_base="1" />
 									<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
-									<TextToSpeechActionClient msg1="Yay, I found you (player)!" />
+									<TextToSpeechActionClient msg1="Yay, I found you!" />
 								</Sequence>
 							</BlackboardCheckInt>
 						</Sequence>
@@ -478,7 +487,7 @@
 				<BlackboardCheckInt value_A="{found}" value_B="0" return_on_mismatch="SUCCESS">
 					<Sequence>
 						<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="1" />
-						<TextToSpeechActionClient msg1="Come out come out where ever you are (player)!" />
+						<TextToSpeechActionClient msg1="Come out come out where ever you are!" />
 						<ForceSuccess>
 							<Timeout msec="20000">
 								<KeepRunningUntilFailure>
@@ -502,6 +511,117 @@
 				</Sequence>
 			</Sequence>
 		</KeepRunningUntilFailure>
+	</BehaviorTree>
+
+<!-- Robot Follows -->
+	<BehaviorTree ID="RobotFollow">
+        <Sequence>
+			<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="true"/>
+            <SetBlackboard output_key="pose_set" value="0" />
+            <SetBlackboard output_key="keep_playing" value="1" />
+            <SetBlackboard output_key="said_pose_waiting" value="0" />
+
+            <KeepRunningUntilFailure>
+                <Fallback>
+                    <BlackboardCheckInt value_A="{keep_playing}" value_B="1" return_on_mismatch="FAILURE">
+						<ReactiveSequence>
+							<ForceSuccess>
+								<Sequence>
+									<WakeWordDetected since_sec="3.0" />
+									<!--TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone1.wav"/-->
+									<SpeechToTextActionClient text="{said}" />
+									<!--TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone2.wav"/-->
+									<Fallback>
+										<Sequence>
+											<TextCompareAction text="{said}" ck_for=".*(stop|stay).*" />
+											<SetBlackboard output_key="go" value="0" />
+										</Sequence>                                    
+										<Sequence>
+											<TextCompareAction text="{said}" ck_for=".*(follow|come).*" />
+											<SetBlackboard output_key="go" value="1" />
+											<!-- Turn off base turn to sound -->
+											<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="false"/>
+										</Sequence>                                    
+										<Sequence>
+											<TextCompareAction text="{said}" ck_for=".*(quit|exit).*" />
+											<SetBlackboard output_key="keep_playing" value="0" />
+										</Sequence>                                    
+									</Fallback>
+								</Sequence>
+							</ForceSuccess>                        
+							<Fallback>
+								<BlackboardCheckInt value_A="{pose_set}" value_B="1" return_on_mismatch="FAILURE">
+									<ForceSuccess>
+										<Fallback>
+											<BlackboardCheckInt value_A="{go}" value_B="1" return_on_mismatch="FAILURE" >
+												<Sequence>
+													<Repeat num_cycles="1">
+														<Sequence>
+															<SetBlackboard output_key="end_pos" value="0.0,0.0,0.0" />
+															<SetBlackboard output_key="intermediate_pos" value="3.14,-0.36,0.0" />
+															<TextToSpeechActionClient msg1="You're the leader.  I'll follow you." />
+															<SetBlackboard output_key="moving" value="1" />
+															<ReactiveSequence>
+																<ForceSuccess>
+																	<Sequence>
+																		<ObjectTrackerStatusAction ck_state="1" min_duration="1" position="tracked_position" />
+																		<PublishPositionAsGoalAction position="{tracked_position}"/>
+																	</Sequence>                                                                
+																</ForceSuccess>                                                          
+																<Nav2Client goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
+																<TextToSpeechActionClient msg1="I'll stay here for now." />    
+																<SetBlackboard output_key="go" value="0" />
+																<SetBlackboard output_key="moving" value="0" />
+															</ReactiveSequence>                                            
+														</Sequence>
+													</Repeat>
+												</Sequence>
+											</BlackboardCheckInt>
+											<Sequence>
+												<BlackboardCheckInt value_A="{moving}" value_B="1" return_on_mismatch="FAILURE">
+													<Sequence>
+														<SetBlackboard output_key="moving" value="0" />
+														<SetBlackboard output_key="go" value="0" />
+														<TextToSpeechActionClient msg1="I'll stay here for now." />    
+														<!-- Turn on base turn to sound -->
+														<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="true"/>
+													</Sequence>                                                
+												</BlackboardCheckInt>
+											</Sequence>
+										</Fallback>                                    
+									</ForceSuccess>                            
+								</BlackboardCheckInt>
+								<Sequence>
+									<Fallback>
+										<Sequence>
+											<GetRobotPoseAction pose="{robot_pose}" />
+											<SetBlackboard output_key="pose_set" value="1" />
+											<TextToSpeechActionClient msg1="Just say 'elsabot follow', and I'll follow you around." />    
+										</Sequence>                            
+										<Fallback>
+											<BlackboardCheckInt value_A="{said_pose_waiting}" value_B="0" return_on_mismatch="FAILURE">
+												<Sequence>
+													<TextToSpeechActionClient msg1="Hold on, I'm waiting for my position to be set." />
+													<SetBlackboard output_key="said_pose_waiting" value="1" />
+												</Sequence>
+											</BlackboardCheckInt>                                        
+											<Sequence>
+												<Delay delay_msec="5000">
+													<SetBlackboard output_key="dummy" value="0" />
+												</Delay>
+											</Sequence>
+										</Fallback>    
+									</Fallback>
+								</Sequence>
+							</Fallback>
+						</ReactiveSequence>
+					</BlackboardCheckInt>
+					<ForceFailure>
+						<TextToSpeechActionClient msg1="That was fun, maybe we can play again later." />
+					</ForceFailure>							
+                </Fallback>                    
+            </KeepRunningUntilFailure>            
+        </Sequence>            
 	</BehaviorTree>
 
 	<BehaviorTree ID="MoveRobot">
@@ -564,6 +684,12 @@
 							<SubTree ID="RobotSeek" stop_key="stop_key" />
 							<TrackAction mode="Track" rate="3" sound_track_mode="none" turn_base="1" />
 						</Sequence>
+						<Sequence>
+							<SetBlackboard output_key="game_name" value="How about Robot Follow" />
+							<SubTree ID="AskGame" game_name="game_name" />
+							<SubTree ID="RobotFollow" stop_key="stop_key" />
+						</Sequence>
+
 						<!--
 						<Sequence>
 							<SetBlackboard output_key="game_name" value="How about Robot Find" />
@@ -580,7 +706,7 @@
 							<BlackboardCheckInt value_A="{first}" value_B="1" return_on_mismatch="FAILURE">
 								<Sequence>
 									<SetBlackboard output_key="first" value="0" />
-									<TextToSpeechActionClient msg1="Would you like to hear the list again (player)?" />
+									<TextToSpeechActionClient msg1="Would you like to hear the list of games again?" />
 									<SpeechToTextActionClient text="{said}" />
 									<TextCompareAction text="{said}" ck_for=".*(no|nope|nah).*" />
 									<SetBlackboard output_key="break" value="1" />

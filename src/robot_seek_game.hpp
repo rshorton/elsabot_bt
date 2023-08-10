@@ -22,6 +22,8 @@ limitations under the License.
 #include <map>
 
 #include "rclcpp/rclcpp.hpp"
+#include "bt_custom_type_helpers.hpp"
+
 
 class RobotSeekGame
 {
@@ -48,11 +50,17 @@ public:
 	bool Init(rclcpp::Node::SharedPtr node, std::string datapath, double init_x, double init_y, double init_yaw, std::vector<SearchPose> &poses);
 	bool NextSearchPose(double &x, double &y, double &yaw, bool &spin_at_goal, bool &scan_at_goal, int &index);
 
+	bool InBoundary(const Position &pos) const;
+
 private:
 	void GetPointInSameDirection(SearchPose p0, SearchPose p1, double x, double y, double yaw,
 								 SearchPose &best, double &angleDiff, double &angleTo);
 
+	void TestBoundaryCheck() const;
+
 private:
+	rclcpp::Node::SharedPtr node_;
+	std::vector<Position> boundary_;
 	std::vector<SearchPose> poses_;
 	int idx_cur_;
 	int idx_start_;

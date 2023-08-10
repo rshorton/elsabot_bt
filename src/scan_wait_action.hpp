@@ -24,55 +24,53 @@ using namespace BT;
 
 class ScanWaitAction: public CoroActionNode
 {
-  public:
-	ScanWaitAction(const std::string& name):
+public:
+  	ScanWaitAction(const std::string& name):
         CoroActionNode(name, {})
     {
         node_ = rclcpp::Node::make_shared("scan_wait_action");
 
         sub_ = node_->create_subscription<robot_head_interfaces::msg::ScanStatus>(
             "/head/scan_status",
-			rclcpp::SystemDefaultsQoS(),
-			std::bind(&ScanWaitAction::scanStatusCallback, this, std::placeholders::_1));
+			  rclcpp::SystemDefaultsQoS(),
+			  std::bind(&ScanWaitAction::scanStatusCallback, this, std::placeholders::_1));
     }
 
     void scanStatusCallback(robot_head_interfaces::msg::ScanStatus::SharedPtr msg)
     {
-    	msg_ = *msg;
-    	received_ = true;
-		//RCLCPP_INFO(node_->get_logger(), "Got scan status msg");
+    	  msg_ = *msg;
+    	  received_ = true;
+		    //RCLCPP_INFO(node_->get_logger(), "Got scan status msg");
     }
 
-  private:
+private:
     NodeStatus tick() override
     {
-    	received_ = false;
-    	robot_head_interfaces::msg::ScanStatus start_msg;
+        received_ = false;
+    	  robot_head_interfaces::msg::ScanStatus start_msg;
 
-    	int state = 0;
+    	  int initialized = false;
 
         while (true) {
-        	rclcpp::spin_some(node_);
+          	rclcpp::spin_some(node_);
 
-        	if (state == 0) {
-        		if (received_) {
-        			received_ = false;
-        			start_msg = msg_;
-        			RCLCPP_INFO(node_->get_logger(), "lcnt= %d, rcnt= %d",
-        					start_msg.at_left_count, start_msg.at_right_count);
-        			state = 1;
-        		}
-        	} else if (state == 1) {
-        		if (received_) {
-        			received_ = false;
-        			RCLCPP_INFO(node_->get_logger(), "lcnt= %d, rcnt= %d",
-        					start_msg.at_left_count, start_msg.at_right_count);
-        			if (start_msg.at_left_count != msg_.at_left_count &&
-       					start_msg.at_right_count != msg_.at_right_count) {
-						return NodeStatus::SUCCESS;
-        			}
-        		}
-        	}
+            if (received_) {
+                received_ = false;
+
+            	  if (!initialized) {
+        			      start_msg = msg_;
+        			      RCLCPP_INFO(node_->get_logger(), "lcnt= %d, rcnt= %d",
+            				  	start_msg.at_left_count, start_msg.at_right_count);
+        			      initialized = true;
+
+            	  } else {
+        			      if (start_msg.at_left_count != msg_.at_left_count &&
+       					        start_msg.at_right_count != msg_.at_right_count) {
+  						          return NodeStatus::SUCCESS;
+        			      }
+        		    }
+        	  }
+
             // set status to RUNNING and "pause/sleep"
             // If halt() is called, we will not resume execution (stack destroyed)
             setStatusRunningAndYield();
@@ -86,7 +84,7 @@ class ScanWaitAction: public CoroActionNode
         CoroActionNode::halt();
     }
 
-  private:
+private:
     rclcpp::Node::SharedPtr node_;
     rclcpp::Subscription<robot_head_interfaces::msg::ScanStatus>::SharedPtr sub_;
 

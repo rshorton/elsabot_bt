@@ -46,8 +46,8 @@ public:
     	auto msg = geometry_msgs::msg::PoseStamped();
         msg.header.frame_id = "oakd_center_camera";
         msg.header.stamp = node_->get_clock()->now();
-        msg.pose.position.x = position.x/1000.0;
-        msg.pose.position.y = position.y/1000.0;
+        msg.pose.position.x = position.x;
+        msg.pose.position.y = position.y;
         msg.pose.position.z = 0.0;
         msg.pose.orientation.x = 0.0;
         msg.pose.orientation.y = 0.0;

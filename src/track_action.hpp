@@ -71,11 +71,11 @@ class TrackAction : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return { BT::InputPort<std::string>("mode"),
-        			 BT::InputPort<std::string>("rate"),
+        	return { BT::InputPort<std::string>("mode"),				// Off, Scan, TrackScan, Manual, LookDown
+        			 BT::InputPort<std::string>("rate"),				// Scan rate
 					 BT::InputPort<std::string>("sound_track_mode"),	// 'any', 'wakeword', 'none'
-        			 BT::InputPort<bool>("turn_base"),
-					 BT::InputPort<std::string>("object_type")};
+        			 BT::InputPort<bool>("turn_base"),					// Turn base to face tracked object
+					 BT::InputPort<std::string>("object_type")};		// Object type to track
         }
 
         virtual BT::NodeStatus tick() override

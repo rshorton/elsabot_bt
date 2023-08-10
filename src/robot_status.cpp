@@ -25,12 +25,12 @@ limitations under the License.
 #include "tf2/LinearMath/Matrix3x3.h"
 
 #include "robot_status.hpp"
+#include "transform_helper.hpp"
 
 RobotStatus *RobotStatus::robot_status_ = nullptr;
 
 RobotStatus::RobotStatus(rclcpp::Node::SharedPtr node):
 	node_(node),
-	transform_helper_(TransformHelper::Instance(node_)),
 	pos_x_(0.0), 
 	pos_y_(0.0),
 	pos_z_(0.0),
@@ -89,7 +89,7 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 {
 	geometry_msgs::msg::TransformStamped xf;
-	if (!transform_helper_.GetTransform("map", "base_link", xf)) {
+	if (!TransformHelper::GetInstance()->GetTransform("map", "base_link", xf)) {
 		x = 0.0;
 		y = 0.0;
 		z = 0.0;
@@ -113,7 +113,7 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 	yaw_ = yaw;
 
 	valid_pose_ = true;
-	RCLCPP_INFO(node_->get_logger(), "Robot pose: x,y,yaw: %f, %f, %f",
+	RCLCPP_DEBUG(node_->get_logger(), "Robot pose: x,y,yaw: %f, %f, %f",
 		pos_x_, pos_y_, yaw_);
 
 	valid_pose_ = true;

@@ -7,17 +7,28 @@
 // Custom types
 struct Pose2D
 {
-    double x, y;
-    double yaw;
+    Pose2D():
+        x(0.0), y(0.0), yaw(0.0) {}
+    Pose2D(double x, double y, double yaw):
+        x(x), y(y), yaw(yaw) {}        
+    double x, y, yaw;
 };
 
 struct Position
 {
+    Position():
+        x(0.0), y(0.0), z(0.0) {}
+    Position(double x, double y, double z):
+        x(x), y(y), z(z) {}
     double x, y, z;
 };
 
 struct OrientationRPY
 {
+    OrientationRPY():
+        r(0.0), p(0.0), y(0.0) {}
+    OrientationRPY(double r, double p, double y):
+        r(r), p(p), y(y) {}
     double r, p, y;
 };
 

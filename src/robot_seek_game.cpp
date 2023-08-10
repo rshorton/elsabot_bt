@@ -116,6 +116,7 @@ void RobotSeekGame::GetPointInSameDirection(SearchPose p0, SearchPose p1,
 bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, std::string datapath,
 						 double init_x, double init_y, double init_yaw, vector<RobotSeekGame::SearchPose> &poses)
 {
+	node_ = node;
 	idx_cur_ = 0;
 	idx_start_ = 0;
 	bFirst_ = 0;
@@ -126,6 +127,8 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, std::string datapath,
 
 	poses_.clear();
 
+	// Read the poses where the robot will search
+	cout << "Game search poses: " << endl;
 	for (json::iterator it = game_data["search_poses"].begin(); it != game_data["search_poses"].end(); ++it) {
 		SearchPose sp;
 		sp.x = (*it)["x"].get<double>();
@@ -142,6 +145,24 @@ bool RobotSeekGame::Init(rclcpp::Node::SharedPtr node, std::string datapath,
 			 << ", scan= " << sp.scan
 			 << endl;
 	}
+
+	// Read the game boundary
+	boundary_.clear();
+	cout << "Game boundary points: " << endl;
+	for (json::iterator it = game_data["boundary"].begin(); it != game_data["boundary"].end(); ++it) {
+		Position pos;
+		pos.x = (*it)["x"].get<double>();
+		pos.y = (*it)["y"].get<double>();
+		pos.z = 0.0;
+
+		boundary_.push_back(pos);
+		cout << "x= " << pos.x
+		     << ", y= " << pos.y
+			 << endl;
+	}
+
+	TestBoundaryCheck();
+
 
     // Determine the first search pose
     for (auto& it : poses_) {
@@ -255,3 +276,42 @@ bool RobotSeekGame::NextSearchPose(double &x, double &y, double &yaw, bool &spin
 	return true;
 }
 
+bool RobotSeekGame::InBoundary(const Position &pos) const
+{
+	// Consider in the boundary if no boundary specified
+    int vertices = boundary_.size();
+    if (vertices < 3) {
+		return true;
+	}
+    bool inside = false;
+    for (int i = 0, j = vertices - 1; i < vertices; j = i++) {
+        if (((boundary_[i].y > pos.y) != (boundary_[j].y > pos.y)) &&
+            (pos.x < (boundary_[j].x - boundary_[i].x) * (pos.y - boundary_[i].y) / 
+			(boundary_[j].y - boundary_[i].y) + boundary_[i].x)) {
+            inside = !inside;
+        }
+    }
+   	RCLCPP_INFO(node_->get_logger(), "InBoundary, ck: (%f, %f), inside: %d", pos.x, pos.y, inside);
+
+    return inside;
+}
+
+void RobotSeekGame::TestBoundaryCheck() const
+{
+	Position pnts[] = {
+		Position( -0.038488, -2.554656, 0.0),
+		Position( -0.024584, -2.552068, 0.0),
+		Position(  0.007693, -2.542701, 0.0),
+		Position(  0.105245, -2.468326, 0.0),
+		Position( -0.835761, -0.622372, 0.0),
+		Position(  1.93,     -1.7,		0.0),
+		Position(  2.0,      -4.0,      0.0),
+		Position(  1.7,      -6.0,      0.0),
+		Position(  1.5,		 -8.0,      0.0),
+		Position(  0.04,	 -9.8,		0.0)};
+
+	std::vector<Position>  positions(std::begin(pnts), std::end(pnts));
+	for (const auto &pos: positions) {
+		InBoundary(pos);
+	}
+}

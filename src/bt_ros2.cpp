@@ -21,6 +21,7 @@
 #include "get_random_selection.hpp"
 #include "robot_seek_init_action.hpp"
 #include "robot_seek_next_pose.hpp"
+#include "robot_seek_in_bounds_check_action.hpp"
 #include "robot_spin.hpp"
 #include "object_detection_action.hpp"
 #include "object_tracker_location_status_action.hpp"
@@ -123,6 +124,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<Nav2ClearGlobalCostMap>("Nav2ClearGlobalCostMap");
     factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
+    factory.registerNodeType<RobotSeekInBoundsCheckAction>("RobotSeekInBoundsCheckAction");
     factory.registerNodeType<RobotSpin>("RobotSpin");
 #if defined(USE_BT_COROUTINES)
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
@@ -275,7 +277,7 @@ int main(int argc, char **argv)
 
     // Create transform helper singleton. Used by various nodes for coordinate transformation
     // between robot frames
-    TransformHelper::Instance(nh);
+    TransformHelper::Create(nh);
 
     // Create object detector processor container singleton
     ObjDetProcContainer::Create(nh);

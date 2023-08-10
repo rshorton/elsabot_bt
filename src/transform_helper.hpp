@@ -27,10 +27,19 @@ limitations under the License.
 class TransformHelper
 {
 public:
-	static TransformHelper & Instance(rclcpp::Node::SharedPtr node) {
-		static TransformHelper helper(node);
-		return helper;
-	}
+	static TransformHelper* Create(rclcpp::Node::SharedPtr node)
+	{
+		if (!xform_helper_) {
+			xform_helper_ = new TransformHelper(node);
+		}			
+		return xform_helper_;
+	};
+
+	static TransformHelper* GetInstance()
+	{
+		return xform_helper_;
+	};
+
 	bool Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z);
 	bool Transform(const std::string &frame_from, const std::string &frame_to, std::string &pos);
 
@@ -41,6 +50,8 @@ private:
 	~TransformHelper() {};
 
 private:
+	static TransformHelper *xform_helper_;
+
 	rclcpp::Node::SharedPtr node_;
 
 	std::shared_ptr<tf2_ros::TransformListener> tfl_;

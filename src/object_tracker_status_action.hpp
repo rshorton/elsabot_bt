@@ -41,11 +41,6 @@ public:
         return s;
     }
 
-    void update()
-    {
-    	rclcpp::spin_some(node_);
-    }
-
     rclcpp::Node::SharedPtr node_;
     bool valid_;
     rclcpp::Subscription<robot_head_interfaces::msg::TrackStatus>::SharedPtr tracker_status_sub_;
@@ -60,13 +55,14 @@ private:
     	            "/head/tracked",
     				rclcpp::SystemDefaultsQoS(),
     				std::bind(&ObjectTrackerStatusROSNodeIf::statusCallback, this, std::placeholders::_1));
+		RCLCPP_DEBUG(node_->get_logger(), "Sub to /head/tracker");
     }
 
     void statusCallback(robot_head_interfaces::msg::TrackStatus::SharedPtr msg)
     {
     	tracker_status_ = *msg;
     	valid_ = true;
-		//RCLCPP_INFO(node_->get_logger(), "Got detected objects");
+		RCLCPP_DEBUG(node_->get_logger(), "Got tracked object status");
     }
 };
 
@@ -89,7 +85,6 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
 
         virtual BT::NodeStatus tick() override
         {
-        	node_if_->update();
 
         	if (!node_if_->valid_) {
         		return BT::NodeStatus::FAILURE;

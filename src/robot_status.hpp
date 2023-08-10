@@ -24,14 +24,10 @@ limitations under the License.
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "transform_helper.hpp"
-
 #undef USE_ROBOT_POSE_PUBLISHER_NODE
 
 class RobotStatus
 {
-private:
-
 public:
 	static RobotStatus* Create(rclcpp::Node::SharedPtr node)
 	{
@@ -62,8 +58,6 @@ private:
 	rclcpp::Node::SharedPtr node_;
 #if defined(USE_ROBOT_POSE_PUBLISHER_NODE)
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
-#else
-	TransformHelper& transform_helper_;	
 #endif	
     double pos_x_;
     double pos_y_;
