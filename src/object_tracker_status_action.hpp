@@ -100,7 +100,7 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
 				throw BT::RuntimeError("missing min_duration");
 			}
 
-			RCLCPP_INFO(node_if_->node_->get_logger(), "Tracking status: tracking [%d], ck [%d], duration [%f], ck [%f], id= [%d]",
+			RCLCPP_DEBUG(node_if_->node_->get_logger(), "Tracking status: tracking [%d], ck [%d], duration [%f], ck [%f], id= [%d]",
 					node_if_->tracker_status_.tracking,
 					ck_state,
 					node_if_->tracker_status_.duration,
