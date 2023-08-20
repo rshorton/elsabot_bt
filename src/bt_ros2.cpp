@@ -77,6 +77,13 @@
 
 using namespace BT;
 
+#define REGISTER_BUILDER_WITH_ROS_NODE(node_type, ros_node_handle) \
+    factory.registerBuilder<node_type>(#node_type, \
+                           [ros_node_handle](const std::string& name, const NodeConfiguration& config) { \
+                               return std::make_unique<node_type>(name, config, ros_node_handle); \
+                           }) \
+
+
 int main(int argc, char **argv)
 {
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
@@ -159,98 +166,20 @@ int main(int argc, char **argv)
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
-    NodeBuilder builder_AntennaAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<AntennaAction>(name, config, nh);
-    };
-    factory.registerBuilder<AntennaAction>( "AntennaAction", builder_AntennaAction);
-
-    NodeBuilder builder_TrackAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<TrackAction>(name, config, nh);
-    };
-    factory.registerBuilder<TrackAction>( "TrackAction", builder_TrackAction);
-
-    NodeBuilder builder_HeadTiltAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<HeadTiltAction>(name, config, nh);
-    };
-    factory.registerBuilder<HeadTiltAction>( "HeadTiltAction", builder_HeadTiltAction);
-
-    NodeBuilder builder_SmileAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<SmileAction>(name, config, nh);
-    };
-    factory.registerBuilder<SmileAction>( "SmileAction", builder_SmileAction);
-
-    NodeBuilder builder_ObjectDetectionAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<ObjectDetectionAction>(name, config, nh);
-    };
-    factory.registerBuilder<ObjectDetectionAction>( "ObjectDetectionAction", builder_ObjectDetectionAction);
-
-    NodeBuilder builder_PoseDetectionControlAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<PoseDetectionControlAction>(name, config, nh);
-    };
-    factory.registerBuilder<PoseDetectionControlAction>( "PoseDetectionControlAction", builder_PoseDetectionControlAction);
-
-    NodeBuilder builder_SpeechToTextActionClient =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<SpeechToTextActionClient>(name, config, nh);
-    };
-    factory.registerBuilder<SpeechToTextActionClient>( "SpeechToTextActionClient", builder_SpeechToTextActionClient);
-
-    NodeBuilder builder_TextToSpeechActionClient =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<TextToSpeechActionClient>(name, config, nh);
-    };
-    factory.registerBuilder<TextToSpeechActionClient>( "TextToSpeechActionClient", builder_TextToSpeechActionClient);
-
-    NodeBuilder builder_HumanPoseDetect =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<HumanPoseDetect>(name, config, nh);
-    };
-    factory.registerBuilder<HumanPoseDetect>( "HumanPoseDetect", builder_HumanPoseDetect);
-
-    NodeBuilder builder_ObjectTrackerStatusAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<ObjectTrackerStatusAction>(name, config, nh);
-    };
-    factory.registerBuilder<ObjectTrackerStatusAction>( "ObjectTrackerStatusAction", builder_ObjectTrackerStatusAction);
-
-    NodeBuilder builder_SaveImageAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<SaveImageAction>(name, config, nh);
-    };
-    factory.registerBuilder<SaveImageAction>( "SaveImageAction", builder_SaveImageAction);
-
-    // FIX - fold into the detection_processor functionality
-    NodeBuilder builder_ObjectTrackerLocationStatusAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<ObjectTrackerLocationStatusAction>(name, config, nh);
-    };
-    factory.registerBuilder<ObjectTrackerLocationStatusAction>( "ObjectTrackerLocationStatusAction", builder_ObjectTrackerLocationStatusAction);
-
-    NodeBuilder builder_PublishPositionAsGoalAction =
-       [nh](const std::string& name, const NodeConfiguration& config)
-    {
-        return std::make_unique<PublishPositionAsGoalAction>(name, config, nh);
-    };
-    factory.registerBuilder<PublishPositionAsGoalAction>( "PublishPositionAsGoalAction", builder_PublishPositionAsGoalAction);
-
+    // These tree nodes use a builder that needs the ROS node
+    REGISTER_BUILDER_WITH_ROS_NODE(AntennaAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(TrackAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(HeadTiltAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(SmileAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(ObjectDetectionAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(PoseDetectionControlAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(SpeechToTextActionClient, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(TextToSpeechActionClient, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(HumanPoseDetect, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(ObjectTrackerStatusAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(SaveImageAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(ObjectTrackerLocationStatusAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(PublishPositionAsGoalAction, nh);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
@@ -293,11 +222,9 @@ int main(int argc, char **argv)
 
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
-    	rclcpp::spin_some(nh);
     	status = tree.tickRoot();
-
-        // Sleep 50 milliseconds
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // Spin a while
+        rclcpp::spin_until_future_complete(nh, std::promise<bool>().get_future(), std::chrono::milliseconds(50));
     }
     return 0;
 }
