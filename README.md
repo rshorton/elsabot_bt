@@ -2,7 +2,9 @@
 
 The ElsaBot project was developed for the OpenCV AI Competition 2021 by Team GrandPlay.  Here are links to the final report and video made for the competition:
  
- [add links]
+https://github.com/rshorton/elsabot
+
+https://youtu.be/WZ-JJvT5fn8
  
 The report provides an overview of the ElsaBot project which can help in understanding how the various ElsaBot-related repositories of this site fit together.
   
@@ -12,7 +14,9 @@ The trees are stored in the **bt_xml** directory. The provided trees include the
 
 The default xml tree is specified by the launch file **elsabot_bt.launch**.
 
-The launch file for this package is used to start all of the nodes that run on the RPi4 CPU A of the ElsaBot robot.  Run using:
+The launch file for this package is used to start all of the robot-base-agnostic nodes that control the higher-level functions. The packages used for controlling the base (including navigation startup) should be started before this package.
+
+Run this package using:
 
 ```
 export DISPLAY=:0;ros2 launch elsabot_bt elsabot_bt.launch.py
