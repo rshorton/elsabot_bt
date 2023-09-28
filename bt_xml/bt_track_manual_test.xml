@@ -1,0 +1,36 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<TrackAction mode="Manual" rate="0" sound_track_mode="none" turn_base="false" object_type="cat" />
+			<Repeat num_cycles="99999">
+				<Sequence>
+					<ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0, -40.0, 0.0" />
+							<TextToSpeechActionClient msg1="pose 1" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+
+					<ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0, 0.0, 20.0" />
+							<TextToSpeechActionClient msg1="pose 2" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+				</Sequence>
+			</Repeat>
+		</Sequence>			
+	</BehaviorTree>
+</root>
