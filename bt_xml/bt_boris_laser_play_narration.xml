@@ -1,0 +1,10 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Delay delay_msec="5000">
+				<TextToSpeechActionClient rate="6" msg1="Hi! I'm Elsabot.  I now have a laser pointer on my head that I use to play with my cat friend Boris.  Watch us play!" />
+			</Delay>				
+		</Sequence>
+
+	</BehaviorTree>
+</root>

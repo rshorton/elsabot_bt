@@ -1,0 +1,55 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Delay delay_msec="1000">
+				<TrackAction mode="Manual" rate="0" sound_track_mode="none" turn_base="false" object_type="cat" min_confidence="0.3" />
+			</Delay>				
+			<Delay delay_msec="1000">
+				<TrackManualAction pose="0.0, -40.0, 0.0" />
+			</Delay>
+			<TextToSpeechActionClient msg1="Hey Boris, let's play!" />
+			<SetBlackboard output_key="action" value="" />
+
+			<RobotCatGameInitAction timeout="8.0" yaw_min="-50.0" yax_max="50.0" yaw_step="25.0" yaw_evade_step="25.0"
+									 pitch_min="-45.0" pitch_max="-20" pitch_step="2.0" pitch_dither_step="5.0"/>			
+			<PointerLightAction white_level="0" laser_level="10" />
+							
+			<KeepRunningUntilFailure>
+				<ForceSuccess>
+					<Sequence>
+						<Sequence>
+							<ForceSuccess>
+								<BlackboardCheckString value_A="{action}" value_B="timeout" return_on_mismatch="FAILURE">
+									<Sequence>
+										<PointerLightAction white_level="0" laser_level="0" />
+										<Delay delay_msec= "1000" >
+											<PointerLightAction white_level="0" laser_level="10" />
+										</Delay>
+									</Sequence>
+								</BlackboardCheckString>							
+							</ForceSuccess>
+						</Sequence>
+						<Sequence>
+							<ObjectTrackerStatusAction ck_state="1" min_duration="0.5" fail_on_not_tracked="false" is_tracking="is_tracking" position="tracked_position"track_status="track_status" />
+							<SetBlackboard output_key="prev_action" value="{action}" />
+							<RobotCatGameNextPoseAction cat_tracked="{is_tracking}" track_status="{track_status}" pose="next_head_pose" action_desc="action" />
+							<TrackManualAction pose="{next_head_pose}" />
+							<BlackboardCheckString value_A="{prev_action}" value_B="waiting" return_on_mismatch="FAILURE">
+								<BlackboardCheckString value_A="{action}" value_B="moving" return_on_mismatch="FAILURE">
+									<Sequence>
+										<GetRandomSelectionAction
+											options="Go Boris!|||Get it Boris!|||" selected="{to_say}" />
+										<TextToSpeechActionClient msg1="{to_say}" />
+									</Sequence>
+								</BlackboardCheckString>
+							</BlackboardCheckString>
+						</Sequence>
+					</Sequence>						
+				</ForceSuccess>
+			</KeepRunningUntilFailure>
+			<Sequence>
+				<PointerLightAction white_level="0" laser_level="0" />
+			</Sequence>
+		</Sequence>			
+	</BehaviorTree>
+</root>
