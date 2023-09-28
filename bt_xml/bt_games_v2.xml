@@ -455,16 +455,14 @@
 									     or just move the head back and forth -->
 									<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 										<Sequence>
-											<TrackAction mode="Off" rate="0" sound_track_mode="none" turn_base="0" />
-											<RobotSpin angle="359" velocity="0.5" />
+											<TrackAction mode="Scan" rate="8" sound_track_mode="none" turn_base="0" />
+											<RobotSpin angle="359" velocity="1.0" />
 										</Sequence>
 									</BlackboardCheckInt>
 									<BlackboardCheckInt value_A="{scan_at_goal}" value_B="1" return_on_mismatch="SUCCESS">
 										<Sequence>
-											<TrackAction mode="Scan" rate="1" sound_track_mode="none" turn_base="0" />
-											<!-- ScanWaitAction uses a BT Co routine which needs Boost but is not
-											     build for ROS2 Galactic.  Fix later if needed. -->
-											<!-- ScanWaitAction / -->
+											<TrackAction mode="Scan" rate="8" sound_track_mode="none" turn_base="0" />
+											<ScanWaitAction />
 										</Sequence>
 									</BlackboardCheckInt>
 									<TextToSpeechActionClient msg1="I'm still looking for you." />
@@ -475,7 +473,7 @@
 						  <!-- Say a message if player found -->
 							<BlackboardCheckInt value_A="{found}" value_B="1" return_on_mismatch="FAILURE">
 								<Sequence>
-									<TrackAction mode="TrackScan" rate="3" sound_track_mode="any" turn_base="1" />
+									<TrackAction mode="TrackScan" rate="8" sound_track_mode="none" turn_base="1" />
 									<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
 									<TextToSpeechActionClient msg1="Yay, I found you!" />
 								</Sequence>
@@ -516,7 +514,7 @@
 <!-- Robot Follows -->
 	<BehaviorTree ID="RobotFollow">
         <Sequence>
-			<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="true"/>
+			<TrackAction mode="TrackScan" rate="8" sound_track_mode="any" turn_base="false"/>
             <SetBlackboard output_key="pose_set" value="0" />
             <SetBlackboard output_key="keep_playing" value="1" />
             <SetBlackboard output_key="said_pose_waiting" value="0" />
@@ -543,10 +541,10 @@
 												<TextCompareAction text="{said}" ck_for=".*(follow|come).*" />
 												<SetBlackboard output_key="go" value="1" />
 												<!-- Turn off base turn to sound -->
-												<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="false"/>
+												<TrackAction mode="TrackScan" rate="8" sound_track_mode="any" turn_base="false"/>
 											</Sequence>                                    
 											<Sequence>
-												<TextCompareAction text="{said}" ck_for=".*(quit|exit).*" />
+												<TextCompareAction text="{said}" ck_for=".*(quit|exit|end).*" />
 												<SetBlackboard output_key="keep_playing" value="0" />
 											</Sequence>                                    
 										</Fallback>
@@ -587,7 +585,7 @@
 															<SetBlackboard output_key="go" value="0" />
 															<TextToSpeechActionClient msg1="I'll stay here for now." />    
 															<!-- Turn on base turn to sound -->
-															<TrackAction mode="Track" rate="3" sound_track_mode="any" turn_base="true"/>
+															<TrackAction mode="TrackScan" rate="8" sound_track_mode="any" turn_base="true"/>
 														</Sequence>                                                
 													</BlackboardCheckInt>
 												</Sequence>
