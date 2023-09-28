@@ -1,18 +1,19 @@
 <root main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
-		<Repeat num_cycles="9999">
+		<KeepRunningUntilFailure>
 			<Sequence>
-				<Fallback>
-					<Sequence>
-						<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
-						<TextToSpeechActionClient msg1="Detected" />
-					</Sequence>
-					<Sequence>
-						<TextToSpeechActionClient msg1="Not Detected" />
-					</Sequence>
-
-				</Fallback>
+				<ForceSuccess>
+					<Fallback>
+						<Sequence>
+							<ObjectDetectionAction class="person" pose="detected_Pose" min_confidence="0.85" />
+							<TextToSpeechActionClient msg1="Detected" />
+						</Sequence>
+						<Sequence>
+							<TextToSpeechActionClient msg1="Not Detected" />
+						</Sequence>
+					</Fallback>
+				</ForceSuccess>	
 			</Sequence>
-		</Repeat>
+		</KeepRunningUntilFailure>
 	</BehaviorTree>
 </root>
