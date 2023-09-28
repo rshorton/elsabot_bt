@@ -1,33 +1,36 @@
 <root main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
-		<Repeat num_cycles="99999">
-			<Sequence>
-				<ForceSuccess>
-					<Sequence>
-						<ObjectTrackerStatusAction ck_state="1" min_duration="3" />
-						<TextToSpeechActionClient msg1="Detected" />
-					</Sequence>
-				</ForceSuccess>
-
+		<Sequence>
+			<TrackAction mode="TrackScan" rate="8" sound_track_mode="none" turn_base="true" />
+			<Repeat num_cycles="99999">
 				<Sequence>
-					<Delay delay_msec="3000">
-						<SmileAction level="2" duration_ms="2000" />
-					</Delay>
-				</Sequence>
+					<ForceSuccess>
+						<Sequence>
+							<ObjectTrackerStatusAction ck_state="1" min_duration="3" />
+							<TextToSpeechActionClient msg1="Detected" />
+						</Sequence>
+					</ForceSuccess>
 
-				<ForceSuccess>
 					<Sequence>
-						<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
-						<TextToSpeechActionClient msg1="Not Detected" />
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
 					</Sequence>
-				</ForceSuccess>
 
-				<Sequence>
-					<Delay delay_msec="3000">
-						<SmileAction level="2" duration_ms="2000" />
-					</Delay>
+					<ForceSuccess>
+						<Sequence>
+							<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
+							<TextToSpeechActionClient msg1="Not Detected" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
 				</Sequence>
-			</Sequence>
-		</Repeat>
+			</Repeat>
+		</Sequence>			
 	</BehaviorTree>
 </root>

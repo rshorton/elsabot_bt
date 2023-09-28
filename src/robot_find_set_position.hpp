@@ -47,6 +47,8 @@ class RobotFindSetPositionAction : public BT::SyncActionNode
         		throw BT::RuntimeError("missing y position");
         	}
 
+// FIX - transform to map frame 
+
     		RobotFindGame* game = RobotFindGame::GetRobotFindGame();
     		if (game == nullptr) {
     			std::cout << "Game pointer null" << endl;

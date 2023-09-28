@@ -73,6 +73,8 @@ private:
     }
 };
 
+// FIX - obsolete, use ObjectTrackerStatusAction instead
+
 class ObjectTrackerLocationStatusAction : public BT::SyncActionNode
 {
     public:

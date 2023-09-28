@@ -2,8 +2,6 @@
 
 #include "behaviortree_cpp_v3/action_node.h"
 
-// FIX - add reference frame and timestamp to these
-
 // Custom types
 struct Pose2D
 {
@@ -53,6 +51,17 @@ Pose2D convertFromString(StringView key)
     }
 }
 
+inline
+std::string convertToString(const Pose2D &pose)
+{
+	std::stringstream str;
+	str << pose.x << ","
+		<< pose.y << ","
+        << pose.yaw
+		<< std::endl;
+    return str.str();
+}
+
 template <> inline
 Position convertFromString(StringView key)
 {
@@ -72,6 +81,17 @@ Position convertFromString(StringView key)
     }
 }
 
+inline
+std::string convertToString(const Position &pos)
+{
+	std::stringstream str;
+	str << pos.x << ","
+		<< pos.y << ","
+        << pos.z
+		<< std::endl;
+    return str.str();
+}
+
 template <> inline
 OrientationRPY convertFromString(StringView key)
 {
@@ -89,6 +109,17 @@ OrientationRPY convertFromString(StringView key)
 		output.y = convertFromString<double>(parts[2]);
 		return output;
     }
+}
+
+inline
+std::string convertToString(const OrientationRPY &pose)
+{
+	std::stringstream str;
+	str << pose.r << ","
+		<< pose.p << ","
+        << pose.y
+		<< std::endl;
+    return str.str();
 }
 
 } // end namespace BT

@@ -2,6 +2,7 @@
 	<BehaviorTree ID="MainTree">
 		<Sequence>
 			<SetBlackboard output_key="person_detected" value="0" />
+			<TrackAction mode="TrackScan" rate="3" sound_track_mode="none" turn_base="0" />
 
 			<Repeat num_cycles="99999">
 				<Fallback>

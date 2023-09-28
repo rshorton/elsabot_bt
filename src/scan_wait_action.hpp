@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "ros_common.hpp"
+#include "robot_status.hpp"
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "robot_head_interfaces/msg/scan_status.hpp"
@@ -28,48 +31,37 @@ public:
   	ScanWaitAction(const std::string& name):
         CoroActionNode(name, {})
     {
-        node_ = rclcpp::Node::make_shared("scan_wait_action");
-
-        sub_ = node_->create_subscription<robot_head_interfaces::msg::ScanStatus>(
-            "/head/scan_status",
-			  rclcpp::SystemDefaultsQoS(),
-			  std::bind(&ScanWaitAction::scanStatusCallback, this, std::placeholders::_1));
-    }
-
-    void scanStatusCallback(robot_head_interfaces::msg::ScanStatus::SharedPtr msg)
-    {
-    	  msg_ = *msg;
-    	  received_ = true;
-		    //RCLCPP_INFO(node_->get_logger(), "Got scan status msg");
     }
 
 private:
     NodeStatus tick() override
     {
-        received_ = false;
-    	  robot_head_interfaces::msg::ScanStatus start_msg;
+        rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
 
-    	  int initialized = false;
+        int initialized = false;
+        robot_head_interfaces::msg::TrackStatus cur_status;
+    	robot_head_interfaces::msg::TrackStatus start_status;
 
         while (true) {
-          	rclcpp::spin_some(node_);
 
-            if (received_) {
-                received_ = false;
+            if (!RobotStatus::GetInstance()->GetTrackStatus(cur_status)) {
+                RCLCPP_WARN(node->get_logger(), "ScanWaitAction, track status not available");
+                setStatusRunningAndYield();
+                continue;
+            }
 
-            	  if (!initialized) {
-        			      start_msg = msg_;
-        			      RCLCPP_INFO(node_->get_logger(), "lcnt= %d, rcnt= %d",
-            				  	start_msg.at_left_count, start_msg.at_right_count);
-        			      initialized = true;
+            if (!initialized) {
+                start_status = cur_status;
+                RCLCPP_INFO(node->get_logger(), "lcnt= %d, rcnt= %d",
+                    start_status.scan_status.at_left_count, start_status.scan_status.at_right_count);
+                initialized = true;
 
-            	  } else {
-        			      if (start_msg.at_left_count != msg_.at_left_count &&
-       					        start_msg.at_right_count != msg_.at_right_count) {
-  						          return NodeStatus::SUCCESS;
-        			      }
-        		    }
-        	  }
+            } else {
+                if (start_status.scan_status.at_left_count != cur_status.scan_status.at_left_count &&
+                    start_status.scan_status.at_right_count != cur_status.scan_status.at_right_count) {
+                    return NodeStatus::SUCCESS;
+                }
+            }
 
             // set status to RUNNING and "pause/sleep"
             // If halt() is called, we will not resume execution (stack destroyed)
@@ -84,10 +76,4 @@ private:
         CoroActionNode::halt();
     }
 
-private:
-    rclcpp::Node::SharedPtr node_;
-    rclcpp::Subscription<robot_head_interfaces::msg::ScanStatus>::SharedPtr sub_;
-
-    robot_head_interfaces::msg::ScanStatus msg_;
-    bool received_;
 };

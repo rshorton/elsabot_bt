@@ -22,9 +22,7 @@ limitations under the License.
 #include <map>
 
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
-
-#undef USE_ROBOT_POSE_PUBLISHER_NODE
+#include "robot_head_interfaces/msg/track_status.hpp"
 
 class RobotStatus
 {
@@ -35,36 +33,35 @@ public:
 			robot_status_ = new RobotStatus(node);
 		}			
 		return robot_status_;
-	};
+	}
 
 	static RobotStatus* GetInstance()
 	{
 		return robot_status_;
-	};
+	}
 
 	bool GetPose(double &x, double &y, double &z, double &yaw);
+	bool GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status);
 
 private:
 	RobotStatus(rclcpp::Node::SharedPtr node);
 	~RobotStatus() {};
 
-#if defined(USE_ROBOT_POSE_PUBLISHER_NODE)
-	void PoseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg);
-#endif	
+	void TrackStatusCallback(robot_head_interfaces::msg::TrackStatus::SharedPtr msg);
+
 
 private:
 	static RobotStatus *robot_status_;
 
 	rclcpp::Node::SharedPtr node_;
-#if defined(USE_ROBOT_POSE_PUBLISHER_NODE)
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
-#endif	
-    double pos_x_;
-    double pos_y_;
-	double pos_z_;
-    double yaw_;
-    bool valid_pose_;
+    double pos_x_ = 0.0;
+    double pos_y_ = 0.0;
+	double pos_z_ = 0.0;
+    double yaw_ = 0.0;
 
+	bool valid_track_status_ = false;
+    rclcpp::Subscription<robot_head_interfaces::msg::TrackStatus>::SharedPtr track_status_sub_;
+    robot_head_interfaces::msg::TrackStatus track_status_;
 };
 
 #endif //_ROBOT_STATUS_HPP_

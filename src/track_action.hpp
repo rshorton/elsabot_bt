@@ -20,7 +20,7 @@ limitations under the License.
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-#include "robot_head_interfaces/msg/track.hpp"
+#include "robot_head_interfaces/msg/track_cmd.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
 // Singleton for publishing the Track control state - shared by all TrackActionNode instances
@@ -36,16 +36,21 @@ public:
         return s;
     }
 
-    void setTrackState(const std::string &mode, const std::string &rate, const std::string sound_track_mode, bool turn_base, const std::string &object_type)
+    void setTrackSettings(const std::string &mode, const std::string &rate, const std::string sound_track_mode,
+						  bool turn_base, const std::string &object_type, double min_confidence)
     {
-    	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, sound_track_mode= %s, turn_base= %d, object_type= %s",
-    				mode.c_str(), rate.c_str(), sound_track_mode.c_str(), turn_base, object_type.c_str());
-    	auto msg = robot_head_interfaces::msg::Track();
+    	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, sound_track_mode= %s, \
+					turn_base= %d, object_type= %s, min_confidence= %f",
+    				mode.c_str(), rate.c_str(), sound_track_mode.c_str(), turn_base, object_type.c_str(),
+					min_confidence);
+    	auto msg = robot_head_interfaces::msg::TrackCmd();
     	msg.mode = mode;
-        msg.rate = rate;
-        msg.sound_track_mode = sound_track_mode;
+// Fix rename rate to scan_step		
+        msg.scan_step = rate;
+        msg.sound_mode = sound_track_mode;
         msg.turn_base = turn_base;
 		msg.object_type = object_type;
+		msg.min_confidence = min_confidence;
         track_publisher_->publish(msg);
         std::this_thread::sleep_for(100ms);
     }
@@ -54,10 +59,10 @@ private:
     TrackActionROSNodeIf(rclcpp::Node::SharedPtr node):
     	node_(node)
 	{
-    	track_publisher_ = node_->create_publisher<robot_head_interfaces::msg::Track>("/head/track", 2);
+    	track_publisher_ = node_->create_publisher<robot_head_interfaces::msg::TrackCmd>("/head/track_cmd", 2);
     }
     rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<robot_head_interfaces::msg::Track>::SharedPtr track_publisher_;
+    rclcpp::Publisher<robot_head_interfaces::msg::TrackCmd>::SharedPtr track_publisher_;
 };
 
 class TrackAction : public BT::SyncActionNode
@@ -75,7 +80,9 @@ class TrackAction : public BT::SyncActionNode
         			 BT::InputPort<std::string>("rate"),				// Scan rate
 					 BT::InputPort<std::string>("sound_track_mode"),	// 'any', 'wakeword', 'none'
         			 BT::InputPort<bool>("turn_base"),					// Turn base to face tracked object
-					 BT::InputPort<std::string>("object_type")};		// Object type to track
+					 BT::InputPort<std::string>("object_type"),			// Object type to track
+	       			 BT::InputPort<double>("min_confidence")};			// Min detection confidence for tracking
+
         }
 
         virtual BT::NodeStatus tick() override
@@ -85,6 +92,8 @@ class TrackAction : public BT::SyncActionNode
 			std::string object_type = "person";
         	std::string sound_track_mode;
         	bool turn_base = false;
+			double min_confidence = 0.7;
+
         	if (!getInput<std::string>("mode", mode)) {
     			throw BT::RuntimeError("missing mode");
     		}
@@ -98,9 +107,9 @@ class TrackAction : public BT::SyncActionNode
     			throw BT::RuntimeError("missing turn_base");
     		}
         	getInput<std::string>("object_type", object_type);
+        	getInput<double>("min_confidence", min_confidence);
 
-
-        	node_if_->setTrackState(mode, rate, sound_track_mode, turn_base, object_type);
+        	node_if_->setTrackSettings(mode, rate, sound_track_mode, turn_base, object_type, min_confidence);
             return BT::NodeStatus::SUCCESS;
         }
 

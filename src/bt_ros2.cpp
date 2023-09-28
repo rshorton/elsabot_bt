@@ -11,8 +11,10 @@
 #include "human_pose_detection_control_action.hpp"
 #include "voice_detected.hpp"
 #include "smile_action.hpp"
+#include "pointer_light_action.hpp"
 #include "antenna_action.hpp"
 #include "track_action.hpp"
+#include "track_manual_action.hpp"
 #include "head_tilt_action.hpp"
 #include "wakeword_detected.hpp"
 #include "robot_says_init_actions.hpp"
@@ -27,15 +29,14 @@
 #include "object_tracker_location_status_action.hpp"
 #include "object_tracker_status_action.hpp"
 #include "publish_position_as_goal_action.hpp"
-
-#if defined(USE_BT_COROUTINES)
 #include "scan_wait_action.hpp"
-#endif
 #include "save_image.hpp"
 #include "robot_find_init_action.hpp"
 #include "robot_find_next_step.hpp"
 #include "robot_find_check_step.hpp"
 #include "robot_find_set_position.hpp"
+#include "robot_cat_game_next_pose_action.hpp"
+#include "robot_cat_game_init_action.hpp"
 
 #include "detection_processor_container.hpp"
 #include "detection_processor_create_action.hpp"
@@ -133,9 +134,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
     factory.registerNodeType<RobotSeekInBoundsCheckAction>("RobotSeekInBoundsCheckAction");
     factory.registerNodeType<RobotSpin>("RobotSpin");
-#if defined(USE_BT_COROUTINES)
     factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
-#endif
     factory.registerNodeType<RobotFindInitAction>("RobotFindInitAction");
     factory.registerNodeType<RobotFindNextStepAction>("RobotFindNextStepAction");
     factory.registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
@@ -162,6 +161,10 @@ int main(int argc, char **argv)
 #endif    
 
     factory.registerNodeType<GetRobotPoseAction>("GetRobotPoseAction");
+    factory.registerNodeType<ObjectTrackerStatusAction>("ObjectTrackerStatusAction");
+
+    factory.registerNodeType<RobotCatGameNextPoseAction>("RobotCatGameNextPoseAction");
+    factory.registerNodeType<RobotCatGameInitAction>("RobotCatGameInitAction");
 
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
@@ -171,15 +174,16 @@ int main(int argc, char **argv)
     REGISTER_BUILDER_WITH_ROS_NODE(TrackAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(HeadTiltAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(SmileAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(PointerLightAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(ObjectDetectionAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(PoseDetectionControlAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(SpeechToTextActionClient, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(TextToSpeechActionClient, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(HumanPoseDetect, nh);
-    REGISTER_BUILDER_WITH_ROS_NODE(ObjectTrackerStatusAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(SaveImageAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(ObjectTrackerLocationStatusAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(PublishPositionAsGoalAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(TrackManualAction, nh);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
@@ -223,6 +227,7 @@ int main(int argc, char **argv)
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
     	status = tree.tickRoot();
+
         // Spin a while
         rclcpp::spin_until_future_complete(nh, std::promise<bool>().get_future(), std::chrono::milliseconds(50));
     }

@@ -30,61 +30,21 @@ limitations under the License.
 RobotStatus *RobotStatus::robot_status_ = nullptr;
 
 RobotStatus::RobotStatus(rclcpp::Node::SharedPtr node):
-	node_(node),
-	pos_x_(0.0), 
-	pos_y_(0.0),
-	pos_z_(0.0),
-	yaw_(0.0),
-	valid_pose_(false)
+	node_(node)
 {
-#if defined(USE_ROBOT_POSE_PUBLISHER_NODE)	
-    pose_sub_ = node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-		"/robot_pose",
-        rclcpp::SystemDefaultsQoS(),
-        std::bind(&RobotStatus::PoseCallback, this, std::placeholders::_1));
-#endif		
+	track_status_sub_ = node_->create_subscription<robot_head_interfaces::msg::TrackStatus>(
+				"/head/track_status",
+				rclcpp::SystemDefaultsQoS(),
+				std::bind(&RobotStatus::TrackStatusCallback, this, std::placeholders::_1));
+	RCLCPP_DEBUG(node_->get_logger(), "Sub to /head/track_status");
 }
 
-#if defined(USE_ROBOT_POSE_PUBLISHER_NODE)	
-void RobotStatus::PoseCallback(geometry_msgs::msg::PoseStamped::SharedPtr msg)
+void RobotStatus::TrackStatusCallback(robot_head_interfaces::msg::TrackStatus::SharedPtr msg)
 {
-	pos_x_ = msg->pose.position.x;
-	pos_y_ = msg->pose.position.y;
-	pos_z_ = msg->pose.position.z;
-
-	double quatx = msg->pose.orientation.x;
-	double quaty = msg->pose.orientation.y;
-	double quatz = msg->pose.orientation.z;
-	double quatw = msg->pose.orientation.w;
-
-	tf2::Quaternion q(quatx, quaty, quatz, quatw);
-	tf2::Matrix3x3 m(q);
-	double roll, pitch, yaw;
-	m.getRPY(roll, pitch, yaw);
-	yaw_ = yaw;
-
-	valid_pose_ = true;
-	RCLCPP_DEBUG(node_->get_logger(), "Robot pose: x,y,yaw: %f, %f, %f",
-		pos_x_, pos_y_, yaw_);
+	track_status_ = *msg;
+	valid_track_status_ = true;
+	RCLCPP_DEBUG(node_->get_logger(), "Got track status");
 }
-
-bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
-{
-	if (valid_pose_) {
-		x = pos_x_;
-		y = pos_y_;
-		z = pos_z_;
-		yaw = yaw_;
-	} else {
-		x = 0.0;
-		y = 0.0;
-		z = 0.0;
-		yaw = 0.0;
-	}
-	return valid_pose_;
-}
-
-#else
 
 bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 {
@@ -112,12 +72,18 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 	m.getRPY(roll, pitch, yaw);
 	yaw_ = yaw;
 
-	valid_pose_ = true;
 	RCLCPP_DEBUG(node_->get_logger(), "Robot pose: x,y,yaw: %f, %f, %f",
 		pos_x_, pos_y_, yaw_);
-
-	valid_pose_ = true;
-	return valid_pose_;		
+	return true;		
 }
-#endif
+
+bool RobotStatus::GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status)
+{
+	if (valid_track_status_) {
+		status = track_status_;
+		return true;
+	}
+	return false;
+}
+
 	
