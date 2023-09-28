@@ -93,13 +93,9 @@ void ObjDetProc::DetectionCallback(object_detection_msgs::msg::ObjectDescArray::
 		if (it != objects_to_det_.end() &&
 			it->second < o.confidence) {
 
-			o.x /= 1000.0;
-			o.y /= 1000.0;
-			o.z /= 1000.0;
-
-			double x = o.x;
-			double y = o.y;
-			double z = o.z;
+			double x = o.position.point.x;
+			double y = o.position.point.y;
+			double z = o.position.point.z;
 
 			// fix - ignore spurious location 0,0,0 detections
 			if (x < 0.01 && y < 0.01 && z < 0.01) {
@@ -107,7 +103,7 @@ void ObjDetProc::DetectionCallback(object_detection_msgs::msg::ObjectDescArray::
 				continue;
 			}
 
-			TransformHelper::GetInstance()->Transform(o.frame, coord_frame_, x, y, z);
+			TransformHelper::GetInstance()->Transform(o.position.header.frame_id, coord_frame_, x, y, z);
 
 			// Try to find an existing detection with Id
 			DetObj *match = nullptr;
@@ -143,7 +139,7 @@ void ObjDetProc::DetectionCallback(object_detection_msgs::msg::ObjectDescArray::
 				d.cnt_no_det = -1;
 				active_detections_.push_back(d);
 				RCLCPP_INFO(node_->get_logger(), "New obj [%lu] at (map) %f, %f, %f, (odom) %f, %f, %f",
-					 d.id, x, y, z, o.x, o.y, o.z);
+					 d.id, x, y, z, o.position.point.x, o.position.point.y, o.position.point.z);
 			}
 		} else {
 
@@ -332,14 +328,14 @@ bool ObjDetProc::GetObjectPos(size_t id, double &x, double &y, double &z, const 
 {
 	for (auto &o: active_detections_) {
 		if (o.id == id) {
-			x = o.desc.x;
-			y = o.desc.y;
-			z = o.desc.z;
-			if (!TransformHelper::GetInstance()->Transform(o.desc.frame, coord_frame, x, y, z)) {
+			x = o.desc.position.point.x;
+			y = o.desc.position.point.y;
+			z = o.desc.position.point.z;
+			if (!TransformHelper::GetInstance()->Transform(o.desc.position.header.frame_id, coord_frame, x, y, z)) {
 				return false;
 			}
 			RCLCPP_ERROR(node_->get_logger(), "GetObjectPos: id: [%lu], xyz(%s) %f, %f, %f, xyz(%s) %f, %f, %f",
-				id, o.desc.frame.c_str(), o.desc.x, o.desc.y, o.desc.z, coord_frame.c_str(), x, y, z);
+				id, o.desc.position.header.frame_id.c_str(), o.desc.position.point.x, o.desc.position.point.y, o.desc.position.point.z, coord_frame.c_str(), x, y, z);
 			return true;
 		}
 	}

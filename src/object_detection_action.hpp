@@ -133,7 +133,7 @@ class ObjectDetectionAction : public BT::SyncActionNode
 			for (size_t i = 0; i < node_if_->objArray_.objects.size(); i++) {
 				object_detection_msgs::msg::ObjectDesc &obj = node_if_->objArray_.objects[i];
 				if (obj.track_status == "TRACKED" && obj.name == object_class) { // && obj.confidence >= min_confidence) {
-					double sqdist = obj.x * obj.x + obj.y * obj.y;
+					double sqdist = obj.position.point.x * obj.position.point.x + obj.position.point.y * obj.position.point.y;
 					if (sqdist < closest_dist) {
 						closest_dist = sqdist;
 						closest = i;
@@ -143,15 +143,15 @@ class ObjectDetectionAction : public BT::SyncActionNode
 
 			if (closest != -1) {
 				std::stringstream str;
-				str << node_if_->objArray_.objects[closest].x << ","
-					<< node_if_->objArray_.objects[closest].y << ",0.0"
+				str << node_if_->objArray_.objects[closest].position.point.x << ","
+					<< node_if_->objArray_.objects[closest].position.point.y << ",0.0"
 					<< std::endl;
 				setOutput("pose", str.str());
 				closest_dist = sqrt(closest_dist);
 				setOutput("distance", (double)closest_dist);
 
-				cout << "x " << node_if_->objArray_.objects[closest].x << ", y "
-					<< node_if_->objArray_.objects[closest].y << ", dist "
+				cout << "x " << node_if_->objArray_.objects[closest].position.point.x << ", y "
+					<< node_if_->objArray_.objects[closest].position.point.y << ", dist "
 					<< closest_dist	<< ", conf "
 					<< node_if_->objArray_.objects[closest].confidence
 					<< std::endl;
