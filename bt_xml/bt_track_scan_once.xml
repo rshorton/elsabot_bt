@@ -3,11 +3,11 @@
 		<Sequence>
 		  <PoseDetectionControlAction enable="false" />
 
-      <TrackAction mode="Scan" rate="3" />
+      <TrackAction mode="Scan" rate="8" sound_track_mode="none" turn_base="true"/>
       <TextToSpeechActionClient msg1="Start" />
       <ScanWaitAction />
       <TextToSpeechActionClient msg1="End" />
-      <TrackAction mode="Track" rate="3" />
+      <TrackAction mode="Track" rate="8" sound_track_mode="none" turn_base="true" />
 
 		</Sequence>
 
