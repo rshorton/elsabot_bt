@@ -31,6 +31,7 @@ find_package(object_detection_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(robot_localization REQUIRED)
 
 #find_package(moveit_ros_planning REQUIRED)
 #find_package(moveit_ros_planning_interface REQUIRED)
@@ -61,6 +62,7 @@ set(dependencies
   nav2_util
   nav_msgs
   visualization_msgs
+  robot_localization
   #moveit_ros_planning
   #moveit_ros_planning_interface
 )

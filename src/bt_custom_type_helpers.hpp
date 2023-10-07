@@ -124,3 +124,27 @@ std::string convertToString(const OrientationRPY &pose)
 
 } // end namespace BT
 
+inline
+std::vector<Pose2D> convertPose2DListFromString(BT::StringView key, char sep, bool swap_x_y = false)
+{
+    std::vector<Pose2D> poses;
+
+    // One or more groups of 3 real numbers separated by the specified one-character separator.
+    // Ex using space separator:
+    //   22.7,1.5,2.0 5.1,8.22,0
+    auto groups = BT::splitString(key, sep);
+    if (groups.size() >= 1)
+    {
+        for (const auto &group: groups) {
+            auto pose_2d = BT::convertFromString<Pose2D>(group);
+            if (swap_x_y) {
+                auto tmp = pose_2d.x;
+                pose_2d.x = pose_2d.y;
+                pose_2d.y = tmp;
+            }
+            poses.push_back(pose_2d);
+        }
+    }
+    return poses;        
+}
+

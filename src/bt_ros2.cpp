@@ -1,8 +1,11 @@
 #include "nav2_client.hpp"
 #include "nav2_client_loop.hpp"
+#include "nav2_nav_through_poses.hpp"
 #include "nav2_compute_path_client.hpp"
 #include "nav2_clear_local_cost_map.hpp"
 #include "nav2_clear_global_cost_map.hpp"
+
+#include "ll_coord_to_local_utm.hpp"
 
 #include "text_compare_action.hpp"
 #include "speech_to_text_action_client.hpp"
@@ -120,6 +123,9 @@ int main(int argc, char **argv)
 
     factory.registerNodeType<Nav2Client>("Nav2Client");
     factory.registerNodeType<Nav2ClientLoop>("Nav2ClientLoop");
+    factory.registerNodeType<Nav2NavThroughPoses>("Nav2NavThroughPoses");
+    factory.registerNodeType<LLCoordToLocalUTM>("LLCoordToLocalUTM");
+
     factory.registerNodeType<TextCompareAction>("TextCompareAction");
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");

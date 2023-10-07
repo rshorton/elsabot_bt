@@ -1,0 +1,8 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+        <Sequence>
+            <LLCoordToLocalUTM ll_poses="33.180110,-96.695263,180.0; 33.180019,-96.695166,90.0;33.180104,-96.695314,0.0" local_utm_coord_poses="utm_coords" />
+            <LLCoordToLocalUTM ll_kml_path="/home/elsabot/robot_ws/doc.kml" local_utm_coord_poses="utm_coords" />
+        </Sequence>
+    </BehaviorTree>
+</root>
