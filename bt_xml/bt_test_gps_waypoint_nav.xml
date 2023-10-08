@@ -1,0 +1,12 @@
+<root main_tree_to_execute = "MainTree">
+    <BehaviorTree ID="MainTree">
+		<Repeat num_cycles="2">
+            <Sequence>
+                <LLCoordToLocalUTM ll_kml_path="/home/scott/robot_ws/path3.kml" local_utm_coord_poses="utm_coords" />
+                <Nav2NavThroughPoses poses="{utm_coords}" />
+                <LLCoordToLocalUTM ll_kml_path="/home/scott/robot_ws/path4.kml" local_utm_coord_poses="utm_coords" />
+                <Nav2NavThroughPoses poses="{utm_coords}" />
+            </Sequence>
+        </Repeat>
+    </BehaviorTree>
+</root>
