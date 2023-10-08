@@ -77,14 +77,7 @@ public:
         auto result_future = action_client->async_get_result(goal_handle);
 
         RCLCPP_INFO(node_->get_logger(), "Waiting for result");
-#if defined(FUTURE_WAIT_BLOCK)
-        if (rclcpp::spin_until_future_complete(node_, result_future) !=
-                rclcpp::FutureReturnCode::SUCCESS)
-        {
-            RCLCPP_ERROR(node_->get_logger(), "get result call failed " );
-            return BT::NodeStatus::FAILURE;
-        }
-#else
+
         bool bSuccess = false;
 		auto timeout = std::chrono::duration<float, std::milli>(250);
 
@@ -122,15 +115,6 @@ public:
         	return BT::NodeStatus::IDLE;
         }
 
-#endif
-        if (_aborted) {
-        	_aborted = false;
-            // this happens only if method halt() was invoked
-            //_client.cancelAllGoals();
-            RCLCPP_INFO(node_->get_logger(), "Nav aborted");
-            return BT::NodeStatus::IDLE;
-        }
-
         rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateThroughPoses>::WrappedResult wrapped_result = result_future.get();
 
         switch (wrapped_result.code) {
@@ -146,7 +130,6 @@ public:
                 RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
                 return BT::NodeStatus::FAILURE;
         }
-
 
         RCLCPP_INFO(node_->get_logger(), "result received");
         return BT::NodeStatus::SUCCESS;
