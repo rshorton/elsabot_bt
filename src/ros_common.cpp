@@ -14,12 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-This class is used to create and contain Object Detection Processor
-instances.  A tree node can request the creation and other nodes can
-query the status of the detector at any time. 
-*/
-
 #include "ros_common.hpp"
 
 ROSCommon *ROSCommon::ros_common_ = nullptr;
