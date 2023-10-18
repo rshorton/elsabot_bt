@@ -82,6 +82,7 @@ add_executable(elsabot_bt
   src/ui_topics.cpp
   src/imu_topic.cpp
   src/ros_common.cpp
+  src/nav_utils.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}

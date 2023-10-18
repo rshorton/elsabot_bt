@@ -1,6 +1,7 @@
 #include "nav2_client.hpp"
 #include "nav2_client_loop.hpp"
 #include "nav2_nav_through_poses.hpp"
+#include "nav2_follow_waypoints.hpp"
 #include "nav2_compute_path_client.hpp"
 #include "nav2_clear_local_cost_map.hpp"
 #include "nav2_clear_global_cost_map.hpp"
@@ -124,6 +125,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<Nav2Client>("Nav2Client");
     factory.registerNodeType<Nav2ClientLoop>("Nav2ClientLoop");
     factory.registerNodeType<Nav2NavThroughPoses>("Nav2NavThroughPoses");
+    factory.registerNodeType<Nav2FollowWayoints>("Nav2FollowWayoints");
     factory.registerNodeType<LLCoordToLocalUTM>("LLCoordToLocalUTM");
 
     factory.registerNodeType<TextCompareAction>("TextCompareAction");

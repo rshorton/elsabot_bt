@@ -9,7 +9,7 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
-#include "nav2_msgs/action/navigate_through_poses.hpp"
+#include "nav2_msgs/action/follow_waypoints.hpp"
 #include "behaviortree_cpp_v3/action_node.h"
 #include "nav2_util/geometry_utils.hpp"
 
@@ -17,12 +17,12 @@
 
 #undef FUTURE_WAIT_BLOCK
 
-class Nav2NavThroughPoses : public BT::AsyncActionNode
+class Nav2FollowWayoints : public BT::AsyncActionNode
 {
     using pose_list = std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>>;
 
 public:
-    Nav2NavThroughPoses(const std::string& name, const BT::NodeConfiguration& config)
+    Nav2FollowWayoints(const std::string& name, const BT::NodeConfiguration& config)
         : BT::AsyncActionNode(name, config),
 		 _aborted(false)
     {
@@ -40,7 +40,7 @@ public:
     virtual BT::NodeStatus tick() override
     {
         node_ = rclcpp::Node::make_shared("nav2_nav_through_poses_client");
-        auto action_client = rclcpp_action::create_client<nav2_msgs::action::NavigateThroughPoses>(node_, "navigate_through_poses");
+        auto action_client = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(node_, "follow_waypoints");
 
         // if no server is present, fail after N seconds
         if (!action_client->wait_for_action_server(std::chrono::seconds(20))) {
@@ -61,15 +61,14 @@ public:
         }
 
         RCLCPP_INFO(node_->get_logger(), "Navigating thru %ld poses", poses->size());
-        
+
         if (calc_orientations) {
             calculate_pose_orientations(poses);
         }            
 
-        nav2_msgs::action::NavigateThroughPoses::Goal goal_msg;
+        nav2_msgs::action::FollowWaypoints::Goal goal_msg;
         goal_msg.poses = *poses;
-        goal_msg.behavior_tree = behavior_tree;
-
+        
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
                 rclcpp::FutureReturnCode::SUCCESS)
@@ -78,7 +77,7 @@ public:
             return BT::NodeStatus::FAILURE;
         }
 
-        rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateThroughPoses>::SharedPtr goal_handle = goal_handle_future.get();
+        rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>::SharedPtr goal_handle = goal_handle_future.get();
         if (!goal_handle) {
             RCLCPP_ERROR(node_->get_logger(), "Nav2 nav through poses goal was rejected by server");
             return BT::NodeStatus::FAILURE;
@@ -125,7 +124,7 @@ public:
         	return BT::NodeStatus::IDLE;
         }
 
-        rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateThroughPoses>::WrappedResult wrapped_result = result_future.get();
+        rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>::WrappedResult wrapped_result = result_future.get();
 
         switch (wrapped_result.code) {
             case rclcpp_action::ResultCode::SUCCEEDED:
