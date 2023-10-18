@@ -2,10 +2,10 @@
     <BehaviorTree ID="MainTree">
 		<Repeat num_cycles="2">
             <Sequence>
-                <LLCoordToLocalUTM ll_kml_path="/home/scott/robot_ws/path3.kml" local_utm_coord_poses="utm_coords" />
-                <Nav2NavThroughPoses poses="{utm_coords}" />
-                <LLCoordToLocalUTM ll_kml_path="/home/scott/robot_ws/path4.kml" local_utm_coord_poses="utm_coords" />
-                <Nav2NavThroughPoses poses="{utm_coords}" />
+                <LLCoordToLocalUTM ll_kml_path="/home/elsabot/robot_ws/path11.kml" local_utm_coord_poses="utm_coords" />
+                <Nav2FollowWayoints poses="{utm_coords}" calc_orientations="true" />
+                <LLCoordToLocalUTM ll_kml_path="/home/elsabot/robot_ws/path10.kml" local_utm_coord_poses="utm_coords" />
+                <Nav2FollowWayoints poses="{utm_coords}" calc_orientations="true" />
             </Sequence>
         </Repeat>
     </BehaviorTree>
