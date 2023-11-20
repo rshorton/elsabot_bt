@@ -47,6 +47,7 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
 			BT::InputPort<bool>("fail_on_not_tracked"),
 			BT::OutputPort<bool>("is_tracking"),
 			BT::OutputPort<std::string>("position"),
+			BT::OutputPort<std::string>("unique_id"),
 			BT::OutputPort<std::shared_ptr<robot_head_interfaces::msg::TrackStatus>>("track_status")};
 	}
 
@@ -75,12 +76,14 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
 		bool fail_on_not_tracked = true;
 		getInput<bool>("fail_on_not_tracked", fail_on_not_tracked);
 
-		RCLCPP_DEBUG(node->get_logger(), "Tracking status: tracking [%d], ck [%d], duration [%f], ck [%f], id= [%d]",
+		std::string unique_id = track_status.object.unique_id;
+		RCLCPP_DEBUG(node->get_logger(), "Tracking status: tracking [%d], ck [%d], duration [%f], ck [%f], id= [%d], unique_id= [%s]",
 				track_status.tracking,
 				ck_state,
 				track_status.duration,
 				min_duration,
-				track_status.object.id);
+				track_status.object.id,
+				unique_id.c_str());
 
 		// Success if specified state has been active for the specified duration
 		bool is_tracking = ck_state == track_status.tracking &&	track_status.duration > min_duration;
@@ -96,6 +99,7 @@ class ObjectTrackerStatusAction : public BT::SyncActionNode
 		setOutput("position", str.str());
 		setOutput("is_tracking", is_tracking);
 		setOutput("track_status", std::make_shared<robot_head_interfaces::msg::TrackStatus>(std::move(track_status)));
+		setOutput("unique_id", unique_id);
 		return BT::NodeStatus::SUCCESS;
 	}
 };

@@ -6,8 +6,13 @@
 				<Sequence>
 					<ForceSuccess>
 						<Sequence>
-							<ObjectTrackerStatusAction ck_state="1" min_duration="3" />
+							<ObjectTrackerStatusAction ck_state="1" min_duration="3" is_tracking="is_tracking" position="track_position"
+								unique_id="track_unique_id" track_status="track_status"/>
 							<TextToSpeechActionClient msg1="Detected" />
+							<Inverter>
+								<TextCompareAction text="{track_unique_id}" ck_for=""/>
+							</Inverter>	
+							<TextToSpeechActionClient msg1="You are" msg2="{track_unique_id}" />
 						</Sequence>
 					</ForceSuccess>
 
@@ -19,7 +24,8 @@
 
 					<ForceSuccess>
 						<Sequence>
-							<ObjectTrackerStatusAction ck_state="0" min_duration="4" />
+							<ObjectTrackerStatusAction ck_state="0" min_duration="4" is_tracking="is_tracking" position="track_position"
+								unique_id="track_unique_id" track_status="track_status"/>
 							<TextToSpeechActionClient msg1="Not Detected" />
 						</Sequence>
 					</ForceSuccess>
