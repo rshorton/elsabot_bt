@@ -1,0 +1,67 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<KeepRunningUntilFailure>
+			<Sequence>
+				<TrackAction mode="TrackScan" rate="4" sound_track_mode="none" turn_base="true" unique_id="Scott" />
+				<Repeat num_cycles="99999">
+					<Sequence>
+						<ForceSuccess>
+							<Sequence>
+								<WakeWordDetected since_sec="10.0" />
+								<Sequence>
+									<HeadTiltAction angle="10" dwell_ms="1500" />
+									<SpeechToTextActionClient text="{said}" />
+									<!--TextToSpeechActionClient msg1="You said" />
+									<TextToSpeechActionClient msg1="{said}" /-->
+
+									<TextExtractAction pattern="track\s*([a-zA-Z0-9_]*).*" text="{said}" field1="{field1}" field2="{field2}" />
+									<TextToSpeechActionClient msg1="I will track" msg2="{field1}" />
+
+									<TrackAction mode="TrackScan" rate="4" sound_track_mode="none" turn_base="true" unique_id="{field1}" />
+								</Sequence>
+							</Sequence>
+						</ForceSuccess>
+
+						<Sequence>
+							<Delay delay_msec="3000">
+								<SmileAction level="2" duration_ms="1000" />
+							</Delay>
+						</Sequence>
+
+						<ForceSuccess>
+							<Sequence>
+								<ObjectTrackerStatusAction ck_state="1" min_duration="3" is_tracking="is_tracking" position="track_position"
+									unique_id="track_unique_id" track_status="track_status"/>
+								<!--TextToSpeechActionClient msg1="Detected" /-->
+								<Inverter>
+									<TextCompareAction text="{track_unique_id}" ck_for=""/>
+								</Inverter>	
+								<TextToSpeechActionClient msg1="" msg2="{track_unique_id}" />
+							</Sequence>
+						</ForceSuccess>
+
+						<Sequence>
+							<Delay delay_msec="3000">
+								<SmileAction level="2" duration_ms="1000" />
+							</Delay>
+						</Sequence>
+
+						<ForceSuccess>
+							<Sequence>
+								<ObjectTrackerStatusAction ck_state="0" min_duration="4" is_tracking="is_tracking" position="track_position"
+									unique_id="track_unique_id" track_status="track_status"/>
+								<TextToSpeechActionClient msg1="Not Detected" />
+							</Sequence>
+						</ForceSuccess>
+
+						<!--Sequence>
+							<Delay delay_msec="3000">
+								<SmileAction level="2" duration_ms="1000" />
+							</Delay>
+						</Sequence-->
+					</Sequence>
+				</Repeat>
+			</Sequence>				
+		</KeepRunningUntilFailure>			
+	</BehaviorTree>
+</root>

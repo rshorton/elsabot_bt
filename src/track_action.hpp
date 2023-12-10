@@ -37,12 +37,12 @@ public:
     }
 
     void setTrackSettings(const std::string &mode, const std::string &rate, const std::string sound_track_mode,
-						  bool turn_base, const std::string &object_type, double min_confidence)
+						  bool turn_base, const std::string &object_type, const std::string &unique_id, double min_confidence)
     {
-    	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, sound_track_mode= %s, \
-					turn_base= %d, object_type= %s, min_confidence= %f",
-    				mode.c_str(), rate.c_str(), sound_track_mode.c_str(), turn_base, object_type.c_str(),
-					min_confidence);
+    	RCLCPP_INFO(node_->get_logger(), "Set track: mode= %s, rate= %s, sound_track_mode= %s" \
+					", turn_base= %d, object_type= %s, object_unique_id=%s, min_confidence= %f",
+    				mode.c_str(), rate.c_str(), sound_track_mode.c_str(), turn_base,
+					object_type.c_str(), unique_id.c_str(), min_confidence);
     	auto msg = robot_head_interfaces::msg::TrackCmd();
     	msg.mode = mode;
 // Fix rename rate to scan_step		
@@ -50,6 +50,7 @@ public:
         msg.sound_mode = sound_track_mode;
         msg.turn_base = turn_base;
 		msg.object_type = object_type;
+		msg.object_unique_id = unique_id;
 		msg.min_confidence = min_confidence;
         track_publisher_->publish(msg);
         std::this_thread::sleep_for(100ms);
@@ -81,8 +82,8 @@ class TrackAction : public BT::SyncActionNode
 					 BT::InputPort<std::string>("sound_track_mode"),	// 'any', 'wakeword', 'none'
         			 BT::InputPort<bool>("turn_base"),					// Turn base to face tracked object
 					 BT::InputPort<std::string>("object_type"),			// Object type to track
+					 BT::InputPort<std::string>("unique_id"),			// Unique ID
 	       			 BT::InputPort<double>("min_confidence")};			// Min detection confidence for tracking
-
         }
 
         virtual BT::NodeStatus tick() override
@@ -90,6 +91,7 @@ class TrackAction : public BT::SyncActionNode
         	std::string mode;
         	std::string rate;
 			std::string object_type = "person";
+			std::string unique_id;
         	std::string sound_track_mode;
         	bool turn_base = false;
 			double min_confidence = 0.7;
@@ -107,9 +109,10 @@ class TrackAction : public BT::SyncActionNode
     			throw BT::RuntimeError("missing turn_base");
     		}
         	getInput<std::string>("object_type", object_type);
+        	getInput<std::string>("unique_id", unique_id);
         	getInput<double>("min_confidence", min_confidence);
 
-        	node_if_->setTrackSettings(mode, rate, sound_track_mode, turn_base, object_type, min_confidence);
+        	node_if_->setTrackSettings(mode, rate, sound_track_mode, turn_base, object_type, unique_id, min_confidence);
             return BT::NodeStatus::SUCCESS;
         }
 

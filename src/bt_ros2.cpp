@@ -9,6 +9,7 @@
 #include "ll_coord_to_local_utm.hpp"
 
 #include "text_compare_action.hpp"
+#include "text_extract_action.hpp"
 #include "speech_to_text_action_client.hpp"
 #include "text_to_speech_action_client.hpp"
 #include "human_pose_detect.hpp"
@@ -129,6 +130,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<LLCoordToLocalUTM>("LLCoordToLocalUTM");
 
     factory.registerNodeType<TextCompareAction>("TextCompareAction");
+    factory.registerNodeType<TextExtractAction>("TextExtractAction");
+
     factory.registerNodeType<VoiceDetected>("VoiceDetected");
     factory.registerNodeType<WakeWordDetected>("WakeWordDetected");
     factory.registerNodeType<RobotSaysInitAction>("RobotSaysInitAction");

@@ -1,0 +1,21 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Repeat num_cycles="999">
+			<Fallback>
+				<Sequence>
+					<Delay delay_msec="3000">
+		          		<TextToSpeechActionClient msg1="Say I am yourname" />
+					</Delay>
+	          		<SpeechToTextActionClient text="{said}" />
+					<TextToSpeechActionClient msg1="You said" />
+					<TextToSpeechActionClient msg1="{said}" />
+
+					<TextExtractAction pattern="i am\s*([a-zA-Z0-9_]*).*" text="{said}" field1="{field1}" field2="{field2}" />
+					<TextToSpeechActionClient msg1="your name is" msg2="{field1}" />
+				</Sequence>
+			</Fallback>
+			</Repeat>
+		</Sequence>
+	</BehaviorTree>
+</root>
