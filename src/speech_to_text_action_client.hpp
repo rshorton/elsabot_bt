@@ -29,7 +29,7 @@ limitations under the License.
 #include "speech_action_interfaces/action/recognize.hpp"
 
 #include "std_msgs/msg/header.hpp"
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 
 class SpeechToTextActionClient : public BT::SyncActionNode
 {
@@ -37,7 +37,7 @@ public:
 	using Recognize = speech_action_interfaces::action::Recognize;
 	using GoalHandleRecognize = rclcpp_action::ClientGoalHandle<Recognize>;
 
-    SpeechToTextActionClient(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+    SpeechToTextActionClient(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
         : BT::SyncActionNode(name, config)
     {
     	node_ = node;

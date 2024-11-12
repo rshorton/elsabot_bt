@@ -26,12 +26,12 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 class TextExtractAction : public BT::SyncActionNode
 {
     public:
-		TextExtractAction(const std::string& name, const BT::NodeConfiguration& config)
+		TextExtractAction(const std::string& name, const BT::NodeConfig& config)
 				: BT::SyncActionNode(name, config)
 		{
 			setlocale(LC_ALL, "");

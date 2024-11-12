@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "robot_head_interfaces/msg/pointer_light.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 // Singleton for publishing the pointer light control state - shared by all PointerLightAction instances
 class PointerLightActionROSNodeIf
@@ -56,7 +56,7 @@ private:
 class PointerLightAction : public BT::SyncActionNode
 {
 public:
-    PointerLightAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+    PointerLightAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
         : BT::SyncActionNode(name, config)
     {
         node_if_ = PointerLightActionROSNodeIf::instance(node);

@@ -19,7 +19,7 @@ limitations under the License.
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 #include "imu_topic.hpp"
 
 using namespace std;
@@ -27,7 +27,7 @@ using namespace std;
 class GetMovementStatusAction : public BT::SyncActionNode
 {
     public:
-		GetMovementStatusAction(const std::string& name, const BT::NodeConfiguration& config)
+		GetMovementStatusAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
         }

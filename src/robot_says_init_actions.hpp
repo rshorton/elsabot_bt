@@ -18,7 +18,7 @@ limitations under the License.
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_says_game.hpp"
 
@@ -27,7 +27,7 @@ using namespace std;
 class RobotSaysInitAction : public BT::SyncActionNode
 {
     public:
-		RobotSaysInitAction(const std::string& name, const BT::NodeConfiguration& config)
+		RobotSaysInitAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
         }

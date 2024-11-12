@@ -22,14 +22,14 @@ limitations under the License.
 #include <map>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 #include "detection_processor_container.hpp"
 #include "ros_common.hpp"
 
 class DetectionConfigureAction : public BT::SyncActionNode
 {
     public:
-	DetectionConfigureAction(const std::string& name, const BT::NodeConfiguration& config) :
+	DetectionConfigureAction(const std::string& name, const BT::NodeConfig& config) :
 		BT::SyncActionNode(name, config)
     {
     }

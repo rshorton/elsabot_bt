@@ -24,14 +24,14 @@ limitations under the License.
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "nav_msgs/msg/path.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_find_game.hpp"
 
 class RobotFindInitAction : public BT::SyncActionNode
 {
     public:
-		RobotFindInitAction(const std::string& name, const BT::NodeConfiguration& config)
+		RobotFindInitAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
 			node_ = rclcpp::Node::make_shared("robot_find_init_action_node");

@@ -15,7 +15,7 @@
   <depend>geometry_msgs</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>nav2_msgs</depend>
-  <depend>behaviortree_cpp_v3</depend>
+  <depend>behaviortree_cpp</depend>
   <depend>speech_action_interfaces</depend>
   <depend>robot_head_interfaces</depend>
   <depend>robot_ui_interfaces</depend>

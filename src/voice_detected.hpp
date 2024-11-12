@@ -18,12 +18,12 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 class VoiceDetected : public BT::SyncActionNode
 {
     public:
-		VoiceDetected(const std::string& name, const BT::NodeConfiguration& config)
+		VoiceDetected(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config),
 	        vad(false)
         {

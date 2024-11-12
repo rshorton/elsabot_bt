@@ -1,4 +1,4 @@
-<root main_tree_to_execute="MainTree">
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
 		<Sequence>
 			<TrackAction mode="Manual" rate="0" sound_track_mode="none" turn_base="false" object_type="cat" />

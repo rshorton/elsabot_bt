@@ -21,7 +21,7 @@ limitations under the License.
 #include "std_msgs/msg/bool.hpp"
 #include "robot_head_interfaces/msg/scan_status.hpp"
 
-#include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp/bt_factory.h"
 
 using namespace BT;
 

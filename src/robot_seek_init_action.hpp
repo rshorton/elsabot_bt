@@ -31,7 +31,7 @@ limitations under the License.
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav_msgs/msg/path.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_seek_game.hpp"
 
@@ -40,7 +40,7 @@ using namespace std;
 class RobotSeekInitAction : public BT::SyncActionNode
 {
     public:
-		RobotSeekInitAction(const std::string& name, const BT::NodeConfiguration& config)
+		RobotSeekInitAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config),
 			  cur_pos_x(0.0),
 			  cur_pos_y(0.0),

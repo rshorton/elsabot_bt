@@ -19,7 +19,7 @@ limitations under the License.
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_head_interfaces/msg/track_status.hpp"
 #include "robot_cat_game.hpp"
@@ -30,7 +30,7 @@ class RobotCatGameNextPoseAction : public BT::SyncActionNode
 {
     public:
 
-	RobotCatGameNextPoseAction(const std::string& name, const BT::NodeConfiguration& config)
+	RobotCatGameNextPoseAction(const std::string& name, const BT::NodeConfig& config)
 		: BT::SyncActionNode(name, config)
 	{
 	}

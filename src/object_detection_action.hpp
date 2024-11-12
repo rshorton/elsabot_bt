@@ -26,7 +26,7 @@ limitations under the License.
 #include "std_msgs/msg/bool.hpp"
 #include "object_detection_msgs/msg/object_desc_array.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 typedef std::chrono::duration<float> float_seconds;
 
@@ -79,7 +79,7 @@ private:
 class ObjectDetectionAction : public BT::SyncActionNode
 {
     public:
-	ObjectDetectionAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+	ObjectDetectionAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
 			node_if_ = ObjectDetectionROSNodeIf::instance(node);

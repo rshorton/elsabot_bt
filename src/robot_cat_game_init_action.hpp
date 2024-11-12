@@ -18,14 +18,14 @@ limitations under the License.
 
 #include <string>
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_cat_game.hpp"
 
 class RobotCatGameInitAction : public BT::SyncActionNode
 {
     public:
-    RobotCatGameInitAction(const std::string& name, const BT::NodeConfiguration& config)
+    RobotCatGameInitAction(const std::string& name, const BT::NodeConfig& config)
         : BT::SyncActionNode(name, config)
     {
     }

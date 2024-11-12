@@ -17,14 +17,14 @@ limitations under the License.
 #pragma once
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 #include "ui_topics.hpp"
 #include "ros_common.hpp"
 
 class UIInputAction : public BT::SyncActionNode
 {
 public:
-    UIInputAction(const std::string& name, const BT::NodeConfiguration& config)
+    UIInputAction(const std::string& name, const BT::NodeConfig& config)
         : BT::SyncActionNode(name, config)
     {
     }

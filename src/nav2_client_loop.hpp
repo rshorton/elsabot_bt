@@ -21,7 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "nav2_util/geometry_utils.hpp"
 
 #include "bt_custom_type_helpers.hpp"
@@ -32,14 +32,14 @@ using namespace std::chrono_literals;
 
 #undef FUTURE_WAIT_BLOCK
 
-class Nav2ClientLoop : public BT::AsyncActionNode
+class Nav2ClientLoop : public BT::ThreadedAction
 {
 private:
     enum class PositionState { MOVE_AWAY_FROM_GOAL, MOVE_TOWARD_GOAL};    
 
 public:
-    Nav2ClientLoop(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::AsyncActionNode(name, config),
+    Nav2ClientLoop(const std::string& name, const BT::NodeConfig& config)
+        : BT::ThreadedAction(name, config),
 		 _aborted(false)
     {
     }

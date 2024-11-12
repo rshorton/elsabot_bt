@@ -26,7 +26,7 @@ limitations under the License.
 #include "std_msgs/msg/bool.hpp"
 #include "robot_head_interfaces/msg/detected_pose.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 using namespace std::chrono_literals;
 using std::map;
@@ -88,7 +88,7 @@ private:
 class HumanPoseDetect : public BT::SyncActionNode
 {
     public:
-		HumanPoseDetect(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+		HumanPoseDetect(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
 				: BT::SyncActionNode(name, config)
 		{
 			node_if_ = HumanPoseDetectROSNodeIf::instance(node);

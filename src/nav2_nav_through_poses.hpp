@@ -10,20 +10,20 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "nav2_util/geometry_utils.hpp"
 
 #include "nav_utils.hpp"
 
 #undef FUTURE_WAIT_BLOCK
 
-class Nav2NavThroughPoses : public BT::AsyncActionNode
+class Nav2NavThroughPoses : public BT::ThreadedAction
 {
     using pose_list = std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>>;
 
 public:
-    Nav2NavThroughPoses(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::AsyncActionNode(name, config),
+    Nav2NavThroughPoses(const std::string& name, const BT::NodeConfig& config)
+        : BT::ThreadedAction(name, config),
 		 _aborted(false)
     {
     }

@@ -29,15 +29,15 @@ limitations under the License.
 
 #include "geometry_msgs/msg/twist.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 using namespace std;
 
-class RobotSpin : public BT::AsyncActionNode
+class RobotSpin : public BT::ThreadedAction
 {
     public:
-		RobotSpin(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::AsyncActionNode(name, config),
+		RobotSpin(const std::string& name, const BT::NodeConfig& config)
+            : BT::ThreadedAction(name, config),
 			  strt_yaw_(0.0),
 			  prev_yaw_(0.0),
 			  relative_yaw_(0.0)

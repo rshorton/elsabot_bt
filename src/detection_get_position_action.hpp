@@ -37,7 +37,7 @@ pose - Position of the object as string, format: "<x>,<y>,<yaw>"
 #include <map>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "detection_processor_container.hpp"
 #include "robot_status.hpp"
@@ -46,7 +46,7 @@ pose - Position of the object as string, format: "<x>,<y>,<yaw>"
 class DetectionGetPositionAction : public BT::SyncActionNode
 {
     public:
-	DetectionGetPositionAction(const std::string& name, const BT::NodeConfiguration& config) :
+	DetectionGetPositionAction(const std::string& name, const BT::NodeConfig& config) :
 		BT::SyncActionNode(name, config)
     {
     }

@@ -18,14 +18,14 @@ limitations under the License.
 
 #include <string>
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_find_game.hpp"
 
 class RobotFindCheckStepAction : public BT::SyncActionNode
 {
     public:
-	RobotFindCheckStepAction(const std::string& name, const BT::NodeConfiguration& config)
+	RobotFindCheckStepAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
         }

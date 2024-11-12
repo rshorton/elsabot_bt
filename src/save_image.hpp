@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "robot_head_interfaces/msg/save_image.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 // Singleton for publishing the save image message - shared by all SaveImageAction nodes instances
 class SaveImageActionROSNodeIf
@@ -56,7 +56,7 @@ private:
 class SaveImageAction : public BT::SyncActionNode
 {
     public:
-		SaveImageAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+		SaveImageAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
             node_if_ = SaveImageActionROSNodeIf::instance(node);

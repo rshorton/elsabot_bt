@@ -21,7 +21,7 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "robot_head_interfaces/msg/track_cmd.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 // Singleton for publishing the Track control state - shared by all TrackActionNode instances
 class TrackActionROSNodeIf
@@ -69,7 +69,7 @@ private:
 class TrackAction : public BT::SyncActionNode
 {
     public:
-		TrackAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+		TrackAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
 			node_if_ = TrackActionROSNodeIf::instance(node);

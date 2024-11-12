@@ -31,7 +31,7 @@ limitations under the License.
 #include "speech_action_interfaces/action/speak.hpp"
 
 #include "std_msgs/msg/header.hpp"
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 
 #include "game_settings.hpp"
 
@@ -41,7 +41,7 @@ public:
 	using Speak = speech_action_interfaces::action::Speak;
 	using GoalHandleSpeak = rclcpp_action::ClientGoalHandle<Speak>;
 
-    TextToSpeechActionClient(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+    TextToSpeechActionClient(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
         : BT::SyncActionNode(name, config)
     {
     	node_ = node;

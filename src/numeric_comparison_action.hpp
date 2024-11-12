@@ -19,14 +19,14 @@ limitations under the License.
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 using namespace std;
 
 class NumericComparisonAction : public BT::SyncActionNode
 {
     public:
-		NumericComparisonAction(const std::string& name, const BT::NodeConfiguration& config)
+		NumericComparisonAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
         }

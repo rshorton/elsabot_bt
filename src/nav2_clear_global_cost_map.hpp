@@ -22,13 +22,13 @@ limitations under the License.
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "nav2_msgs/srv/clear_entire_costmap.hpp"
 
 class Nav2ClearGlobalCostMap : public BT::SyncActionNode
 {
 public:
-    Nav2ClearGlobalCostMap(const std::string& name, const BT::NodeConfiguration& config)
+    Nav2ClearGlobalCostMap(const std::string& name, const BT::NodeConfig& config)
         : BT::SyncActionNode(name, config)
     {
     }

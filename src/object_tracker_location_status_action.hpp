@@ -25,7 +25,7 @@ limitations under the License.
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 // Singleton for subscribing to object location message - shared by all ObjectTrackerLocationStatusAction node instances
 class ObjectTrackerLocationStatusROSNodeIf
@@ -78,7 +78,7 @@ private:
 class ObjectTrackerLocationStatusAction : public BT::SyncActionNode
 {
     public:
-	ObjectTrackerLocationStatusAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+	ObjectTrackerLocationStatusAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
 			node_if_ = ObjectTrackerLocationStatusROSNodeIf::instance(node);

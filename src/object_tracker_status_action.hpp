@@ -29,12 +29,12 @@ limitations under the License.
 #include "std_msgs/msg/bool.hpp"
 #include "robot_head_interfaces/msg/track_status.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 class ObjectTrackerStatusAction : public BT::SyncActionNode
 {
     public:
-	ObjectTrackerStatusAction(const std::string& name, const BT::NodeConfiguration& config)
+	ObjectTrackerStatusAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
         }

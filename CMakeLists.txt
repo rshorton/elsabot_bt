@@ -23,7 +23,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_msgs REQUIRED)
-find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(behaviortree_cpp REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
 find_package(robot_head_interfaces REQUIRED)
 find_package(robot_ui_interfaces REQUIRED)
@@ -54,7 +54,7 @@ set(dependencies
   geometry_msgs
   nav2_behavior_tree
   nav2_msgs
-  behaviortree_cpp_v3
+  behaviortree_cpp
   speech_action_interfaces
   robot_head_interfaces
   robot_ui_interfaces

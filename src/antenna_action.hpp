@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "robot_head_interfaces/msg/antenna.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 // Single for publishing the antenna control state - shared by all AntennaActionNode instances
 class AntennaActionROSNodeIf
@@ -60,7 +60,7 @@ private:
 class AntennaAction : public BT::SyncActionNode
 {
     public:
-		AntennaAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+		AntennaAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
 			node_if_ = AntennaActionROSNodeIf::instance(node);

@@ -23,7 +23,7 @@ limitations under the License.
 #include <memory>
 #include "rclcpp/rclcpp.hpp"
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "robot_localization/srv/from_ll.hpp"
 
 class LLCoordToLocalUTM : public BT::SyncActionNode
@@ -31,7 +31,7 @@ class LLCoordToLocalUTM : public BT::SyncActionNode
     using pose_list = std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>>;
 
 public:
-    LLCoordToLocalUTM(const std::string& name, const BT::NodeConfiguration& config)
+    LLCoordToLocalUTM(const std::string& name, const BT::NodeConfig& config)
         : BT::SyncActionNode(name, config)
     {
     }

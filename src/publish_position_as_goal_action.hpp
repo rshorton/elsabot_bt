@@ -21,7 +21,7 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "bt_custom_type_helpers.hpp"
 #include "ros_common.hpp"
@@ -69,7 +69,7 @@ private:
 class PublishPositionAsGoalAction : public BT::SyncActionNode
 {
     public:
-		PublishPositionAsGoalAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
+		PublishPositionAsGoalAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
             : BT::SyncActionNode(name, config)
         {
 			node_if_ = PublishPositionAsGoalActionROSNodeIf::instance(node);

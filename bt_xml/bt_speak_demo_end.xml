@@ -1,4 +1,4 @@
-<root main_tree_to_execute = "MainTree">
+<root BTCPP_format="4" main_tree_to_execute = "MainTree">
     <BehaviorTree ID="MainTree">
         <Sequence>
             <TextToSpeechActionClient msg1="Are we done?  Can I go watch West world now?"/>

@@ -20,7 +20,7 @@ limitations under the License.
 #include <sstream>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "robot_seek_game.hpp"
 #include "bt_custom_type_helpers.hpp"
@@ -31,7 +31,7 @@ using namespace std;
 class RobotSeekInBoundsCheckAction : public BT::SyncActionNode
 {
     public:
-		RobotSeekInBoundsCheckAction(const std::string& name, const BT::NodeConfiguration& config)
+		RobotSeekInBoundsCheckAction(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
         }

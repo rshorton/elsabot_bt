@@ -21,7 +21,7 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 #include "speech_action_interfaces/msg/wakeword.hpp"
 
 using namespace std::chrono;
@@ -29,7 +29,7 @@ using namespace std::chrono;
 class WakeWordDetected : public BT::SyncActionNode
 {
     public:
-	WakeWordDetected(const std::string& name, const BT::NodeConfiguration& config)
+	WakeWordDetected(const std::string& name, const BT::NodeConfig& config)
             : BT::SyncActionNode(name, config)
         {
 			std::stringstream ss;

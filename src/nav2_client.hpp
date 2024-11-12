@@ -10,7 +10,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "nav2_util/geometry_utils.hpp"
 
 #include "bt_custom_type_helpers.hpp"
@@ -19,11 +19,11 @@ using nav2_util::geometry_utils::orientationAroundZAxis;
 
 #undef FUTURE_WAIT_BLOCK
 
-class Nav2Client : public BT::AsyncActionNode
+class Nav2Client : public BT::ThreadedAction
 {
 public:
-    Nav2Client(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::AsyncActionNode(name, config),
+    Nav2Client(const std::string& name, const BT::NodeConfig& config)
+        : BT::ThreadedAction(name, config),
 		 _aborted(false)
     {
     }

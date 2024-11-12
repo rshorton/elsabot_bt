@@ -26,7 +26,7 @@ limitations under the License.
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav_msgs/msg/path.h"
@@ -61,11 +61,11 @@ Point convertFromString(StringView key)
 }
 } // end namespace BT
 
-class Nav2ComputePathClient : public BT::AsyncActionNode
+class Nav2ComputePathClient : public BT::ThreadedAction
 {
 public:
-    Nav2ComputePathClient(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::AsyncActionNode(name, config)
+    Nav2ComputePathClient(const std::string& name, const BT::NodeConfig& config)
+        : BT::ThreadedAction(name, config)
     {
     }
 

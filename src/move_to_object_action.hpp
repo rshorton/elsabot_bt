@@ -23,18 +23,18 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 
 #include "bt_custom_type_helpers.hpp"
 #include "ros_common.hpp"
 
 using namespace std;
 
-class MoveToObjectAction : public BT::AsyncActionNode
+class MoveToObjectAction : public BT::ThreadedAction
 {
     public:
-		MoveToObjectAction(const std::string& name, const BT::NodeConfiguration& config) :
-            BT::AsyncActionNode(name, config)
+		MoveToObjectAction(const std::string& name, const BT::NodeConfig& config) :
+            BT::ThreadedAction(name, config)
         {
 			node_ = ROSCommon::GetInstance()->GetNode();
             vel_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 1);

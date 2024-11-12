@@ -64,10 +64,10 @@
 #include "set_gripper_position_action.hpp"
 #endif
 
-#include <behaviortree_cpp_v3/bt_factory.h>
-#include <behaviortree_cpp_v3/loggers/bt_cout_logger.h>
-#include <behaviortree_cpp_v3/loggers/bt_file_logger.h>
-#include <behaviortree_cpp_v3/loggers/bt_zmq_publisher.h>
+#include <behaviortree_cpp/bt_factory.h>
+#include <behaviortree_cpp/loggers/bt_cout_logger.h>
+#include <behaviortree_cpp/loggers/bt_file_logger_v2.h>
+#include <behaviortree_cpp/loggers/groot2_publisher.h>
 
 #include "transform_helper.hpp"
 #include "robot_status.hpp"
@@ -85,7 +85,7 @@ using namespace BT;
 
 #define REGISTER_BUILDER_WITH_ROS_NODE(node_type, ros_node_handle) \
     factory.registerBuilder<node_type>(#node_type, \
-                           [ros_node_handle](const std::string& name, const NodeConfiguration& config) { \
+                           [ros_node_handle](const std::string& name, const NodeConfig& config) { \
                                return std::make_unique<node_type>(name, config, ros_node_handle); \
                            }) \
 
@@ -99,9 +99,6 @@ int main(int argc, char **argv)
  
     nh->declare_parameter("bt_use_std_out_logger", false);
     bool use_std_out_logger = nh->get_parameter("bt_use_std_out_logger").as_bool();
-
-    nh->declare_parameter("bt_use_zmq_publisher", false);
-    bool use_zmq_publisher = nh->get_parameter("bt_use_zmq_publisher").as_bool();
 
     nh->declare_parameter("bt_log_file", "");
     std::string log_file = nh->get_parameter("bt_log_file").as_string();
@@ -207,14 +204,9 @@ int main(int argc, char **argv)
         logger = std::make_shared<StdCoutLogger>(tree);
     }
 
-    std::shared_ptr<FileLogger> file_logger;
+    std::shared_ptr<FileLogger2> file_logger;
     if (log_file.size()) {
-        file_logger = std::make_shared<FileLogger>(tree, log_file.c_str());
-    }
-
-    std::shared_ptr<PublisherZMQ> zmq_publisher;
-    if (use_zmq_publisher) {
-        zmq_publisher = std::make_shared<PublisherZMQ>(tree);
+        file_logger = std::make_shared<FileLogger2>(tree, log_file.c_str());
     }
 
     NodeStatus status = NodeStatus::RUNNING;
@@ -237,7 +229,7 @@ int main(int argc, char **argv)
 
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
-    	status = tree.tickRoot();
+        status = tree.tickWhileRunning(std::chrono::milliseconds(1)); 
 
         // Spin a while
         rclcpp::spin_until_future_complete(nh, std::promise<bool>().get_future(), std::chrono::milliseconds(50));

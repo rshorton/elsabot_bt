@@ -17,13 +17,13 @@ limitations under the License.
 #pragma once
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
+#include <behaviortree_cpp/action_node.h>
 #include "ros_common.hpp"
 
 class LogAction : public BT::SyncActionNode
 {
 public:
-    LogAction(const std::string& name, const BT::NodeConfiguration& config)
+    LogAction(const std::string& name, const BT::NodeConfig& config)
         : BT::SyncActionNode(name, config)
     {
     }

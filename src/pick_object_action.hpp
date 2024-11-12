@@ -10,7 +10,7 @@
 #include "std_msgs/msg/header.hpp"
 #include <moveit/move_group_interface/move_group_interface.h>
 
-#include "behaviortree_cpp_v3/action_node.h"
+#include "behaviortree_cpp/action_node.h"
 
 #include "bt_custom_type_helpers.hpp"
 #include "ros_common.hpp"
@@ -19,11 +19,11 @@
 
 #undef FUTURE_WAIT_BLOCK
 
-class PickObjectAction : public BT::AsyncActionNode
+class PickObjectAction : public BT::ThreadedAction
 {
 public:
-    PickObjectAction(const std::string& name, const BT::NodeConfiguration& config)
-        : BT::AsyncActionNode(name, config),
+    PickObjectAction(const std::string& name, const BT::NodeConfig& config)
+        : BT::ThreadedAction(name, config),
 		 _aborted(false)
     {
     }
