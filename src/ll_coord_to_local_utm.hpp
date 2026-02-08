@@ -96,10 +96,17 @@ public:
                 pose.x, pose.y);
 
             auto result = client->async_send_request(request);
-            // Wait for the result.
-            if (rclcpp::spin_until_future_complete(node_, result) == rclcpp::FutureReturnCode::SUCCESS) {
-                RCLCPP_INFO(node_->get_logger(), "completed");
 
+            std::chrono::seconds timeout(15); 
+
+            // Wait for the result.
+            auto return_code = rclcpp::spin_until_future_complete(node_, result, timeout);
+            if (return_code == rclcpp::FutureReturnCode::SUCCESS) {
+                RCLCPP_INFO(node_->get_logger(), "completed");
+            } else if (return_code == rclcpp::FutureReturnCode::TIMEOUT) {
+                RCLCPP_WARN(node_->get_logger(), "Future timed out");
+                ok = false;
+                break;
             } else {
                 RCLCPP_ERROR(node_->get_logger(), "Failed to convert LL coord");
                 ok = false;
