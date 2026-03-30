@@ -17,55 +17,54 @@ limitations under the License.
 #ifndef _ROBOT_SEEK_GAME_HPP_
 #define _ROBOT_SEEK_GAME_HPP_
 
-#include <vector>
-#include <string>
 #include <map>
+#include <string>
+#include <vector>
 
-#include "rclcpp/rclcpp.hpp"
 #include "bt_custom_type_helpers.hpp"
+#include "rclcpp/rclcpp.hpp"
 
+class RobotSeekGame {
+ private:
+ public:
+  struct SearchPose {
+    double x;
+    double y;
+    double yaw;
+    bool spin;
+    bool scan;
 
-class RobotSeekGame
-{
-private:
+    double initial_dist;
+  };
 
-public:
-	struct SearchPose
-	{
-	    double x;
-	    double y;
-	    double yaw;
-	    bool spin;
-	    bool scan;
+  RobotSeekGame();
+  ~RobotSeekGame();
 
-	    double initial_dist;
-	};
+  static RobotSeekGame* GetRobotSeekGame();
+  static RobotSeekGame* CreateRobotSeekGame();
 
-	RobotSeekGame();
-	~RobotSeekGame();
+  bool Init(rclcpp::Node::SharedPtr node, std::string datapath, double init_x,
+            double init_y, double init_yaw, std::vector<SearchPose>& poses);
+  bool NextSearchPose(double& x, double& y, double& yaw, bool& spin_at_goal,
+                      bool& scan_at_goal, int& index);
 
-	static RobotSeekGame* GetRobotSeekGame();
-	static RobotSeekGame* CreateRobotSeekGame();
+  bool InBoundary(const Position& pos) const;
 
-	bool Init(rclcpp::Node::SharedPtr node, std::string datapath, double init_x, double init_y, double init_yaw, std::vector<SearchPose> &poses);
-	bool NextSearchPose(double &x, double &y, double &yaw, bool &spin_at_goal, bool &scan_at_goal, int &index);
+ private:
+  void GetPointInSameDirection(SearchPose p0, SearchPose p1, double x, double y,
+                               double yaw, SearchPose& best, double& angleDiff,
+                               double& angleTo);
 
-	bool InBoundary(const Position &pos) const;
+  void TestBoundaryCheck() const;
 
-private:
-	void GetPointInSameDirection(SearchPose p0, SearchPose p1, double x, double y, double yaw,
-								 SearchPose &best, double &angleDiff, double &angleTo);
-
-	void TestBoundaryCheck() const;
-
-private:
-	rclcpp::Node::SharedPtr node_;
-	std::vector<Position> boundary_;
-	std::vector<SearchPose> poses_;
-	int idx_cur_;
-	int idx_start_;
-	int dir_;
-	bool bFirst_;
+ private:
+  rclcpp::Node::SharedPtr node_;
+  std::vector<Position> boundary_;
+  std::vector<SearchPose> poses_;
+  int idx_cur_;
+  int idx_start_;
+  int dir_;
+  bool bFirst_;
 };
 
 #endif

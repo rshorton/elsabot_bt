@@ -19,9 +19,10 @@ limitations under the License.
 
 #include <memory>
 
-#include "rclcpp/rclcpp.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
 
-bool calculate_pose_orientations(std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>>);
+bool calculate_pose_orientations(
+    std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>>);
 
-#endif //_NAV_UTILS_HPP_
+#endif  //_NAV_UTILS_HPP_

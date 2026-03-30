@@ -17,46 +17,40 @@ limitations under the License.
 #ifndef _DETECTION_PROCESSOR_CONTAINER_HPP_
 #define _DETECTION_PROCESSOR_CONTAINER_HPP_
 
-#include <string>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string>
 
-#include "rclcpp/rclcpp.hpp"
 #include "detection_processor.hpp"
+#include "rclcpp/rclcpp.hpp"
 
-class ObjDetProcContainer
-{
-private:
+class ObjDetProcContainer {
+ private:
+ public:
+  static ObjDetProcContainer* Create(rclcpp::Node::SharedPtr node) {
+    if (!container_) {
+      container_ = new ObjDetProcContainer(node);
+    }
+    return container_;
+  };
 
-public:
+  static ObjDetProcContainer* GetInstance() { return container_; };
 
-	static ObjDetProcContainer* Create(rclcpp::Node::SharedPtr node)
-	{
-		if (!container_) {
-			container_ = new ObjDetProcContainer(node);
-		}			
-		return container_;
-	};
+  std::shared_ptr<ObjDetProc> CreateProc(const std::string& name,
+                                         const std::string& topic);
+  bool DestroyProc(const std::string& name);
 
-	static ObjDetProcContainer* GetInstance()
-	{
-		return container_;
-	};
+  std::shared_ptr<ObjDetProc> GetProc(const std::string& name);
 
-	std::shared_ptr<ObjDetProc> CreateProc(const std::string &name, const std::string &topic);
-	bool DestroyProc(const std::string &name);
+ private:
+  ObjDetProcContainer(rclcpp::Node::SharedPtr node) : node_(node) {};
+  ~ObjDetProcContainer() {};
 
-	std::shared_ptr<ObjDetProc> GetProc(const std::string &name);
+ private:
+  static ObjDetProcContainer* container_;
 
-private:
-	ObjDetProcContainer(rclcpp::Node::SharedPtr node): node_(node) {};
-	~ObjDetProcContainer() {};
-
-private:
-	static ObjDetProcContainer *container_;
-
-	rclcpp::Node::SharedPtr node_;
-	std::unordered_map<std::string, std::shared_ptr<ObjDetProc>> detector_map_;
+  rclcpp::Node::SharedPtr node_;
+  std::unordered_map<std::string, std::shared_ptr<ObjDetProc>> detector_map_;
 };
 
-#endif //_DETECTION_PROCESSOR_CONTAINER_HPP_
+#endif  //_DETECTION_PROCESSOR_CONTAINER_HPP_

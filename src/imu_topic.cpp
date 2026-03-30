@@ -17,41 +17,35 @@ limitations under the License.
 /*
 This class is used to create and contain Object Detection Processor
 instances.  A tree node can request the creation and other nodes can
-query the status of the detector at any time. 
+query the status of the detector at any time.
 */
-
-#include <iostream>
-#include <string>
-#include <map>
-#include <chrono>
 
 #include "imu_topic.hpp"
 
-IMUTopic *IMUTopic::imu_topic_ = nullptr;
+#include <chrono>
+#include <iostream>
+#include <map>
+#include <string>
 
-IMUTopic::IMUTopic(rclcpp::Node::SharedPtr node):
-	node_(node)
-{
-    imu_sub_ = node_->create_subscription<sensor_msgs::msg::Imu>(
-		"/imu/data",
-        rclcpp::SystemDefaultsQoS(),
-        std::bind(&IMUTopic::IMUCallback, this, std::placeholders::_1));
+IMUTopic* IMUTopic::imu_topic_ = nullptr;
+
+IMUTopic::IMUTopic(rclcpp::Node::SharedPtr node) : node_(node) {
+  imu_sub_ = node_->create_subscription<sensor_msgs::msg::Imu>(
+      "/imu/data", rclcpp::SystemDefaultsQoS(),
+      std::bind(&IMUTopic::IMUCallback, this, std::placeholders::_1));
 }
 
-void IMUTopic::IMUCallback(sensor_msgs::msg::Imu::SharedPtr msg)
-{
-	RCLCPP_DEBUG(node_->get_logger(), "IMU msg received");
-	last_msg_ = msg;
+void IMUTopic::IMUCallback(sensor_msgs::msg::Imu::SharedPtr msg) {
+  RCLCPP_DEBUG(node_->get_logger(), "IMU msg received");
+  last_msg_ = msg;
 }
 
-bool IMUTopic::GetAngularVelocity(double &x, double &y, double &z)
-{
-	if (last_msg_) {
-		x = last_msg_->angular_velocity.x;
-		y = last_msg_->angular_velocity.y;
-		z = last_msg_->angular_velocity.z;
-		return true;
-	}
-	return false;
+bool IMUTopic::GetAngularVelocity(double& x, double& y, double& z) {
+  if (last_msg_) {
+    x = last_msg_->angular_velocity.x;
+    y = last_msg_->angular_velocity.y;
+    z = last_msg_->angular_velocity.z;
+    return true;
+  }
+  return false;
 }
-

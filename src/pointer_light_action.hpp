@@ -16,69 +16,71 @@ limitations under the License.
 
 #pragma once
 
-#include "rclcpp/rclcpp.hpp"
-#include "robot_head_interfaces/msg/pointer_light.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-// Singleton for publishing the pointer light control state - shared by all PointerLightAction instances
-class PointerLightActionROSNodeIf
-{
-public:
-	PointerLightActionROSNodeIf(PointerLightActionROSNodeIf const&) = delete;
-	PointerLightActionROSNodeIf& operator=(PointerLightActionROSNodeIf const&) = delete;
+#include "rclcpp/rclcpp.hpp"
+#include "robot_head_interfaces/msg/pointer_light.hpp"
 
-    static std::shared_ptr<PointerLightActionROSNodeIf> instance(rclcpp::Node::SharedPtr node)
-    {
-    	static std::shared_ptr<PointerLightActionROSNodeIf> s{new PointerLightActionROSNodeIf(node)};
-        return s;
-    }
+// Singleton for publishing the pointer light control state - shared by all
+// PointerLightAction instances
+class PointerLightActionROSNodeIf {
+ public:
+  PointerLightActionROSNodeIf(PointerLightActionROSNodeIf const&) = delete;
+  PointerLightActionROSNodeIf& operator=(PointerLightActionROSNodeIf const&) =
+      delete;
 
-    void setPointerLightState(int32_t w_level, int32_t l_level)
-    {
+  static std::shared_ptr<PointerLightActionROSNodeIf> instance(
+      rclcpp::Node::SharedPtr node) {
+    static std::shared_ptr<PointerLightActionROSNodeIf> s{
+        new PointerLightActionROSNodeIf(node)};
+    return s;
+  }
 
-    	RCLCPP_INFO(node_->get_logger(), "Set pointer light: white_level= %d, laser_lever= %d", w_level, l_level);
-    	auto message = robot_head_interfaces::msg::PointerLight();
-        message.white_level = w_level;
-        message.laser_level = l_level;
-        pointer_light_publisher_->publish(message);
-    }
+  void setPointerLightState(int32_t w_level, int32_t l_level) {
+    RCLCPP_INFO(node_->get_logger(),
+                "Set pointer light: white_level= %d, laser_lever= %d", w_level,
+                l_level);
+    auto message = robot_head_interfaces::msg::PointerLight();
+    message.white_level = w_level;
+    message.laser_level = l_level;
+    pointer_light_publisher_->publish(message);
+  }
 
-private:
-    PointerLightActionROSNodeIf(rclcpp::Node::SharedPtr node):
-		 node_(node)
-	{
-        pointer_light_publisher_ = node_->create_publisher<robot_head_interfaces::msg::PointerLight>("/head/pointer_light", 1);
-    }
-    rclcpp::Node::SharedPtr node_;
-    rclcpp::Publisher<robot_head_interfaces::msg::PointerLight>::SharedPtr pointer_light_publisher_;
+ private:
+  PointerLightActionROSNodeIf(rclcpp::Node::SharedPtr node) : node_(node) {
+    pointer_light_publisher_ =
+        node_->create_publisher<robot_head_interfaces::msg::PointerLight>(
+            "/head/pointer_light", 1);
+  }
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Publisher<robot_head_interfaces::msg::PointerLight>::SharedPtr
+      pointer_light_publisher_;
 };
 
-class PointerLightAction : public BT::SyncActionNode
-{
-public:
-    PointerLightAction(const std::string& name, const BT::NodeConfiguration& config, rclcpp::Node::SharedPtr node)
-        : BT::SyncActionNode(name, config)
-    {
-        node_if_ = PointerLightActionROSNodeIf::instance(node);
-    }
+class PointerLightAction : public BT::SyncActionNode {
+ public:
+  PointerLightAction(const std::string& name,
+                     const BT::NodeConfiguration& config,
+                     rclcpp::Node::SharedPtr node)
+      : BT::SyncActionNode(name, config) {
+    node_if_ = PointerLightActionROSNodeIf::instance(node);
+  }
 
-    static BT::PortsList providedPorts()
-    {
-        return { BT::InputPort<std::string>("white_level"),
-                 BT::InputPort<std::string>("laser_level") };
-    }
+  static BT::PortsList providedPorts() {
+    return {BT::InputPort<std::string>("white_level"),
+            BT::InputPort<std::string>("laser_level")};
+  }
 
-    virtual BT::NodeStatus tick() override
-    {
-        int32_t white_level = 0;
-        int32_t laser_level = 0;
-        getInput<std::int32_t>("white_level", white_level);
-        getInput<std::int32_t>("laser_level", laser_level);
+  virtual BT::NodeStatus tick() override {
+    int32_t white_level = 0;
+    int32_t laser_level = 0;
+    getInput<std::int32_t>("white_level", white_level);
+    getInput<std::int32_t>("laser_level", laser_level);
 
-        node_if_->setPointerLightState(white_level, laser_level);
-        return BT::NodeStatus::SUCCESS;
-    }
+    node_if_->setPointerLightState(white_level, laser_level);
+    return BT::NodeStatus::SUCCESS;
+  }
 
-private:
-    std::shared_ptr<PointerLightActionROSNodeIf> node_if_;
+ private:
+  std::shared_ptr<PointerLightActionROSNodeIf> node_if_;
 };

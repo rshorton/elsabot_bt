@@ -16,90 +16,87 @@ limitations under the License.
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
 #include <stdio.h>
+
+#include <chrono>
+#include <limits>
 #include <sstream>
 #include <string>
-#include <limits>
-#include <chrono>
-
-#include "ros_common.hpp"
-#include "robot_status.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/bool.hpp"
 #include "robot_head_interfaces/msg/track_status.hpp"
+#include "robot_status.hpp"
+#include "ros_common.hpp"
+#include "std_msgs/msg/bool.hpp"
 
-#include <behaviortree_cpp_v3/action_node.h>
+class ObjectTrackerStatusAction : public BT::SyncActionNode {
+ public:
+  ObjectTrackerStatusAction(const std::string& name,
+                            const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
 
-class ObjectTrackerStatusAction : public BT::SyncActionNode
-{
-    public:
-	ObjectTrackerStatusAction(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::SyncActionNode(name, config)
-        {
-        }
+  static BT::PortsList providedPorts() {
+    return {BT::InputPort<bool>("ck_state"),
+            BT::InputPort<float>("min_duration"),
+            BT::InputPort<bool>("fail_on_not_tracked"),
+            BT::OutputPort<bool>("is_tracking"),
+            BT::OutputPort<std::string>("position"),
+            BT::OutputPort<std::string>("unique_id"),
+            BT::OutputPort<
+                std::shared_ptr<robot_head_interfaces::msg::TrackStatus>>(
+                "track_status")};
+  }
 
-	static BT::PortsList providedPorts()
-	{
-		return{
-			BT::InputPort<bool>("ck_state"),
-			BT::InputPort<float>("min_duration"),
-			BT::InputPort<bool>("fail_on_not_tracked"),
-			BT::OutputPort<bool>("is_tracking"),
-			BT::OutputPort<std::string>("position"),
-			BT::OutputPort<std::string>("unique_id"),
-			BT::OutputPort<std::shared_ptr<robot_head_interfaces::msg::TrackStatus>>("track_status")};
-	}
+  virtual BT::NodeStatus tick() override {
+    rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
 
-	virtual BT::NodeStatus tick() override
-	{
-		rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
+    robot_head_interfaces::msg::TrackStatus track_status;
+    if (!RobotStatus::GetInstance()->GetTrackStatus(track_status)) {
+      RCLCPP_WARN(node->get_logger(), "Track status not available");
+      return BT::NodeStatus::FAILURE;
+    }
 
-		robot_head_interfaces::msg::TrackStatus track_status;
-		if (!RobotStatus::GetInstance()->GetTrackStatus(track_status)) {
-			RCLCPP_WARN(node->get_logger(), "Track status not available");
-			return BT::NodeStatus::FAILURE; 
-		}
+    bool ck_state;
+    if (!getInput<bool>("ck_state", ck_state)) {
+      throw BT::RuntimeError("missing ck_state");
+    }
 
-		bool ck_state;
-		if (!getInput<bool>("ck_state", ck_state)) {
-			throw BT::RuntimeError("missing ck_state");
-		}
+    float min_duration;
+    if (!getInput<float>("min_duration", min_duration)) {
+      throw BT::RuntimeError("missing min_duration");
+    }
 
-		float min_duration;
-		if (!getInput<float>("min_duration", min_duration)) {
-			throw BT::RuntimeError("missing min_duration");
-		}
+    // Original behavior is to return success only if tracking an object.
+    // Allow success if no tracking to allow processing track status in all
+    // cases.
+    bool fail_on_not_tracked = true;
+    getInput<bool>("fail_on_not_tracked", fail_on_not_tracked);
 
-		// Original behavior is to return success only if tracking an object.
-		// Allow success if no tracking to allow processing track status in all cases.
-		bool fail_on_not_tracked = true;
-		getInput<bool>("fail_on_not_tracked", fail_on_not_tracked);
+    std::string unique_id = track_status.object.unique_id;
+    RCLCPP_DEBUG(node->get_logger(),
+                 "Tracking status: tracking [%d], ck [%d], duration [%f], ck "
+                 "[%f], id= [%d], unique_id= [%s]",
+                 track_status.tracking, ck_state, track_status.duration,
+                 min_duration, track_status.object.id, unique_id.c_str());
 
-		std::string unique_id = track_status.object.unique_id;
-		RCLCPP_DEBUG(node->get_logger(), "Tracking status: tracking [%d], ck [%d], duration [%f], ck [%f], id= [%d], unique_id= [%s]",
-				track_status.tracking,
-				ck_state,
-				track_status.duration,
-				min_duration,
-				track_status.object.id,
-				unique_id.c_str());
+    // Success if specified state has been active for the specified duration
+    bool is_tracking = ck_state == track_status.tracking &&
+                       track_status.duration > min_duration;
 
-		// Success if specified state has been active for the specified duration
-		bool is_tracking = ck_state == track_status.tracking &&	track_status.duration > min_duration;
+    if (fail_on_not_tracked && !is_tracking) {
+      return BT::NodeStatus::FAILURE;
+    }
 
-		if (fail_on_not_tracked && !is_tracking) {
-			return BT::NodeStatus::FAILURE;
-		}
-
-		std::stringstream str;
-		str << track_status.object.position.point.x << ","
-			<< track_status.object.position.point.y << ",0.0"
-			<< std::endl;
-		setOutput("position", str.str());
-		setOutput("is_tracking", is_tracking);
-		setOutput("track_status", std::make_shared<robot_head_interfaces::msg::TrackStatus>(std::move(track_status)));
-		setOutput("unique_id", unique_id);
-		return BT::NodeStatus::SUCCESS;
-	}
+    std::stringstream str;
+    str << track_status.object.position.point.x << ","
+        << track_status.object.position.point.y << ",0.0" << std::endl;
+    setOutput("position", str.str());
+    setOutput("is_tracking", is_tracking);
+    setOutput("track_status",
+              std::make_shared<robot_head_interfaces::msg::TrackStatus>(
+                  std::move(track_status)));
+    setOutput("unique_id", unique_id);
+    return BT::NodeStatus::SUCCESS;
+  }
 };

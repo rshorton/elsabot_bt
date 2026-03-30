@@ -16,58 +16,54 @@ limitations under the License.
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
 #include <stdio.h>
+
+#include <chrono>
+#include <limits>
 #include <sstream>
 #include <string>
-#include <limits>
-#include <chrono>
 
-#include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
 #include "detection_processor_container.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "ros_common.hpp"
 
-class DetectionProcessorCreateAction : public BT::SyncActionNode
-{
-    public:
-	DetectionProcessorCreateAction(const std::string& name, const BT::NodeConfiguration& config) :
-		BT::SyncActionNode(name, config)
-	{
-	}
+class DetectionProcessorCreateAction : public BT::SyncActionNode {
+ public:
+  DetectionProcessorCreateAction(const std::string& name,
+                                 const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
 
-	static BT::PortsList providedPorts()
-	{
-		return {
-			BT::InputPort<std::string>("det"),
-			BT::InputPort<std::string>("topic")};
-	}
+  static BT::PortsList providedPorts() {
+    return {BT::InputPort<std::string>("det"),
+            BT::InputPort<std::string>("topic")};
+  }
 
-	virtual BT::NodeStatus tick() override
-	{
-		rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
+  virtual BT::NodeStatus tick() override {
+    rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
 
-		std::string det;
-		if (!getInput<std::string>("det", det)) {
-			throw BT::RuntimeError("missing det");
-		}
+    std::string det;
+    if (!getInput<std::string>("det", det)) {
+      throw BT::RuntimeError("missing det");
+    }
 
-		std::string topic;
-		if (!getInput<std::string>("topic", topic)) {
-			throw BT::RuntimeError("missing topic");
-		}
+    std::string topic;
+    if (!getInput<std::string>("topic", topic)) {
+      throw BT::RuntimeError("missing topic");
+    }
 
-		RCLCPP_INFO(node->get_logger(), "Create object detection processor [%s] for topic [%s]",
-				det.c_str(),
-				topic.c_str());
+    RCLCPP_INFO(node->get_logger(),
+                "Create object detection processor [%s] for topic [%s]",
+                det.c_str(), topic.c_str());
 
-		ObjDetProcContainer *container = ObjDetProcContainer::GetInstance();
-		if (!container) {
-			return BT::NodeStatus::FAILURE;
-		}
+    ObjDetProcContainer* container = ObjDetProcContainer::GetInstance();
+    if (!container) {
+      return BT::NodeStatus::FAILURE;
+    }
 
-		if (!container->CreateProc(det, topic)) {
-			return BT::NodeStatus::FAILURE;
-		}
-		return BT::NodeStatus::SUCCESS;
-	}
+    if (!container->CreateProc(det, topic)) {
+      return BT::NodeStatus::FAILURE;
+    }
+    return BT::NodeStatus::SUCCESS;
+  }
 };

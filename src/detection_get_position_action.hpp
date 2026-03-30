@@ -31,78 +31,72 @@ pose - Position of the object as string, format: "<x>,<y>,<yaw>"
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
 #include <stdio.h>
+
+#include <map>
 #include <sstream>
 #include <string>
-#include <map>
-
-#include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
 
 #include "detection_processor_container.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "robot_status.hpp"
 #include "ros_common.hpp"
 
-class DetectionGetPositionAction : public BT::SyncActionNode
-{
-    public:
-	DetectionGetPositionAction(const std::string& name, const BT::NodeConfiguration& config) :
-		BT::SyncActionNode(name, config)
-    {
+class DetectionGetPositionAction : public BT::SyncActionNode {
+ public:
+  DetectionGetPositionAction(const std::string& name,
+                             const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
+
+  static BT::PortsList providedPorts() {
+    return {BT::InputPort<std::string>("det"), BT::InputPort<size_t>("obj_id"),
+            BT::InputPort<std::string>("coord_frame"),
+            BT::OutputPort<std::string>("position")};
+  }
+
+  virtual BT::NodeStatus tick() override {
+    rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
+
+    std::string det;
+    if (!getInput<std::string>("det", det)) {
+      throw BT::RuntimeError("missing det");
     }
 
-	static BT::PortsList providedPorts()
-	{
-		return {
-			BT::InputPort<std::string>("det"),
-			BT::InputPort<size_t>("obj_id"),
-			BT::InputPort<std::string>("coord_frame"),
-			BT::OutputPort<std::string>("position")
-		};
-	}
+    size_t obj_id;
+    if (!getInput<size_t>("obj_id", obj_id)) {
+      throw BT::RuntimeError("missing obj_id");
+    }
 
-	virtual BT::NodeStatus tick() override
-	{
-        rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
+    std::string coord_frame;
+    if (!getInput<std::string>("coord_frame", coord_frame)) {
+      throw BT::RuntimeError("missing coord_frame");
+    }
 
-		std::string det;
-		if (!getInput<std::string>("det", det)) {
-			throw BT::RuntimeError("missing det");
-		}
+    ObjDetProcContainer* container = ObjDetProcContainer::GetInstance();
+    if (!container) {
+      return BT::NodeStatus::FAILURE;
+    }
 
-		size_t obj_id;
-		if (!getInput<size_t>("obj_id", obj_id)) {
-			throw BT::RuntimeError("missing obj_id");
-		}
+    std::shared_ptr<ObjDetProc> proc = container->GetProc(det);
+    if (!proc) {
+      RCLCPP_INFO(node->get_logger(),
+                  "Object detection processor [%s] does not exist",
+                  det.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
 
-		std::string coord_frame;
-		if (!getInput<std::string>("coord_frame", coord_frame)) {
-			throw BT::RuntimeError("missing coord_frame");
-		}
+    double x, y, z = 0.0;
+    if (!proc->GetObjectPos(obj_id, x, y, z, coord_frame)) {
+      RCLCPP_INFO(node->get_logger(), "Object [%lu] does not exist", obj_id);
+      return BT::NodeStatus::FAILURE;
+    }
 
-		ObjDetProcContainer *container = ObjDetProcContainer::GetInstance();
-		if (!container) {
-			return BT::NodeStatus::FAILURE;
-		}
-
-		std::shared_ptr<ObjDetProc> proc = container->GetProc(det);
-		if (!proc) {
-			RCLCPP_INFO(node->get_logger(), "Object detection processor [%s] does not exist",
-				det.c_str());
-			return BT::NodeStatus::FAILURE;
-		}
-
-		double x, y, z = 0.0;
-		if (!proc->GetObjectPos(obj_id, x, y, z, coord_frame)) {
-			RCLCPP_INFO(node->get_logger(), "Object [%lu] does not exist", obj_id);
-			return BT::NodeStatus::FAILURE;
-		}
-
-		std::stringstream ss;
-		ss << x << ',' << y << ',' << z;
-		setOutput("position", ss.str());
-		RCLCPP_DEBUG(node->get_logger(), "Object [%lu] pos [%s]", obj_id, ss.str().c_str());
-		return BT::NodeStatus::SUCCESS;
-	}
-
+    std::stringstream ss;
+    ss << x << ',' << y << ',' << z;
+    setOutput("position", ss.str());
+    RCLCPP_DEBUG(node->get_logger(), "Object [%lu] pos [%s]", obj_id,
+                 ss.str().c_str());
+    return BT::NodeStatus::SUCCESS;
+  }
 };

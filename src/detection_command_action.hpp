@@ -16,67 +16,65 @@ limitations under the License.
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
 #include <stdio.h>
+
+#include <map>
 #include <sstream>
 #include <string>
-#include <map>
 
-#include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
 #include "detection_processor_container.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include "ros_common.hpp"
 
-class DetectionCommandAction : public BT::SyncActionNode
-{
-    public:
-	DetectionCommandAction(const std::string& name, const BT::NodeConfiguration& config) :
-		BT::SyncActionNode(name, config)
-    {
+class DetectionCommandAction : public BT::SyncActionNode {
+ public:
+  DetectionCommandAction(const std::string& name,
+                         const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
+
+  static BT::PortsList providedPorts() {
+    return {
+        BT::InputPort<std::string>("det"),
+        BT::InputPort<std::string>("command"),
+    };
+  }
+
+  virtual BT::NodeStatus tick() override {
+    rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
+
+    std::string det;
+    if (!getInput<std::string>("det", det)) {
+      throw BT::RuntimeError("missing det");
     }
 
-	static BT::PortsList providedPorts()
-	{
-		return {
-			BT::InputPort<std::string>("det"),
-			BT::InputPort<std::string>("command"),
-		};
-	}
+    std::string command;
+    if (!getInput<std::string>("command", command)) {
+      throw BT::RuntimeError("missing command");
+    }
 
-	virtual BT::NodeStatus tick() override
-	{
-		rclcpp::Node::SharedPtr node = ROSCommon::GetInstance()->GetNode();
+    ObjDetProcContainer* container = ObjDetProcContainer::GetInstance();
+    if (!container) {
+      return BT::NodeStatus::FAILURE;
+    }
 
-		std::string det;
-		if (!getInput<std::string>("det", det)) {
-			throw BT::RuntimeError("missing det");
-		}
+    std::shared_ptr<ObjDetProc> proc = container->GetProc(det);
+    if (!proc) {
+      RCLCPP_INFO(node->get_logger(),
+                  "Object detection processor [%s] does not exist",
+                  det.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
 
-		std::string command;
-		if (!getInput<std::string>("command", command)) {
-			throw BT::RuntimeError("missing command");
-		}
-
-		ObjDetProcContainer *container = ObjDetProcContainer::GetInstance();
-		if (!container) {
-			return BT::NodeStatus::FAILURE;
-		}
-
-		std::shared_ptr<ObjDetProc> proc = container->GetProc(det);
-		if (!proc) {
-			RCLCPP_INFO(node->get_logger(), "Object detection processor [%s] does not exist",
-				det.c_str());
-			return BT::NodeStatus::FAILURE;
-		}
-
-		if (command == "clear") {
-			proc->ClearCollection();
-		} else if (command == "reset") {
-			proc->Reset();
-		} else if (command == "pause") {
-			proc->Pause();
-		} else if (command == "resume") {
-			proc->Resume();
-		}
-		return BT::NodeStatus::SUCCESS;
-	}
+    if (command == "clear") {
+      proc->ClearCollection();
+    } else if (command == "reset") {
+      proc->Reset();
+    } else if (command == "pause") {
+      proc->Pause();
+    } else if (command == "resume") {
+      proc->Resume();
+    }
+    return BT::NodeStatus::SUCCESS;
+  }
 };

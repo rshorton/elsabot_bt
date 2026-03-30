@@ -16,31 +16,31 @@ limitations under the License.
 
 #include "nav_utils.hpp"
 
-bool calculate_pose_orientations(std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>> poses)
-{
-    auto num_poses = poses->size();
-    if (num_poses == 1) {
-        return true;
-    }
-
-    tf2::Quaternion q;
-
-    // Set the orientation of each post such that it points to the next pose
-    for (size_t i = 0; i + 1 < num_poses; i++) {
-        double dx = (*poses)[i + 1].pose.position.x - (*poses)[i].pose.position.x;
-        double dy = (*poses)[i + 1].pose.position.y - (*poses)[i].pose.position.y;
-
-    	double yaw = std::atan2(dy, dx);
-        q.setRPY(0.0, 0.0, yaw);
-        (*poses)[i].pose.orientation = tf2::toMsg(q);
-
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "dx: %f, dy: %f, yaw: %f", dx, dy, yaw);
-
-    }
-
-    // Last point uses same orientation as last.
-    // FIX - allow this to be specified.
-    (*poses)[num_poses - 1].pose.orientation = tf2::toMsg(q);
-
+bool calculate_pose_orientations(
+    std::shared_ptr<std::vector<geometry_msgs::msg::PoseStamped>> poses) {
+  auto num_poses = poses->size();
+  if (num_poses == 1) {
     return true;
+  }
+
+  tf2::Quaternion q;
+
+  // Set the orientation of each post such that it points to the next pose
+  for (size_t i = 0; i + 1 < num_poses; i++) {
+    double dx = (*poses)[i + 1].pose.position.x - (*poses)[i].pose.position.x;
+    double dy = (*poses)[i + 1].pose.position.y - (*poses)[i].pose.position.y;
+
+    double yaw = std::atan2(dy, dx);
+    q.setRPY(0.0, 0.0, yaw);
+    (*poses)[i].pose.orientation = tf2::toMsg(q);
+
+    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "dx: %f, dy: %f, yaw: %f", dx,
+                 dy, yaw);
+  }
+
+  // Last point uses same orientation as last.
+  // FIX - allow this to be specified.
+  (*poses)[num_poses - 1].pose.orientation = tf2::toMsg(q);
+
+  return true;
 }

@@ -71,7 +71,7 @@ class RobotCatGameNextPoseAction : public BT::SyncActionNode
 			std::string action_desc;
 
 			if (game->NextHeadPose(*track_status, pose, action_desc)) {
-				setOutput("pose", convertToString(pose));
+				setOutput("pose", BT::convertToString(pose));
 				setOutput("action_desc", action_desc);
 				return BT::NodeStatus::SUCCESS;
 			}					

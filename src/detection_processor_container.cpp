@@ -17,48 +17,47 @@ limitations under the License.
 /*
 This class is used to create and contain Object Detection Processor
 instances.  A tree node can request the creation and other nodes can
-query the status of the detector at any time. 
+query the status of the detector at any time.
 */
-
-#include <iostream>
-#include <string>
-#include <map>
-#include <chrono>
 
 #include "detection_processor_container.hpp"
 
-ObjDetProcContainer *ObjDetProcContainer::container_ = nullptr;
+#include <chrono>
+#include <iostream>
+#include <map>
+#include <string>
 
-std::shared_ptr<ObjDetProc> ObjDetProcContainer::CreateProc(const std::string &name, const std::string &topic)
-{
-	std::shared_ptr<ObjDetProc> det;
+ObjDetProcContainer* ObjDetProcContainer::container_ = nullptr;
 
-	auto it = detector_map_.find(name);
-	if (it != detector_map_.end()) {
-		return it->second;
-	}
+std::shared_ptr<ObjDetProc> ObjDetProcContainer::CreateProc(
+    const std::string& name, const std::string& topic) {
+  std::shared_ptr<ObjDetProc> det;
 
-	det = std::make_shared<ObjDetProc>(node_, name, topic);
-	if (det) {
-		detector_map_[name] = det;
-	}
-	RCLCPP_INFO(node_->get_logger(), "%s detection processor [%s] for topic [%s]",
-			det? "Created ": "Failed to create ",
-			name.c_str(), topic.c_str());
-	return det;
+  auto it = detector_map_.find(name);
+  if (it != detector_map_.end()) {
+    return it->second;
+  }
+
+  det = std::make_shared<ObjDetProc>(node_, name, topic);
+  if (det) {
+    detector_map_[name] = det;
+  }
+  RCLCPP_INFO(node_->get_logger(), "%s detection processor [%s] for topic [%s]",
+              det ? "Created " : "Failed to create ", name.c_str(),
+              topic.c_str());
+  return det;
 }
 
-bool ObjDetProcContainer::DestroyProc(const std::string &name)
-{
-	return detector_map_.erase(name) != 0;
+bool ObjDetProcContainer::DestroyProc(const std::string& name) {
+  return detector_map_.erase(name) != 0;
 }
 
-std::shared_ptr<ObjDetProc> ObjDetProcContainer::GetProc(const std::string &name)
-{
-	std::shared_ptr<ObjDetProc> det;
-	auto it = detector_map_.find(name);
-	if (it != detector_map_.end()) {
-		det = it->second;
-	}
-	return det;
+std::shared_ptr<ObjDetProc> ObjDetProcContainer::GetProc(
+    const std::string& name) {
+  std::shared_ptr<ObjDetProc> det;
+  auto it = detector_map_.find(name);
+  if (it != detector_map_.end()) {
+    det = it->second;
+  }
+  return det;
 }

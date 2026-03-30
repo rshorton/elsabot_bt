@@ -16,56 +16,57 @@ limitations under the License.
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
+
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
-
 #include "robot_says_game.hpp"
 
 using namespace std;
 
-class RobotSaysNextStepAction : public BT::SyncActionNode
-{
-    public:
-		RobotSaysNextStepAction(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::SyncActionNode(name, config)
-        {
-        }
+class RobotSaysNextStepAction : public BT::SyncActionNode {
+ public:
+  RobotSaysNextStepAction(const std::string& name,
+                          const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
 
-        static BT::PortsList providedPorts()
-        {
-            return{ BT::OutputPort<std::string>("pose_name_l"),
-            	    BT::OutputPort<std::string>("pose_name_r"),
-					BT::OutputPort<std::string>("pose_lr_check"),
-					BT::OutputPort<std::string>("pose_speech"),
-					BT::OutputPort<int>("step_index") };
-        }
+  static BT::PortsList providedPorts() {
+    return {BT::OutputPort<std::string>("pose_name_l"),
+            BT::OutputPort<std::string>("pose_name_r"),
+            BT::OutputPort<std::string>("pose_lr_check"),
+            BT::OutputPort<std::string>("pose_speech"),
+            BT::OutputPort<int>("step_index")};
+  }
 
-        virtual BT::NodeStatus tick() override
-        {
-    		string pose_name_l;
-    		string pose_name_r;
-    		string pose_lr_check;
-    		string pose_speech;
-    		int32_t step_index;
+  virtual BT::NodeStatus tick() override {
+    string pose_name_l;
+    string pose_name_r;
+    string pose_lr_check;
+    string pose_speech;
+    int32_t step_index;
 
-    		RobotSaysGame* game = RobotSaysGame::GetRobotSaysGame();
-    		if (game == nullptr) {
-    			std::cout << "Game pointer null" << endl;
-    		}
+    RobotSaysGame* game = RobotSaysGame::GetRobotSaysGame();
+    if (game == nullptr) {
+      std::cout << "Game pointer null" << endl;
+    }
 
-    		if (game != nullptr && !game->NextStep(pose_name_l, pose_name_r, pose_lr_check, pose_speech, step_index)) {
-    			cout << "NextStep: pose_name_l= " << pose_name_l << ", pose_name_r= " << pose_name_r << ", pose_lr_check= " << pose_lr_check << ", pose_speech= " << pose_speech << endl;
-    			setOutput("pose_name_l", pose_name_l);
-    			setOutput("pose_name_r", pose_name_r);
-    			setOutput("pose_lr_check", pose_lr_check);
-    			setOutput("pose_speech", pose_speech);
-    			setOutput("step_index", step_index);
-	            return BT::NodeStatus::SUCCESS;
-    		}
-			return BT::NodeStatus::FAILURE;
-        }
+    if (game != nullptr &&
+        !game->NextStep(pose_name_l, pose_name_r, pose_lr_check, pose_speech,
+                        step_index)) {
+      cout << "NextStep: pose_name_l= " << pose_name_l
+           << ", pose_name_r= " << pose_name_r
+           << ", pose_lr_check= " << pose_lr_check
+           << ", pose_speech= " << pose_speech << endl;
+      setOutput("pose_name_l", pose_name_l);
+      setOutput("pose_name_r", pose_name_r);
+      setOutput("pose_lr_check", pose_lr_check);
+      setOutput("pose_speech", pose_speech);
+      setOutput("step_index", step_index);
+      return BT::NodeStatus::SUCCESS;
+    }
+    return BT::NodeStatus::FAILURE;
+  }
 
-    private:
+ private:
 };

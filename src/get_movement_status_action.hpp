@@ -16,55 +16,49 @@ limitations under the License.
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
+
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
 #include "imu_topic.hpp"
+#include "rclcpp/rclcpp.hpp"
 
 using namespace std;
 
-class GetMovementStatusAction : public BT::SyncActionNode
-{
-    public:
-		GetMovementStatusAction(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::SyncActionNode(name, config)
-        {
+class GetMovementStatusAction : public BT::SyncActionNode {
+ public:
+  GetMovementStatusAction(const std::string& name,
+                          const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
+
+  static BT::PortsList providedPorts() {
+    return {BT::InputPort<std::string>("type"), BT::OutputPort<double>("x"),
+            BT::OutputPort<double>("y"), BT::OutputPort<double>("z")};
+  }
+
+  virtual BT::NodeStatus tick() override {
+    string type;
+
+    if (!getInput<std::string>("type", type)) {
+      throw BT::RuntimeError("missing type option");
+    }
+
+    IMUTopic* imu_topic = IMUTopic::GetInstance();
+    if (imu_topic) {
+      if (type == "angular_velocity") {
+        double x, y, z;
+        if (imu_topic->GetAngularVelocity(x, y, z)) {
+          setOutput("x", x);
+          setOutput("y", y);
+          setOutput("z", z);
+          RCLCPP_INFO(rclcpp::get_logger("rclcpp"),
+                      "GetMovementAction: angular, x,y,z: %f, %f, %f", x, y, z);
+          return BT::NodeStatus::SUCCESS;
         }
+      }
+    }
+    return BT::NodeStatus::FAILURE;
+  }
 
-        static BT::PortsList providedPorts()
-        {
-            return {
-                    BT::InputPort<std::string>("type"),
-                    BT::OutputPort<double>("x"),
-                    BT::OutputPort<double>("y"),
-                    BT::OutputPort<double>("z")
-                   };
-        }
-
-        virtual BT::NodeStatus tick() override
-        {
-    		string type;
-
-			if (!getInput<std::string>("type", type)) {
-				throw BT::RuntimeError("missing type option");
-			}
-
-            IMUTopic* imu_topic =  IMUTopic::GetInstance();
-            if (imu_topic) {
-                if (type == "angular_velocity") {
-                    double x, y, z;
-                    if (imu_topic->GetAngularVelocity(x, y, z)) {
-                        setOutput("x", x);
-                        setOutput("y", y);
-                        setOutput("z", z);
-                        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GetMovementAction: angular, x,y,z: %f, %f, %f", x, y, z);
-                        return BT::NodeStatus::SUCCESS;
-                    }
-                }
-            }                
-            return BT::NodeStatus::FAILURE;
-        }
-
-    private:
+ private:
 };

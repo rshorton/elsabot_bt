@@ -16,45 +16,44 @@ limitations under the License.
 
 #pragma once
 
-#include <string>
-#include <sstream>
-
-#include "rclcpp/rclcpp.hpp"
 #include <behaviortree_cpp_v3/action_node.h>
 
-class GetRobotPoseAction: public BT::SyncActionNode
-{
-    public:
-		GetRobotPoseAction(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::SyncActionNode(name, config)
-        {
-        }
+#include <sstream>
+#include <string>
 
-        static BT::PortsList providedPorts()
-        {
-            return{ BT::OutputPort<std::string>("pose")};
-        }
+#include "rclcpp/rclcpp.hpp"
 
-        virtual BT::NodeStatus tick() override
-        {
-            RobotStatus* robot_status = RobotStatus::GetInstance();
-            if (!robot_status) {
-                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Cannot get robot status for obtaining pose");
-                return BT::NodeStatus::FAILURE;
-            }
-            
-            double x, y, z, yaw;
-            auto got_pose = robot_status->GetPose(x, y, z, yaw);
-            if (!got_pose) {
-                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Robot pose not available.");
-                return BT::NodeStatus::FAILURE;
-            }
+class GetRobotPoseAction : public BT::SyncActionNode {
+ public:
+  GetRobotPoseAction(const std::string& name,
+                     const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
 
-            std::stringstream ss;
-            ss << x << "," << y << "," << yaw;
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Robot pose: %s", ss.str().c_str());
+  static BT::PortsList providedPorts() {
+    return {BT::OutputPort<std::string>("pose")};
+  }
 
-			setOutput("pose", ss.str());
-            return BT::NodeStatus::SUCCESS;
-        }
+  virtual BT::NodeStatus tick() override {
+    RobotStatus* robot_status = RobotStatus::GetInstance();
+    if (!robot_status) {
+      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
+                   "Cannot get robot status for obtaining pose");
+      return BT::NodeStatus::FAILURE;
+    }
+
+    double x, y, z, yaw;
+    auto got_pose = robot_status->GetPose(x, y, z, yaw);
+    if (!got_pose) {
+      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Robot pose not available.");
+      return BT::NodeStatus::FAILURE;
+    }
+
+    std::stringstream ss;
+    ss << x << "," << y << "," << yaw;
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Robot pose: %s",
+                ss.str().c_str());
+
+    setOutput("pose", ss.str());
+    return BT::NodeStatus::SUCCESS;
+  }
 };

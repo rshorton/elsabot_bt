@@ -16,62 +16,56 @@ limitations under the License.
 
 #pragma once
 
+#include <behaviortree_cpp_v3/action_node.h>
+
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include <behaviortree_cpp_v3/action_node.h>
 
 using namespace std;
 
-class NumericComparisonAction : public BT::SyncActionNode
-{
-    public:
-		NumericComparisonAction(const std::string& name, const BT::NodeConfiguration& config)
-            : BT::SyncActionNode(name, config)
-        {
-        }
+class NumericComparisonAction : public BT::SyncActionNode {
+ public:
+  NumericComparisonAction(const std::string& name,
+                          const BT::NodeConfiguration& config)
+      : BT::SyncActionNode(name, config) {}
 
-        static BT::PortsList providedPorts()
-        {
-            return {
-                    BT::InputPort<std::string>("comparison"),
-                    BT::InputPort<double>("a"),
-                    BT::InputPort<double>("b")
-                   };
-        }
+  static BT::PortsList providedPorts() {
+    return {BT::InputPort<std::string>("comparison"),
+            BT::InputPort<double>("a"), BT::InputPort<double>("b")};
+  }
 
-        virtual BT::NodeStatus tick() override
-        {
-    		string comparison;
-            double a, b;
+  virtual BT::NodeStatus tick() override {
+    string comparison;
+    double a, b;
 
-			if (!getInput<std::string>("comparison", comparison)) {
-				throw BT::RuntimeError("missing type option");
-			}
+    if (!getInput<std::string>("comparison", comparison)) {
+      throw BT::RuntimeError("missing type option");
+    }
 
-			if (!getInput<double>("a", a)) {
-				throw BT::RuntimeError("missing a");
-			}
+    if (!getInput<double>("a", a)) {
+      throw BT::RuntimeError("missing a");
+    }
 
-			if (!getInput<double>("b", b)) {
-				throw BT::RuntimeError("missing b");
-			}
+    if (!getInput<double>("b", b)) {
+      throw BT::RuntimeError("missing b");
+    }
 
-            if (comparison == "gt") {
-                if (a > b) {
-                    return BT::NodeStatus::SUCCESS;
-                }
-            } else if (comparison == "eq") {
-                if (a == b) {
-                    return BT::NodeStatus::SUCCESS;
-                }
-            } else if (comparison == "lt") {
-                if (a < b) {
-                    return BT::NodeStatus::SUCCESS;
-                }
-            }
-            return BT::NodeStatus::FAILURE;
-        }
+    if (comparison == "gt") {
+      if (a > b) {
+        return BT::NodeStatus::SUCCESS;
+      }
+    } else if (comparison == "eq") {
+      if (a == b) {
+        return BT::NodeStatus::SUCCESS;
+      }
+    } else if (comparison == "lt") {
+      if (a < b) {
+        return BT::NodeStatus::SUCCESS;
+      }
+    }
+    return BT::NodeStatus::FAILURE;
+  }
 
-    private:
+ private:
 };
