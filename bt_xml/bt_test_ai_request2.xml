@@ -1,0 +1,42 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<KeepRunningUntilFailure>
+			<ForceSuccess>
+				<Sequence>
+					<WakeWordDetected since_sec="1.0" />
+ 					<PauseAudioAction stream_type="fg" />
+
+					<SpeechToTextActionClient text="{said}" />
+					<LogAction level="info" msg="Using prompt: " arg1="{said}" />
+					<SetBlackboard output_key="text_to_speak" value="" />
+					<ResumeAudioAction stream_type="fg" />
+
+					<Inverter>
+						<TextCompareAction text="{said}" ck_for="" />
+					</Inverter>						
+
+ 					<CancelAudioAction req_id="fg" />
+
+					<!-- Call AIModelRequest until is finished -->
+					<ReactiveSequence>
+						<!-- If wake work spoken while processing the AI request, then cancel it and any TTS from it -->
+						<Inverter>
+							<Sequence>
+								<WakeWordDetected since_sec="1.0" />
+								<CancelAudioAction req_id="all" />
+								<SetBlackboard output_key="text_to_speak" value="" />
+							</Sequence>
+						</Inverter>
+
+						<!-- On each pass try to play output from the previous update-->
+						<TextToSpeechAction text="{text_to_speak}" />
+						<SetBlackboard output_key="text_to_speak" value="" />
+  					<AIModelRequest prompt="{said}" result="{text_to_speak}"/>
+					</ReactiveSequence>
+					<!-- Say the remaining part of the response if any -->
+					<TextToSpeechAction text="{text_to_speak}" />
+				</Sequence>
+			</ForceSuccess>
+		</KeepRunningUntilFailure>
+	</BehaviorTree>
+</root>
