@@ -85,6 +85,11 @@ void AsyncHttpRequest::requestLoop() {
     std::string auth_header = "Authorization: Bearer " + auth_token_;
     headers = curl_slist_append(headers, auth_header.c_str());
   }
+
+  // Temp workaround for openclaw 3/28 issue: https://github.com/openclaw/openclaw/issues/46997
+  std::string hdr = "x-openclaw-scopes: operator.read,operator.write";
+  headers = curl_slist_append(headers, hdr.c_str());
+
   curl_easy_setopt(easy_handle_, CURLOPT_HTTPHEADER, headers);
 
   curl_easy_setopt(easy_handle_, CURLOPT_POSTFIELDS, req_data_.c_str());
