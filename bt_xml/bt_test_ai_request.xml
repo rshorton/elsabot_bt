@@ -1,0 +1,18 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<KeepRunningUntilFailure>
+			<ForceSuccess>
+				<Sequence>
+					<WakeWordDetected since_sec="1.0" />
+					<SpeechToTextActionClient text="{said}" />
+					<LogAction level="info" msg="Using prompt: %s" arg1="{said}" />
+  					<AIModelRequest prompt="{said}" result="{result}"/>
+					<TextToSpeechAction text="{result}" />
+					<Delay delay_msec="3000">
+            			<LogAction level="info" msg="Finished one pass" />
+          			</Delay> 
+				</Sequence>
+			</ForceSuccess>
+		</KeepRunningUntilFailure>
+	</BehaviorTree>
+</root>

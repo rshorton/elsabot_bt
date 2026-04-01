@@ -3,13 +3,13 @@
         <Sequence>
             <CancelAudioAction req_id="all" />
             <Delay delay_msec="5000">
-                <PlayAudioFileAction file_path="/robot_ws/tone_440_330s.wav"  stream_type="fg" req_id="3" />
+                <PlayAudioFileAction file_path="/robot_ws/tone_440_330s.wav"  stream_type="bg" req_id="3" />
             </Delay>                
             <Repeat num_cycles="10">
                 <Sequence>
-                    <PauseAudioAction/>
+                    <PauseAudioAction stream_type="bg"/>
                     <Delay delay_msec="2000">
-                        <ResumeAudioAction/>
+                        <ResumeAudioAction stream_type="bg" />
                     </Delay>
                     <TextToSpeechAction req_id="1" text="1. Hello. How are you today 123?"/>
                     <Delay delay_msec="1000">

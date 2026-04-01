@@ -15,7 +15,7 @@
 						<TextCompareAction text="{said}" ck_for="" />
 					</Inverter>						
 
- 					<CancelAudioAction req_id="fg" />
+ 					<CancelAudioAction req_id="all" />
 
 					<!-- Call AIModelRequest until is finished -->
 					<ReactiveSequence>

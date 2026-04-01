@@ -27,7 +27,7 @@ class AIModelRequest : public BT::StatefulActionNode {
     std::string prompt;
     getInput<std::string>("prompt", prompt);
 
-    use_streaming_ = false;
+    use_streaming_ = true;
     finish_on_next_update_ = false;
     new_sentence_ = std::string();
 
@@ -93,8 +93,7 @@ class AIModelRequest : public BT::StatefulActionNode {
                           {"stream", use_streaming_},
                           {"user", "user:scott"},
                           {"instructions",
-                           "Keep the response concise to it can be efficiently "
-                           "rendered using TTS."},
+                           "Don't use markdown in the response since it will be spoken using text-to-speech."},
                           {"max_output_tokens", 1024}};
 
     request_ = std::make_unique<AsyncHttpRequest>(
@@ -249,16 +248,17 @@ class AIModelRequest : public BT::StatefulActionNode {
 
     // Find the position of the last occurrence of any character from the
     // separators list that is followed by a space.
-    std::string separators = ".?!";
+    std::string separators = ".?!,";
     size_t pos = len;
     do {
-      pos = streaming_data_buffer_.find_last_of(".?!", pos - 1);
+      pos = streaming_data_buffer_.find_last_of(separators, pos - 1);
       if (pos == std::string::npos) {
         break;
       }
 
       auto next_pos = pos + 1;
-      if (next_pos < len && streaming_data_buffer_[next_pos] == ' ') {
+      if (next_pos < len && (streaming_data_buffer_[next_pos] == ' ' ||
+          streaming_data_buffer_[next_pos] == '\n')) {
         auto sentence = streaming_data_buffer_.substr(0, next_pos);
         std::cout << "New Sentence: " << sentence << std::endl;
         {
