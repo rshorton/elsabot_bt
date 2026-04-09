@@ -44,7 +44,7 @@ class CancelAudioAction : public BT::SyncActionNode {
     std::string req_id = "all";
     getInput<std::string>("req_id", req_id);
 
-    auto client = node_->create_client<CancelAudio>("cancel_audio_service");
+    auto client = node_->create_client<CancelAudio>("cancel_audio");
 
     if (!client->wait_for_service(std::chrono::seconds(5))) {
       RCLCPP_ERROR(node_->get_logger(),

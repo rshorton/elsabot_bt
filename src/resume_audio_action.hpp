@@ -46,7 +46,7 @@ class ResumeAudioAction : public BT::SyncActionNode {
     std::string stream_type = "bg";
     getInput<std::string>("stream_type", stream_type);
 
-    auto client = node_->create_client<ResumeAudio>("resume_audio_service");
+    auto client = node_->create_client<ResumeAudio>("resume_audio");
 
     if (!client->wait_for_service(std::chrono::seconds(5))) {
       RCLCPP_ERROR(node_->get_logger(),

@@ -53,7 +53,7 @@ class PlayAudioFileAction : public BT::SyncActionNode {
     std::string req_id = "";
     getInput<std::string>("req_id", req_id);
 
-    auto client = node_->create_client<PlayAudioFile>("play_audio_service");
+    auto client = node_->create_client<PlayAudioFile>("play_audio");
 
     if (!client->wait_for_service(std::chrono::seconds(5))) {
       RCLCPP_ERROR(node_->get_logger(),
