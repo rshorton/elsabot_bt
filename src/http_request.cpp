@@ -1,51 +1,55 @@
-#include "async_http_request.hpp"
+#include "http_request.hpp"
 
 #include <chrono>
 
-bool AsyncHttpRequest::inited_ = false;
+bool HttpRequest::inited_ = false;
 
-AsyncHttpRequest::AsyncHttpRequest(const std::string& url, long timeout_ms,
-                                   std::string auth_token, std::string req_data,
-                                   bool use_streaming,
-                                   CallbackDone callback_done,
-                                   CallbackData callback_data)
-    : url_(url),
+HttpRequest::HttpRequest(bool async, const std::string& url, long timeout_ms,
+                         std::string auth_token, std::string req_data,
+                         bool use_streaming, CallbackDone callback_done,
+                         CallbackData callback_data)
+    : async_(async),
+      url_(url),
       timeout_ms_(timeout_ms),
       auth_token_(auth_token),
       req_data_(std::move(req_data)),
       use_streaming_(use_streaming),
       callback_done_(std::move(callback_done)),
       callback_data_(std::move(callback_data)) {
-  std::cout << "AsyncHttpRequest 0\n";
+  std::cout << "HttpRequest 0\n";
 
   startup_init();
 
-  std::cout << "AsyncHttpRequest 1\n";
+  std::cout << "HttpRequest 1\n";
 }
 
-AsyncHttpRequest::~AsyncHttpRequest() {
+HttpRequest::~HttpRequest() {
   if (request_thread_.joinable()) {
     request_thread_.join();
   }
   // curl_global_cleanup() should be called at application exit
 }
 
-void AsyncHttpRequest::perform() {
-  request_thread_ = std::thread(&AsyncHttpRequest::requestLoop, this);
+void HttpRequest::perform() {
+  if (async_) {
+    request_thread_ = std::thread(&HttpRequest::requestLoop, this);
+  } else {
+    requestLoop();
+  }    
 }
 
-void AsyncHttpRequest::cancel() {
+void HttpRequest::cancel() {
   is_cancelled_.store(true);
   // Might need a mechanism to wake up the select/poll call in requestLoop if
   // it's blocking For this simple thread-based approach, setting the flag is
   // enough for the loop to check.
 }
 
-size_t AsyncHttpRequest::WriteCallback(void* contents, size_t size,
+size_t HttpRequest::WriteCallback(void* contents, size_t size,
                                        size_t nmemb, void* userp) {
   size_t total_size = size * nmemb;
 
-  AsyncHttpRequest* self = static_cast<AsyncHttpRequest*>(userp);
+  HttpRequest* self = static_cast<HttpRequest*>(userp);
   if (!self) {
     return total_size;
   }
@@ -62,7 +66,7 @@ size_t AsyncHttpRequest::WriteCallback(void* contents, size_t size,
   return total_size;
 }
 
-void AsyncHttpRequest::requestLoop() {
+void HttpRequest::requestLoop() {
   CURLMcode mc;
   int still_running = 0;
   CURLcode res = CURLE_OK;

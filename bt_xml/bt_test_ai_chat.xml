@@ -1,0 +1,63 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<KeepRunningUntilFailure>
+			<ForceSuccess>
+				<Sequence>
+					<WakeWordDetected since_sec="1.0" />
+ 					<PauseAudioAction stream_type="fg" />
+
+       				<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
+
+					<SpeechToTextActionClient text="{said}" />
+					<LogAction level="info" msg="Using prompt: " arg1="{said}" />
+					<SetBlackboard output_key="text_to_speak" value="" />
+					<ResumeAudioAction stream_type="fg" />
+
+       				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+
+					<Inverter>
+						<TextCompareAction text="{said}" ck_for="" />
+					</Inverter>						
+
+ 					<CancelAudioAction req_id="all" />
+
+					<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
+
+					<!-- Call AIModelRequest until is finished -->
+					<ReactiveSequence>
+						<!-- If wake work spoken while processing the AI request, then cancel it and any TTS from it -->
+						<Inverter>
+							<Sequence>
+								<WakeWordDetected since_sec="1.0" />
+								<CancelAudioAction req_id="all" />
+								<SetBlackboard output_key="text_to_speak" value="" />
+							</Sequence>
+						</Inverter>
+
+						<!-- Revert to normal antenna pattern on first speech output -->
+						<ForceSuccess>
+							<Sequence>
+								<Inverter>
+									<TextCompareAction text="{text_to_speak}" ck_for="" />
+								</Inverter>
+			       				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+							</Sequence>
+						</ForceSuccess>							
+
+						<!-- On each pass try to play output from the previous update-->
+						<TextToSpeechAction text="{text_to_speak}" />
+						<SetBlackboard output_key="text_to_speak" value="" />
+  						<AIChatAction prompt="{said}" result="{text_to_speak}" system_prompt= 
+							"You are a helpful assistant. Keep responses concise since your
+          					output will be rendered using text to speech. Use emojis when
+          					appropriate to express yourself.  You can be silly at times to
+							amuse little kids."/>
+					</ReactiveSequence>
+					<!-- Say the remaining part of the response if any -->
+					<TextToSpeechAction text="{text_to_speak}" />
+       				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+				</Sequence>
+			</ForceSuccess>
+		</KeepRunningUntilFailure>
+	</BehaviorTree>
+</root>

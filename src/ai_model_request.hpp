@@ -4,7 +4,7 @@
 #include <json.hpp>
 #include <string>
 
-#include "async_http_request.hpp"
+#include "http_request.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 
 using namespace std::chrono_literals;
@@ -96,9 +96,8 @@ class AIModelRequest : public BT::StatefulActionNode {
                            "Don't use markdown in the response since it will be spoken using text-to-speech."},
                           {"max_output_tokens", 1024}};
 
-    request_ = std::make_unique<AsyncHttpRequest>(
-        url, timeout, auth_token, req.dump(), use_streaming_,
-        completion_callback, data_callback);
+    request_ = std::make_unique<HttpRequest>(true, url, timeout, auth_token, req.dump(), use_streaming_,
+                                             completion_callback, data_callback);
     request_->perform();
 
     return BT::NodeStatus::RUNNING;
@@ -274,7 +273,7 @@ class AIModelRequest : public BT::StatefulActionNode {
   std::promise<std::string> promise_;
   std::future<std::string> future_;
 
-  std::unique_ptr<AsyncHttpRequest> request_;
+  std::unique_ptr<HttpRequest> request_;
 
   std::string streaming_data_buffer_;
 

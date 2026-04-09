@@ -13,11 +13,10 @@
 #include <string>
 #include <thread>
 
-class AsyncHttpRequest {
+class HttpRequest {
  public:
   // Callback type for when the request completes
-  using CallbackDone =
-      std::function<void(std::string response_data, CURLcode result)>;
+  using CallbackDone = std::function<void(std::string response_data, CURLcode result)>;
   using CallbackData = std::function<void(std::string response_data)>;
 
   /**
@@ -26,10 +25,10 @@ class AsyncHttpRequest {
    * @param timeout_ms Timeout in milliseconds (0 for no timeout)
    * @param callback The function to call upon completion
    */
-  AsyncHttpRequest(const std::string& url, long timeout_ms,
-                   std::string auth_token, std::string data, bool use_streaming,
-                   CallbackDone callback_done, CallbackData callback_data);
-  ~AsyncHttpRequest();
+  HttpRequest(bool async, const std::string& url, long timeout_ms,
+              std::string auth_token, std::string data, bool use_streaming,
+              CallbackDone callback_done, CallbackData callback_data);
+  ~HttpRequest();
 
   // Starts the asynchronous request in its own thread
   void perform();
@@ -58,6 +57,7 @@ class AsyncHttpRequest {
   static size_t WriteCallback(void* contents, size_t size, size_t nmemb,
                               void* userp);
 
+  bool async_{false};                              
   std::string url_;
   long timeout_ms_;
   std::string auth_token_;
