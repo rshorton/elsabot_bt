@@ -3,7 +3,10 @@
 		<KeepRunningUntilFailure>
 			<ForceSuccess>
 				<Sequence>
-					<WakeWordDetected since_sec="1.0" />
+					<Fallback>
+						<VoiceDetected />
+						<WakeWordDetected since_sec="1.0" />
+					</Fallback>
  					<PauseAudioAction stream_type="fg" />
 
        				<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
@@ -11,15 +14,19 @@
 					<SpeechToTextActionClient text="{said}" />
 					<LogAction level="info" msg="Using prompt: " arg1="{said}" />
 					<SetBlackboard output_key="text_to_speak" value="" />
-					<ResumeAudioAction stream_type="fg" />
-
+	
        				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
 
+					<!-- Resume current audio playback (if any) if TTS is empty -->
 					<Inverter>
-						<TextCompareAction text="{said}" ck_for="" />
-					</Inverter>						
+						<Sequence>
+							<TextCompareAction text="{said}" ck_for="" />
+							<ResumeAudioAction stream_type="fg" />
+						</Sequence>
+					</Inverter>
 
  					<CancelAudioAction req_id="all" />
+					<ResumeAudioAction stream_type="fg" />
 
 					<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
 
@@ -28,7 +35,10 @@
 						<!-- If wake work spoken while processing the AI request, then cancel it and any TTS from it -->
 						<Inverter>
 							<Sequence>
-								<WakeWordDetected since_sec="1.0" />
+								<Fallback>
+									<VoiceDetected />
+									<WakeWordDetected since_sec="1.0" />
+								</Fallback>	
 								<CancelAudioAction req_id="all" />
 								<SetBlackboard output_key="text_to_speak" value="" />
 							</Sequence>
@@ -48,10 +58,10 @@
 						<TextToSpeechAction text="{text_to_speak}" />
 						<SetBlackboard output_key="text_to_speak" value="" />
   						<AIChatAction prompt="{said}" result="{text_to_speak}" system_prompt= 
-							"You are a helpful assistant. Keep responses concise since your
-          					output will be rendered using text to speech. Use emojis when
-          					appropriate to express yourself.  You can be silly at times to
-							amuse little kids."/>
+							"You are a robot called elsabot and a helpful assistant. Respond only in plain text. 
+							Write only dialogue, no narration.	Do not use asterisks (*) for actions. 
+							Use emojis when appropriate to express yourself.
+							You can be silly at times to amuse little kids."/>
 					</ReactiveSequence>
 					<!-- Say the remaining part of the response if any -->
 					<TextToSpeechAction text="{text_to_speak}" />
