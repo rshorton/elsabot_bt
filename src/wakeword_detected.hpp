@@ -61,7 +61,7 @@ class WakeWordDetected : public BT::SyncActionNode
 				ww = "";
 				std::cout << "Wakeword: since last: " << diff << ", since_sec: " << since_sec << std::endl;
 				if (ww_temp.length() > 0 && diff < since_sec) {
-					RCLCPP_INFO(node_->get_logger(), "Wakeword Detected: return success");
+					RCLCPP_INFO(node_->get_logger(), "Wakeword Detected");
 					return BT::NodeStatus::SUCCESS;
 				}
         	}

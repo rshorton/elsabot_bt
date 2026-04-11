@@ -44,6 +44,7 @@ class VoiceDetected : public BT::SyncActionNode
         {
         	rclcpp::spin_some(node_);
             if (vad) {
+				RCLCPP_INFO(node_->get_logger(), "Voice Activity Detected");
             	return BT::NodeStatus::SUCCESS;
             }
             return BT::NodeStatus::FAILURE;
