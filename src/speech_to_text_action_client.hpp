@@ -45,7 +45,8 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::OutputPort<std::string>("text") };
+        return{ BT::InputPort<float>("delay"),
+                BT::OutputPort<std::string>("text") };
     }
 
     virtual BT::NodeStatus tick() override
@@ -55,7 +56,9 @@ public:
     		const std::lock_guard<std::mutex> lock(_mutex);
     		node_name << "speech_to_text_action_client" << instance++;
     	}
-        //node_ = rclcpp::Node::make_shared(node_name.str());
+
+    	float delay = 0.0f;
+		getInput<float>("delay", delay);
 
         auto action_client = rclcpp_action::create_client<speech_action_interfaces::action::Recognize>(node_, "recognize");
         // if no server is present, fail after 10 seconds
@@ -66,10 +69,11 @@ public:
 
         _aborted = false;
 
-        RCLCPP_INFO(node_->get_logger(), "Sending speech-to-text goal");
+        RCLCPP_INFO(node_->get_logger(), "Sending speech-to-text goal, delay: %f", delay);
 
         auto goal_msg = Recognize::Goal();
         goal_msg.timeout = 10;
+        goal_msg.delay = delay;
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=

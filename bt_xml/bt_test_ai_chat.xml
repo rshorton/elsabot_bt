@@ -4,14 +4,20 @@
 			<ForceSuccess>
 				<Sequence>
 					<Fallback>
-						<VoiceDetected />
-						<WakeWordDetected since_sec="1.0" />
+						<Sequence>
+							<VoiceDetected />
+							<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
+						</Sequence>							
+						<Sequence>
+							<WakeWordDetected since_sec="1.0" />
+							<SetBlackboard output_key="speech_to_text_delay" value="0.5" />
+						</Sequence>							
 					</Fallback>
  					<PauseAudioAction stream_type="fg" />
 
        				<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
 
-					<SpeechToTextActionClient text="{said}" />
+					<SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
 					<LogAction level="info" msg="Using prompt: " arg1="{said}" />
 					<SetBlackboard output_key="text_to_speak" value="" />
 	
