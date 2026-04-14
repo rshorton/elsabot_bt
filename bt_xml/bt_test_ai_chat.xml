@@ -66,8 +66,11 @@
   						<AIChatAction prompt="{said}" result="{text_to_speak}" system_prompt= 
 							"You are a robot called elsabot and a helpful assistant. Respond only in plain text. 
 							Write only dialogue, no narration.	Do not use asterisks (*) for actions. 
-							Use emojis when appropriate to express yourself.
-							You can be silly at times to amuse little kids."/>
+							Only use real emojis to express emotions.  Never describe your actions with words like winking or smiling.
+							Keep your response very concise and don't make assumptions.
+							Avoid unnecessary filler or pleasantries.
+							You can be silly at times to amuse little kids."
+							/>
 					</ReactiveSequence>
 					<!-- Say the remaining part of the response if any -->
 					<TextToSpeechAction text="{text_to_speak}" />

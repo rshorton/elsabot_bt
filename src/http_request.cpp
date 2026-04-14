@@ -16,11 +16,8 @@ HttpRequest::HttpRequest(bool async, const std::string& url, long timeout_ms,
       use_streaming_(use_streaming),
       callback_done_(std::move(callback_done)),
       callback_data_(std::move(callback_data)) {
-  std::cout << "HttpRequest 0\n";
 
   startup_init();
-
-  std::cout << "HttpRequest 1\n";
 }
 
 HttpRequest::~HttpRequest() {
@@ -59,6 +56,8 @@ size_t HttpRequest::WriteCallback(void* contents, size_t size,
   // CB End" << std::endl;
 
   self->response_data_.append(data);
+
+  self->new_data_.store(true);
 
   if (self->use_streaming_ && self->callback_data_) {
     self->callback_data_(data);
@@ -103,12 +102,15 @@ void HttpRequest::requestLoop() {
   curl_easy_setopt(easy_handle_, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(easy_handle_, CURLOPT_WRITEDATA, this);
   if (timeout_ms_ > 0) {
+    curl_easy_setopt(easy_handle_, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms_);
     // Set total timeout for the operation
-    curl_easy_setopt(easy_handle_, CURLOPT_TIMEOUT_MS, timeout_ms_);
+    //curl_easy_setopt(easy_handle_, CURLOPT_TIMEOUT_MS, timeout_ms_);
   }
 
   // Add easy handle to the multi stack
   curl_multi_add_handle(multi_handle_, easy_handle_);
+
+  auto start = std::chrono::steady_clock::now();
 
   do {
     std::this_thread::sleep_for(
@@ -120,6 +122,17 @@ void HttpRequest::requestLoop() {
       break;
     }
 
+    auto now = std::chrono::steady_clock::now(); 
+    if (new_data_.exchange(false)) {
+      //std::cout << "Data received: duration since last: "
+      //          << std::chrono::duration<double>(now - start).count()
+      //          << std::endl;
+      start = now;
+    } else if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start) > std::chrono::milliseconds(timeout_ms_*4)) {
+      res = CURLE_OPERATION_TIMEDOUT;
+      break;        
+    }
+
     if (still_running) {
       // Wait for activity (socket or timeout)
       mc = curl_multi_poll(multi_handle_, NULL, 0, 1000, NULL);
@@ -129,7 +142,7 @@ void HttpRequest::requestLoop() {
   } while (still_running);
 
   if (is_cancelled_.load()) {
-    res = CURLE_ABORTED_BY_CALLBACK;  // Or a custom error code
+    res = CURLE_ABORTED_BY_CALLBACK;
   } else {
     // Check the result of the completed transfer
     CURLMsg* msg;

@@ -7,18 +7,22 @@
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "http_request.hpp"
+#include "ros_common.hpp"
 
 using namespace std::chrono_literals;
 
 class AIChatAction : public BT::StatefulActionNode {
  public:
   AIChatAction(const std::string& name, const BT::NodeConfiguration& config)
-      : BT::StatefulActionNode(name, config) {}
+      : BT::StatefulActionNode(name, config) {
+    node_ = ROSCommon::GetInstance()->GetNode();        
+  }
 
   static BT::PortsList providedPorts() {
     return {BT::InputPort<std::string>("system_prompt"),
             BT::InputPort<bool>("new_chat"),
             BT::InputPort<std::string>("prompt"),
+            BT::InputPort<std::string>("pre_prompt"),
             BT::OutputPort<std::string>("result")};
   }
 
@@ -36,6 +40,10 @@ class AIChatAction : public BT::StatefulActionNode {
       getInput<std::string>("system_prompt", system_prompt_);
     }
 
+    pre_prompt_ = std::string();
+    std::string pre_prompt;
+    getInput<std::string>("pre_prompt", pre_prompt_);
+
     std::string prompt;
     getInput<std::string>("prompt", prompt);
 
@@ -48,22 +56,20 @@ class AIChatAction : public BT::StatefulActionNode {
     future_ = std::move(promise_.get_future());
 
     auto completion_callback = [&](std::string data, CURLcode result) {
-
-      std::cout << "completion_callback: " << data << std::endl;
+      RCLCPP_INFO(node_->get_logger(), "Completion_callback: %ld", data.length());
 
       std::string ret;
       if (result == CURLE_OK) {
-        std::cout << "Request successful\n";
+        RCLCPP_INFO(node_->get_logger(), "Request successful");
         ret = "ok";
       } else if (result == CURLE_ABORTED_BY_CALLBACK) {
-        std::cout << "Request was cancelled.\n";
+        RCLCPP_DEBUG(node_->get_logger(), "Model request was cancelled");
         ret = "aborted";
       } else if (result == CURLE_OPERATION_TIMEDOUT) {
-        std::cout << "Request timed-out.\n";
+        RCLCPP_ERROR(node_->get_logger(), "Model request timed-out");
         ret = "timeout";
       } else {
-        std::cerr << "Request failed: " << curl_easy_strerror(result)
-                  << std::endl;
+        RCLCPP_ERROR(node_->get_logger(), "Model request failed: %s", curl_easy_strerror(result));
         ret = "failed";
       }
       promise_.set_value(ret);
@@ -77,8 +83,6 @@ class AIChatAction : public BT::StatefulActionNode {
       //
       //  When finished:  "stop": true
 
-      std::cout << "data_callback: " << data << std::endl;
-
       size_t pos = 0;
       while ((pos = data.find("data: ", pos)) != std::string::npos) {
         pos += 6;
@@ -88,7 +92,7 @@ class AIChatAction : public BT::StatefulActionNode {
         }
         try {
           std::string c = nlohmann::json::parse(data.substr(pos, end - pos))["content"];
-          std::cout << c << std::flush;
+          //std::cout << c << std::flush;
           full_response_ += c;
           add_new_streaming_data(c);
 
@@ -98,19 +102,22 @@ class AIChatAction : public BT::StatefulActionNode {
       }
     };
 
+    std::for_each(history_.begin(), history_.end(), [](ChatMessage &item) {
+      item.last_user_msg = false;
+    });
+
     int num_tokens = fetch_token_count(prompt);
-    history_.push_back({"user", prompt, num_tokens});
+    history_.push_back({"user", prompt, num_tokens, true});
     current_tokens_ += num_tokens;
 
-    std::cout << "TOKENS, prompt: " << num_tokens
-              << ", Total: " << current_tokens_ << std::endl;
+    RCLCPP_DEBUG(node_->get_logger(), "TOKENS, prompt: %d, total: %d", num_tokens, current_tokens_);
 
     while (current_tokens_ > (max_context_ - 1000) && !history_.empty()) {
       current_tokens_ -= history_.front().token_count;
       history_.pop_front();
     }
 
-    std::cout << "TOKENS, after purge:  Total: " << current_tokens_ << std::endl;
+    RCLCPP_DEBUG(node_->get_logger(), "TOKENS, after purge:  total: %d", current_tokens_);
 
     // We use the /completions endpoint for manual templating
     nlohmann::json payload = {{"prompt", applyLlama2Template()},
@@ -119,8 +126,7 @@ class AIChatAction : public BT::StatefulActionNode {
 
     auto req_text = payload.dump();
 
-    std::cout << "NEW REQUEST: " << std::endl;
-    std::cout << req_text << std::endl << std::endl;
+    RCLCPP_DEBUG(node_->get_logger(), "NEW REQUEST: %s", req_text.c_str());
 
     auto url = host_address_and_port_ + "/completions";
     auto timeout = 8000;
@@ -153,9 +159,9 @@ class AIChatAction : public BT::StatefulActionNode {
     auto status = future_.wait_for(0ms);
 
     if (status == std::future_status::ready) {
-      std::cout << "Future is ready, result is available." << std::endl;
       auto result = future_.get();
-      std::cout << "Result: " << result << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Future is ready, result: %s", result.c_str());
+
       if (result == "aborted" || result == "timeout" || result == "failed") {
         return BT::NodeStatus::FAILURE;
       } else {
@@ -165,15 +171,15 @@ class AIChatAction : public BT::StatefulActionNode {
         finish_on_next_update_ = true;
 
         int num_tokens = fetch_token_count(full_response_);
-        history_.push_back({"assistant", full_response_, num_tokens});
+        history_.push_back({"assistant", full_response_, num_tokens, false});
         current_tokens_ += num_tokens;
 
         return BT::NodeStatus::RUNNING;
       }
     } else if (status == std::future_status::timeout) {
-      // std::cout << "Future is not ready yet (timeout)." << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Future is not ready yet (timeout).");
     } else if (status == std::future_status::deferred) {
-      std::cout << "Future task is deferred (not started yet)." << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Future task is deferred (not started yet).");
     }
     return BT::NodeStatus::RUNNING;
   }
@@ -191,6 +197,7 @@ class AIChatAction : public BT::StatefulActionNode {
     std::string role;
     std::string content;
     int token_count;
+    bool last_user_msg;
   };
 
   int fetch_token_count(const std::string& text) {
@@ -199,17 +206,15 @@ class AIChatAction : public BT::StatefulActionNode {
     int count = (int)text.length() / 4;
 
     auto completion_callback = [&](std::string data, CURLcode result) {
-      std::cout << "completion_callback (token count): " << data << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Completion_callback (token count): %s", data.c_str());
 
       if (result == CURLE_OK) {
-        std::cout << "Token count request successful. Data length: "
-                  << data.length() << " bytes\n";
+        RCLCPP_DEBUG(node_->get_logger(), "Token count request successful. Data length: %ld bytes", data.length());
         count = (int)nlohmann::json::parse(data)["tokens"].size();
       } else if (result == CURLE_OPERATION_TIMEDOUT) {
-        std::cout << "Token count request timed-out.\n";
+        RCLCPP_ERROR(node_->get_logger(), "Token count request timed-out.");
       } else {
-        std::cerr << "Token count request failed: "
-                  << curl_easy_strerror(result) << std::endl;
+        RCLCPP_ERROR(node_->get_logger(), "Token count request failed: %s", curl_easy_strerror(result));
       }
     };
 
@@ -227,11 +232,20 @@ class AIChatAction : public BT::StatefulActionNode {
   std::string applyLlama2Template() {
     std::string prompt =
         "<s>[INST] <<SYS>>\n" + system_prompt_ + "\n<</SYS>>\n\n";
+    
     bool first_user = true;
 
     for (const auto& msg : history_) {
       if (msg.role == "user") {
-        if (!first_user) prompt += "<s>[INST] ";
+        if (!first_user) {
+          prompt += "<s>[INST] ";
+        }
+
+        // Include optional 'extra' system prompt before new prompt
+        if (msg.last_user_msg && !pre_prompt_.empty()) {
+          prompt += "<<SYS>>\n" + pre_prompt_ + "\n<</SYS>>\n\n";
+        }
+
         prompt += msg.content + " [/INST] ";
         first_user = false;
       } else {
@@ -274,7 +288,8 @@ class AIChatAction : public BT::StatefulActionNode {
       if (next_pos < len && (streaming_data_buffer_[next_pos] == ' ' ||
                              streaming_data_buffer_[next_pos] == '\n')) {
         auto sentence = streaming_data_buffer_.substr(0, next_pos);
-        std::cout << "New Sentence: " << sentence << std::endl;
+
+        RCLCPP_DEBUG(node_->get_logger(), "New Sentence: %s", sentence.c_str());
         {
           std::lock_guard<std::mutex> guard(new_sentence_mutex);
           new_sentence_.append(sentence);
@@ -284,6 +299,8 @@ class AIChatAction : public BT::StatefulActionNode {
       }
     } while (pos > 0);
   }
+
+  rclcpp::Node::SharedPtr node_;
 
   std::string host_address_and_port_{"http://localhost:8003"};
 
@@ -305,6 +322,8 @@ class AIChatAction : public BT::StatefulActionNode {
   // fix - add param
   int max_context_{4096};
   int current_tokens_{0};
+
+  std::string pre_prompt_;
 
   std::string full_response_;
 };

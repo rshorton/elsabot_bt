@@ -69,6 +69,7 @@ class HttpRequest {
   std::string response_data_;
   std::thread request_thread_;
   std::atomic<bool> is_cancelled_{false};
+  std::atomic<bool> new_data_{false};
   CURL* easy_handle_ = nullptr;
   CURLM* multi_handle_ = nullptr;
   std::mutex mtx_;

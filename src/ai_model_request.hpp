@@ -6,6 +6,7 @@
 
 #include "http_request.hpp"
 #include "behaviortree_cpp/bt_factory.h"
+#include "ros_common.hpp"
 
 using namespace std::chrono_literals;
 
@@ -16,7 +17,9 @@ const std::size_t MIN_SENTENCE_LEN = 30;
 class AIModelRequest : public BT::StatefulActionNode {
  public:
   AIModelRequest(const std::string& name, const BT::NodeConfiguration& config)
-      : BT::StatefulActionNode(name, config) {}
+      : BT::StatefulActionNode(name, config) {
+    node_ = ROSCommon::GetInstance()->GetNode();
+  }
 
   static BT::PortsList providedPorts() {
     return {BT::InputPort<std::string>("prompt"),
@@ -37,26 +40,22 @@ class AIModelRequest : public BT::StatefulActionNode {
     auto completion_callback = [&](std::string data, CURLcode result) {
       std::string ret;
       if (result == CURLE_OK) {
-        std::cout << "Request successful. Data length: " << data.length()
-                  << " bytes\n";
-        // std::cout << "Data: " << data << "\n";
+        RCLCPP_INFO(node_->get_logger(), "Model ok. Data length: %ld bytes", data.length());
         ret = data;
       } else if (result == CURLE_ABORTED_BY_CALLBACK) {
-        std::cout << "Request was cancelled.\n";
+        RCLCPP_DEBUG(node_->get_logger(), "Model request was cancelled");
         ret = "aborted";
       } else if (result == CURLE_OPERATION_TIMEDOUT) {
-        std::cout << "Request timed-out.\n";
+        RCLCPP_ERROR(node_->get_logger(), "Model request timed-out");
         ret = "timeout";
       } else {
-        std::cerr << "Request failed: " << curl_easy_strerror(result)
-                  << std::endl;
+        RCLCPP_ERROR(node_->get_logger(), "Model request failed: %s", curl_easy_strerror(result));
         ret = "failed";
       }
       promise_.set_value(ret);
     };
 
     auto data_callback = [&](std::string data) {
-      // std::cout << "data_callback: " << data << std::endl;
       //  Example:  data:
       //  {"type":"response.output_text.delta","item_id":"msg_b3e4f043-dcde-45f0-8e4e-489e3cb1a99d","output_index":0,"content_index":0,"delta":"Still"}
 
@@ -75,11 +74,11 @@ class AIModelRequest : public BT::StatefulActionNode {
         }
 
         auto delta = j["delta"].get<std::string>();
-        std::cout << "Text Delta: " << delta << std::endl;
+        //std::cout << "Text Delta: " << delta << std::endl;
 
         add_new_streaming_data(delta);
       } catch (...) {
-        std::cout << "Failed to parse data callback json" << std::endl;
+        RCLCPP_ERROR(node_->get_logger(), "Failed to parse data callback json.");
       }
     };
 
@@ -125,11 +124,12 @@ class AIModelRequest : public BT::StatefulActionNode {
     auto status = future_.wait_for(0ms);
 
     if (status == std::future_status::ready) {
-      std::cout << "Future is ready, result is available." << std::endl;
       auto result = future_.get();
-      std::cout << "Result: " << result << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Future is ready, result: %s", result.c_str());
+
       if (result == "aborted" || result == "timeout" || result == "failed") {
         return BT::NodeStatus::FAILURE;
+
       } else {
         if (use_streaming_) {
           // Run one more tick to allow the last of the response to be processed
@@ -144,14 +144,15 @@ class AIModelRequest : public BT::StatefulActionNode {
             finish_on_next_update_ = true;
             return BT::NodeStatus::RUNNING;
           }
-          std::cout << "Failed to parse model result json" << std::endl;
+          RCLCPP_ERROR(node_->get_logger(), "Failed to parse model result json");
           return BT::NodeStatus::FAILURE;
         }
       }
     } else if (status == std::future_status::timeout) {
-      //std::cout << "Future is not ready yet (timeout)." << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Future is not ready yet (timeout).");
+
     } else if (status == std::future_status::deferred) {
-      std::cout << "Future task is deferred (not started yet)." << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Future task is deferred (not started yet).");
     }
     return BT::NodeStatus::RUNNING;
   }
@@ -187,7 +188,7 @@ class AIModelRequest : public BT::StatefulActionNode {
   bool parse_response(std::string result, std::string& ret) const {
     try {
       nlohmann::json j = nlohmann::json::parse(result);
-      std::cout << std::setw(4) << j << "\n\n";
+      //std::cout << std::setw(4) << j << "\n\n";
 
       auto object = j["object"].get<std::string>();
       if (object != "response") {
@@ -195,25 +196,25 @@ class AIModelRequest : public BT::StatefulActionNode {
         return false;
       }
 
-      std::cout << "Model response object: " << object << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Model response object: %s", object.c_str());
 
       auto status = j["status"].get<std::string>();
       if (status != "completed") {
-        std::cerr << "Unexpected model status: " << status << std::endl;
+        RCLCPP_ERROR(node_->get_logger(), "Unexpected model status: %s", status.c_str());
         return false;
       }
 
-      std::cout << "Got model status: " << status << std::endl;
+      RCLCPP_DEBUG(node_->get_logger(), "Got model status: %s", status.c_str());
 
       for (const auto& out_item : j["output"]) {
         if (out_item.find("content") == out_item.end()) {
-          std::cerr << "Did find content in model output" << std::endl;
+          RCLCPP_ERROR(node_->get_logger(), "Didn't find content in model output");
           return false;
         }
 
         for (const auto& content_item : out_item["content"]) {
           if (content_item.find("text") == content_item.end()) {
-            std::cerr << "Did find text in content model output" << std::endl;
+            RCLCPP_ERROR(node_->get_logger(), "Didn't find text in content model output");
             return false;
           }
           ret = content_item["text"].get<std::string>();
@@ -221,7 +222,7 @@ class AIModelRequest : public BT::StatefulActionNode {
         }
       }
     } catch (...) {
-      std::cout << "Failed to parse model result json" << std::endl;
+      RCLCPP_ERROR(node_->get_logger(), "Failed to parse model result json");
     }
     return false;
   }
@@ -259,7 +260,7 @@ class AIModelRequest : public BT::StatefulActionNode {
       if (next_pos < len && (streaming_data_buffer_[next_pos] == ' ' ||
           streaming_data_buffer_[next_pos] == '\n')) {
         auto sentence = streaming_data_buffer_.substr(0, next_pos);
-        std::cout << "New Sentence: " << sentence << std::endl;
+        RCLCPP_DEBUG(node_->get_logger(), "New Sentence: %s", sentence.c_str());
         {
           std::lock_guard<std::mutex> guard(new_sentence_mutex);
           new_sentence_.append(sentence);
@@ -270,6 +271,7 @@ class AIModelRequest : public BT::StatefulActionNode {
     } while (pos > 0);
   }
 
+  rclcpp::Node::SharedPtr node_;
   std::promise<std::string> promise_;
   std::future<std::string> future_;
 
