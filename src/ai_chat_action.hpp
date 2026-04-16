@@ -9,6 +9,8 @@
 #include "http_request.hpp"
 #include "ros_common.hpp"
 
+#define VLLM_GEMMA
+
 using namespace std::chrono_literals;
 
 class AIChatAction : public BT::StatefulActionNode {
@@ -75,6 +77,32 @@ class AIChatAction : public BT::StatefulActionNode {
       promise_.set_value(ret);
     };
 
+#if defined(VLLM_GEMMA)
+    auto data_callback = [&](std::string data) {
+
+      // vLLM sends data in Server-Sent Events (SSE) format: "data: {...}"
+      std::cout << "data_callback: " << data << std::endl;
+
+      size_t pos = 0;
+      while ((pos = data.find("data: ", pos)) != std::string::npos) {
+          pos += 6;
+          size_t end = data.find("\n\n", pos);
+          if (end == std::string::npos) break;
+
+          std::string json_str = data.substr(pos, end - pos);
+          if (json_str == "[DONE]") break;
+
+          try {
+              auto j = nlohmann::json::parse(json_str);
+              if (j.contains("choices") && !j["choices"].empty()) {
+                  std::string delta = j["choices"][0]["delta"]["content"];
+                  add_new_streaming_data(delta);
+              }
+          } catch (...) {} 
+          pos = end;
+      }
+    };
+#else
     auto data_callback = [&](std::string data) {
       // std::cout << "data_callback: " << data << std::endl;
       //  Example:  data:
@@ -101,6 +129,7 @@ class AIChatAction : public BT::StatefulActionNode {
         pos = end;
       }
     };
+#endif
 
     std::for_each(history_.begin(), history_.end(), [](ChatMessage &item) {
       item.last_user_msg = false;
@@ -119,16 +148,31 @@ class AIChatAction : public BT::StatefulActionNode {
 
     RCLCPP_DEBUG(node_->get_logger(), "TOKENS, after purge:  total: %d", current_tokens_);
 
-    // We use the /completions endpoint for manual templating
-    nlohmann::json payload = {{"prompt", applyLlama2Template()},
-                              {"stream", true},
-                              {"stop", {"</s>", "[INST]"}}};
+#if defined(VLLM_GEMMA)                              
+    nlohmann::json request_data = {{"model", "cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit"},
+                                   {"stream", true},
+                                   {"messages", format_prompt()}
+                                  };
 
-    auto req_text = payload.dump();
+#else
+    // We use the /completions endpoint for manual templating
+    nlohmann::json request_data = {{"prompt", format_prompt()},
+                                   {"stream", true},
+                                   {"stop", {"</s>", "[INST]"}}
+                                  };
+#endif                            
+
+    auto req_text = request_data.dump();
 
     RCLCPP_DEBUG(node_->get_logger(), "NEW REQUEST: %s", req_text.c_str());
 
-    auto url = host_address_and_port_ + "/completions";
+    auto url = host_address_and_port_;
+#if defined(VLLM_GEMMA)
+    url += "/v1/chat/completions";
+#else    
+    url += "/completions";
+#endif
+
     auto timeout = 8000;
 
     request_ = std::make_unique<HttpRequest>(true, url, timeout, std::string(), req_text,
@@ -201,6 +245,10 @@ class AIChatAction : public BT::StatefulActionNode {
   };
 
   int fetch_token_count(const std::string& text) {
+#if defined(VLLM_GEMMA)
+    int count = (int)text.length() / 4;
+
+#else
     nlohmann::json body = {{"content", text}};
     // Default count to length/4 if cannot request
     int count = (int)text.length() / 4;
@@ -225,11 +273,27 @@ class AIChatAction : public BT::StatefulActionNode {
         false, url, timeout, std::string(), body.dump(), false,
         completion_callback, nullptr);
     request_->perform();
+#endif    
     return count;
   }
 
+
+#if defined(VLLM_GEMMA)
+  nlohmann::json format_prompt() {
+
+    nlohmann::json prompt = nlohmann::json::array();
+
+    prompt.push_back({{"role", "system"}, {"content", system_prompt_}});
+
+    for (const auto& msg : history_) {
+        prompt.push_back({{"role", msg.role}, {"content", msg.content}});
+    }
+
+    return prompt;
+  }
+#else
   // Manual Llama 2 Template Builder
-  std::string applyLlama2Template() {
+  std::string format_prompt() {
     std::string prompt =
         "<s>[INST] <<SYS>>\n" + system_prompt_ + "\n<</SYS>>\n\n";
     
@@ -254,6 +318,7 @@ class AIChatAction : public BT::StatefulActionNode {
     }
     return prompt;
   }
+#endif  
 
   void add_new_streaming_data(const std::string& delta) {
     streaming_data_buffer_.append(delta);
@@ -302,7 +367,7 @@ class AIChatAction : public BT::StatefulActionNode {
 
   rclcpp::Node::SharedPtr node_;
 
-  std::string host_address_and_port_{"http://localhost:8003"};
+  std::string host_address_and_port_{"http://localhost:8000"};
 
   std::promise<std::string> promise_;
   std::future<std::string> future_;
