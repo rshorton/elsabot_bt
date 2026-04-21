@@ -70,6 +70,12 @@
 #include <behaviortree_cpp/loggers/groot2_publisher.h>
 
 #include "ai_action.hpp"
+#include "cancel_audio_action.hpp"
+#include "pause_audio_action.hpp"
+#include "play_audio_file_action.hpp"
+#include "resume_audio_action.hpp"
+#include "text_to_speech_action.hpp"
+
 #include "transform_helper.hpp"
 #include "robot_status.hpp"
 #include "ui_topics.hpp"
@@ -194,6 +200,11 @@ int main(int argc, char **argv)
     REGISTER_BUILDER_WITH_ROS_NODE(ObjectTrackerLocationStatusAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(PublishPositionAsGoalAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(TrackManualAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(TextToSpeechAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(CancelAudioAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(PauseAudioAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(ResumeAudioAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(PlayAudioFileAction, nh);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
