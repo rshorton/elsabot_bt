@@ -69,6 +69,7 @@
 #include <behaviortree_cpp/loggers/bt_file_logger_v2.h>
 #include <behaviortree_cpp/loggers/groot2_publisher.h>
 
+#include "ai_action.hpp"
 #include "transform_helper.hpp"
 #include "robot_status.hpp"
 #include "ui_topics.hpp"
@@ -173,6 +174,7 @@ int main(int argc, char **argv)
 
     factory.registerNodeType<RobotCatGameNextPoseAction>("RobotCatGameNextPoseAction");
     factory.registerNodeType<RobotCatGameInitAction>("RobotCatGameInitAction");
+    factory.registerNodeType<AIAction>("AIAction");
 
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!

@@ -25,6 +25,7 @@ find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
+find_package(elsabot_audio_output_interfaces REQUIRED)
 find_package(robot_head_interfaces REQUIRED)
 find_package(robot_ui_interfaces REQUIRED)
 find_package(object_detection_msgs REQUIRED)
@@ -32,6 +33,7 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(robot_localization REQUIRED)
+find_package(CURL REQUIRED)
 
 #find_package(moveit_ros_planning REQUIRED)
 #find_package(moveit_ros_planning_interface REQUIRED)
@@ -56,6 +58,7 @@ set(dependencies
   nav2_msgs
   behaviortree_cpp
   speech_action_interfaces
+  elsabot_audio_output_interfaces
   robot_head_interfaces
   robot_ui_interfaces
   object_detection_msgs
@@ -63,6 +66,7 @@ set(dependencies
   nav_msgs
   visualization_msgs
   robot_localization
+  CURL
   #moveit_ros_planning
   #moveit_ros_planning_interface
 )
@@ -83,6 +87,8 @@ add_executable(elsabot_bt
   src/imu_topic.cpp
   src/ros_common.cpp
   src/nav_utils.cpp
+  src/http_request.cpp
+  src/ai_session.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}

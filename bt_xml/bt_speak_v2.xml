@@ -1,0 +1,23 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <Sequence>
+            <CancelAudioAction req_id="all" />
+            <Delay delay_msec="5000">
+                <PlayAudioFileAction file_path="/robot_ws/tone_440_330s.wav"  stream_type="fg" req_id="3" />
+            </Delay>                
+            <Repeat num_cycles="10">
+                <Sequence>
+                    <PauseAudioAction/>
+                    <Delay delay_msec="2000">
+                        <ResumeAudioAction/>
+                    </Delay>
+                    <TextToSpeechAction req_id="1" text="1. Hello. How are you today 123?"/>
+                    <Delay delay_msec="1000">
+                        <TextToSpeechAction req_id="2" text="2. What is your name?" />
+                    </Delay>   
+                </Sequence>
+            </Repeat>
+            <CancelAudioAction req_id="all" />
+        </Sequence>    
+    </BehaviorTree>
+</root>

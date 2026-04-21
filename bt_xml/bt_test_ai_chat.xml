@@ -1,0 +1,93 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<KeepRunningUntilFailure>
+			<ForceSuccess>
+				<Sequence>
+					<Fallback>
+						<!-- Optionally allow prompt to be specified via a topic
+						  	 (you can use the input_text.sh script for this)
+						-->
+						<UIInputAction action="ck_changed" property="text_input" value="{said}"/>
+						<Sequence>
+							<Fallback>
+								<Sequence>
+									<VoiceDetected />
+									<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
+								</Sequence>							
+								<Sequence>
+									<WakeWordDetected since_sec="1.0" />
+									<SetBlackboard output_key="speech_to_text_delay" value="0.5" />
+								</Sequence>							
+							</Fallback>
+ 							<PauseAudioAction stream_type="fg" />
+
+       						<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
+
+							<SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
+						</Sequence>							
+					</Fallback>
+											
+					<LogAction level="info" msg="Using prompt: " arg1="{said}" />
+					<SetBlackboard output_key="text_to_speak" value="" />
+	
+       				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+
+					<!-- Resume current audio playback (if any) if TTS is empty -->
+					<Inverter>
+						<Sequence>
+							<TextCompareAction text="{said}" ck_for="" />
+							<ResumeAudioAction stream_type="fg" />
+						</Sequence>
+					</Inverter>
+
+ 					<CancelAudioAction req_id="all" />
+					<ResumeAudioAction stream_type="fg" />
+
+					<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
+
+					<!-- Call AIModelRequest until is finished -->
+					<ReactiveSequence>
+						<!-- If wake work spoken while processing the AI request, then cancel it and any TTS from it -->
+						<Inverter>
+							<Sequence>
+								<Fallback>
+									<VoiceDetected />
+									<WakeWordDetected since_sec="1.0" />
+								</Fallback>	
+								<CancelAudioAction req_id="all" />
+								<SetBlackboard output_key="text_to_speak" value="" />
+							</Sequence>
+						</Inverter>
+
+						<!-- Revert to normal antenna pattern on first speech output -->
+						<ForceSuccess>
+							<Sequence>
+								<Inverter>
+									<TextCompareAction text="{text_to_speak}" ck_for="" />
+								</Inverter>
+			       				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+							</Sequence>
+						</ForceSuccess>							
+
+						<!-- On each pass try to play output from the previous update-->
+						<TextToSpeechAction text="{text_to_speak}" />
+						<SetBlackboard output_key="text_to_speak" value="" />
+  						<AIAction prompt="{said}" result="{text_to_speak}" system_prompt= 
+							"You are a robot called elsuh-bot and a helpful assistant. Your AI model is the Gemma 4, with 26 billion parameters.
+							You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword for wake word detection and
+							run on a Jetson Orin AGX computer.
+							Respond only in plain text without narration.
+							Do not use asterisks (*) for actions. Do not describe actions.
+							Only use 'face' emojis as a secondary way to express emotions.
+							Keep your responses concise and don't make assumptions.
+							You can be fun, witty, or amusing."
+							/>
+					</ReactiveSequence>
+					<!-- Say the remaining part of the response if any -->
+					<TextToSpeechAction text="{text_to_speak}" />
+       				<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+				</Sequence>
+			</ForceSuccess>
+		</KeepRunningUntilFailure>
+	</BehaviorTree>
+</root>
