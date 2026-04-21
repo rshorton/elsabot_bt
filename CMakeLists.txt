@@ -88,6 +88,7 @@ add_executable(elsabot_bt
   src/ros_common.cpp
   src/nav_utils.cpp
   src/http_request.cpp
+  src/ai_session.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}

@@ -70,6 +70,7 @@
 #include <behaviortree_cpp_v3/loggers/bt_file_logger.h>
 #include <behaviortree_cpp_v3/loggers/bt_zmq_publisher.h>
 
+#include "ai_action.hpp"
 #include "ai_chat_action.hpp"
 #include "ai_model_request.hpp"
 #include "game_settings.hpp"
@@ -193,6 +194,7 @@ int main(int argc, char** argv) {
 
   factory.registerNodeType<AIModelRequest>("AIModelRequest");
   factory.registerNodeType<AIChatAction>("AIChatAction");
+  factory.registerNodeType<AIAction>("AIAction");
 
   // Scratching your head because your new action isn't working?
   // Check the template type above since you probably copy and pasted and forgot

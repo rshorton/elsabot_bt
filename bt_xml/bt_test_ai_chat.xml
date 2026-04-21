@@ -4,20 +4,29 @@
 			<ForceSuccess>
 				<Sequence>
 					<Fallback>
+						<!-- Optionally allow prompt to be specified via a topic
+						  	 (you can use the input_text.sh script for this)
+						-->
+						<UIInputAction action="ck_changed" property="text_input" value="{said}"/>
 						<Sequence>
-							<VoiceDetected />
-							<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
-						</Sequence>							
-						<Sequence>
-							<WakeWordDetected since_sec="1.0" />
-							<SetBlackboard output_key="speech_to_text_delay" value="0.5" />
+							<Fallback>
+								<Sequence>
+									<VoiceDetected />
+									<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
+								</Sequence>							
+								<Sequence>
+									<WakeWordDetected since_sec="1.0" />
+									<SetBlackboard output_key="speech_to_text_delay" value="0.5" />
+								</Sequence>							
+							</Fallback>
+ 							<PauseAudioAction stream_type="fg" />
+
+       						<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
+
+							<SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
 						</Sequence>							
 					</Fallback>
- 					<PauseAudioAction stream_type="fg" />
-
-       				<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
-
-					<SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
+											
 					<LogAction level="info" msg="Using prompt: " arg1="{said}" />
 					<SetBlackboard output_key="text_to_speak" value="" />
 	
@@ -63,7 +72,7 @@
 						<!-- On each pass try to play output from the previous update-->
 						<TextToSpeechAction text="{text_to_speak}" />
 						<SetBlackboard output_key="text_to_speak" value="" />
-  						<AIChatAction prompt="{said}" result="{text_to_speak}" system_prompt= 
+  						<AIAction prompt="{said}" result="{text_to_speak}" system_prompt= 
 							"You are a robot called elsuh-bot and a helpful assistant. Your AI model is the Gemma 4, with 26 billion parameters.
 							You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword for wake word detection and
 							run on a Jetson Orin AGX computer.
