@@ -40,7 +40,7 @@ UITopics::UITopics(rclcpp::Node::SharedPtr node):
 
 void UITopics::GenericCallback(robot_ui_interfaces::msg::Generic::SharedPtr msg)
 {
-	RCLCPP_DEBUG(node_->get_logger(), "Generic UI msg: name: [%s], type: [%s], value: [%s], instance: [%u]",
+	RCLCPP_INFO(node_->get_logger(), "Generic UI msg: name: [%s], type: [%s], value: [%s], instance: [%u]",
 		msg->name.c_str(), msg->type.c_str(), msg->value.c_str(), msg->instance);
 
 	auto it = generic_msgs_.find(msg->name);
@@ -48,7 +48,7 @@ void UITopics::GenericCallback(robot_ui_interfaces::msg::Generic::SharedPtr msg)
 		if (it->second.msg.instance != msg->instance) {
 			it->second.msg = *msg;
 			it->second.updated = true;
-			RCLCPP_DEBUG(node_->get_logger(), "Generic UI msg: name: [%s] updated", msg->name.c_str());
+			RCLCPP_INFO(node_->get_logger(), "Generic UI msg: name: [%s] updated", msg->name.c_str());
 		}
 		return;
 	}
@@ -62,6 +62,8 @@ void UITopics::GenericCallback(robot_ui_interfaces::msg::Generic::SharedPtr msg)
 
 bool UITopics::GetGeneric(const std::string &name, std::string &type, std::string &value, bool &updated)
 {
+	rclcpp::spin_some(node_);
+	
 	auto it = generic_msgs_.find(name);
 	if (it != generic_msgs_.end()) {
 		type = it->second.msg.type;
