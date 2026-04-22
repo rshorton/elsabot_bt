@@ -1,0 +1,17 @@
+<root main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>          
+      <Repeat num_cycles="999">
+        <Delay delay_msec="1000">
+          <ForceSuccess>
+            <Sequence>
+              <LogAction level="debug" msg="Checking for text input" />
+              <UIInputAction action="ck_changed" property="text_input" value="{text_input}"/>
+              <LogAction level="info" msg="Text entered" arg1="{text_input}" />
+            </Sequence>
+          </ForceSuccess>
+        </Delay>
+      </Repeat>
+    </Sequence>
+	</BehaviorTree>
+</root>

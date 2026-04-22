@@ -86,7 +86,10 @@ public:
             std::string value;
             bool updated = false;
             if (ui_topics->GetGeneric(property, type, value, updated)) {
-                RCLCPP_INFO(node->get_logger(), "property: [%s], value: [%s], updated: [%d]", property.c_str(), value.c_str(), updated);
+                RCLCPP_DEBUG(node->get_logger(), "action: [%s], property: [%s], value: [%s], updated: [%d]",
+                            action.c_str(), property.c_str(), value.c_str(), updated);
+
+                setOutput("value", value);
 
                 if (action == "ck_changed") {
                     if (updated) {
@@ -98,6 +101,7 @@ public:
                             return BT::NodeStatus::SUCCESS;            
                         }
                     }
+
                 } else if (action == "ck_value") {
                     if (ck_value_set) {
                         if (value == ck_value) {
