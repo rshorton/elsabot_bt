@@ -89,6 +89,7 @@ add_executable(elsabot_bt
   src/nav_utils.cpp
   src/http_request.cpp
   src/ai_session.cpp
+  src/tool_call_data.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}

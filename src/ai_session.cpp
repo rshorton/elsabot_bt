@@ -103,7 +103,7 @@ void AISession::perform() {
       RCLCPP_INFO(logger_, "Request successful");
       result = Result::success;
     } else if (curl_result == CURLE_ABORTED_BY_CALLBACK) {
-      RCLCPP_DEBUG(logger_, "Model request was cancelled");
+      RCLCPP_INFO(logger_, "Model request was cancelled");
       result = Result::cancelled;
     } else if (curl_result == CURLE_OPERATION_TIMEDOUT) {
       RCLCPP_ERROR(logger_, "Model request timed-out");
@@ -368,8 +368,11 @@ nlohmann::json AISession::format_prompt() {
   nlohmann::json prompt = nlohmann::json::array();
   prompt.push_back({{"role", "system"}, {"content", system_prompt_}});
 
-  for (const auto& msg : history_) {
-    auto m = msg->get_json();
+  auto last_index = (long int)history_.size() - 1;
+
+  for (auto it = history_.begin(); it != history_.end(); ++it) {
+    auto index = std::distance(history_.begin(), it);
+    auto m = (*it)->get_json(last_index == index);
     prompt.push_back(m);
   }
   return prompt;

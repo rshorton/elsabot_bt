@@ -53,7 +53,7 @@ class AISession {
       token_count_(token_count)
     {}
 
-    virtual nlohmann::json get_json() {
+    virtual nlohmann::json get_json(bool) {
         return {{"role", role_}};
     }
 
@@ -68,8 +68,8 @@ class AISession {
       prompt_(prompt)
     {}
 
-    nlohmann::json get_json() override {
-      nlohmann::json m = SessionMessage::get_json();
+    nlohmann::json get_json(bool is_last) override {
+      nlohmann::json m = SessionMessage::get_json(is_last);
       m["content"] = prompt_;
       return m;
     }
@@ -84,8 +84,8 @@ class AISession {
       response_(response)
     {}
 
-    nlohmann::json get_json() override {
-      nlohmann::json m = SessionMessage::get_json();
+    nlohmann::json get_json(bool is_last) override {
+      nlohmann::json m = SessionMessage::get_json(is_last);
       m["content"] = response_;
       return m;
     }
@@ -100,8 +100,8 @@ class AISession {
       tool_call_json_(tool_call_json)
     {}
 
-    nlohmann::json get_json() override {
-      nlohmann::json m = SessionMessage::get_json();
+    nlohmann::json get_json(bool is_last) override {
+      nlohmann::json m = SessionMessage::get_json(is_last);
       m["tool_calls"] = nlohmann::json::array();
       m["tool_calls"].push_back(nlohmann::json::parse(tool_call_json_));
       return m;
@@ -120,11 +120,19 @@ class AISession {
       tool_result_json_(tool_result_json)
     {}
 
-    nlohmann::json get_json() override {
-      nlohmann::json m = SessionMessage::get_json();
+    nlohmann::json get_json(bool is_last) override {
+      nlohmann::json m = SessionMessage::get_json(is_last);
       m["tool_call_id"] = id_;
       m["name"] = name_;
-      m["content"] = tool_result_json_;
+      // Only send tool result if this is the most recent message.
+      // This attempts to prevent the model from using old tool call results.
+      // An example is the time/date tool call.  After the first call, it
+      // uses the previous result without another tool call. 
+      if (is_last) {
+        m["content"] = tool_result_json_;
+      } else {
+        m["content"] = R"({})";
+      }        
       return m;
     }
 

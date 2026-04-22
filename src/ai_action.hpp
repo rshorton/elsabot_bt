@@ -8,6 +8,7 @@
 #include "behaviortree_cpp/bt_factory.h"
 #include "ai_session.hpp"
 #include "ros_common.hpp"
+#include "tool_call_data.hpp"
 
 class AIAction : public BT::StatefulActionNode {
  public:
@@ -20,11 +21,13 @@ class AIAction : public BT::StatefulActionNode {
     return {BT::InputPort<std::string>("system_prompt"),
             BT::InputPort<bool>("new_session"),
             BT::InputPort<std::string>("prompt"),
-            BT::OutputPort<std::string>("result")};
+            BT::InputPort<std::string>("tool_call_result"),
+            BT::OutputPort<std::string>("result"),
+            BT::OutputPort<std::string>("tool_call_name"),
+            BT::OutputPort<std::string>("tool_call_args")};
   }
 
   BT::NodeStatus onStart() {
-
     auto data_callback = [&](const std::string &data) {
       add_new_streaming_data(data);
     };
@@ -51,30 +54,14 @@ class AIAction : public BT::StatefulActionNode {
 
     finish_on_next_update_ = false;
     new_sentence_ = std::string();
+    tool_call_wait_ = false;
 
-    auto tools_json = R"([
-    {
-      "type": "function",
-      "function": {
-        "name": "get_local_date_and_time",
-        "description": "Gets the local date and time time in the form:  Y-M-D H:M:S"
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "scan_for_objects",
-        "description": "scan for recognizable objects",
-        "parameters": {
-          "type": "object",
-          "properties": {
-              "object_type": {"type": "string", "description": "Type of object to detect"}
-          },
-          "required": ["object_type"]
-        }
-      }
-    }    
-    ])";
+    setOutput("tool_call_name", "");
+    setOutput("tool_call_result", "");
+
+    ToolCallData& tc_data = ToolCallData::getInstance();
+    auto tools_json = tc_data.get_available_tools_json();
+    RCLCPP_INFO(node_->get_logger(), "tools_json: %s", tools_json.c_str());
 
     ai_session_->user_prompt(prompt, tools_json);
     return BT::NodeStatus::RUNNING;
@@ -85,7 +72,23 @@ class AIAction : public BT::StatefulActionNode {
       return BT::NodeStatus::SUCCESS;
     }
 
-    // Output the latest sentence
+    // Send tool cal result if waiting and the result is ready
+    if (tool_call_wait_) {
+      std::string tool_call_result;
+      if (getInput<std::string>("tool_call_result", tool_call_result)) {
+        setOutput("tool_call_name", "");
+        setOutput("tool_call_result", "");
+        tool_call_wait_ = false;
+
+        RCLCPP_INFO(node_->get_logger(), "Sending tool result to model: %s", tool_call_result.c_str());
+        ai_session_->send_tool_result(tool_call_id_, tool_call_name_, tool_call_result);
+      } else {
+        RCLCPP_INFO(node_->get_logger(), "Waiting for tool result");
+      }       
+      return BT::NodeStatus::RUNNING;
+    }
+
+    // Output the latest sentence(s)
     {
       std::lock_guard<std::mutex> guard(new_sentence_mutex_);
       if (!new_sentence_.empty()) {
@@ -112,22 +115,16 @@ class AIAction : public BT::StatefulActionNode {
         if (is_tool_call) {
           nlohmann::json tool_call = nlohmann::json::parse(full_response);
 
-          std::string call_id = tool_call["id"];
-          std::string name = tool_call["function"]["name"];
-          nlohmann::json args = tool_call["function"]["arguments"];
+          tool_call_id_ = tool_call["id"];
+          tool_call_name_ = tool_call["function"]["name"];
+          nlohmann::json tool_call_args = tool_call["function"]["arguments"];
           RCLCPP_INFO(node_->get_logger(), "Tool call, id: %s, name: %s, args: %s",
-            call_id.c_str(), name.c_str(), args.dump().c_str());
+            tool_call_id_.c_str(), tool_call_name_.c_str(), tool_call_args.dump().c_str());
 
-          std::string result;
-          if (name == "get_local_date_and_time") {
-            nlohmann::json result_obj = {{"result", get_local_date_and_time()}};
-            result = result_obj.dump();
-          } else {
-            // Dummy result for testing
-            result = R"({"found": true})";
-          }
-
-          ai_session_->send_tool_result(call_id, name, result);
+          setOutput("result", "");
+          setOutput("tool_call_name", tool_call_name_);
+          setOutput("tool_call_args", tool_call_args.dump());
+          tool_call_wait_ = true;
           return BT::NodeStatus::RUNNING;
 
         } else {
@@ -143,28 +140,13 @@ class AIAction : public BT::StatefulActionNode {
   }
 
   void onHalted() {
+    RCLCPP_INFO(node_->get_logger(), "AIAction halted");
     if (ai_session_) {
       ai_session_->cancel();
     }
   }
 
  private:
-  std::string get_local_date_and_time() {
-    auto now = std::chrono::system_clock::now();
-
-    std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-
-    std::tm local_tm; 
-    localtime_r(&now_time_t, &local_tm);
-
-    std::stringstream s;
-    s << std::put_time(&local_tm, "%Y-%m-%d")
-      << " "
-      << std::put_time(&local_tm, "%H:%M:%S");
-
-    return s.str();
-}
-
   const std::size_t MIN_SENTENCE_LEN = 30;
 
   void add_new_streaming_data(const std::string& delta) {
@@ -229,11 +211,14 @@ class AIAction : public BT::StatefulActionNode {
 
   std::unique_ptr<AISession> ai_session_;
 
-  std::string streaming_data_buffer_;
+  std::string streaming_data_buffer_;     // Buffer for streamed results
 
-  std::mutex new_sentence_mutex_;
-  std::string new_sentence_;
+  std::mutex new_sentence_mutex_;         // Protects new_sentence var
+  std::string new_sentence_;              // New sentence ready to output
 
-  bool finish_on_next_update_{false};
-  
+  std::string tool_call_id_;              // ID of current tool call in progress
+  std::string tool_call_name_;            // Name of current tool call in progress
+
+  bool finish_on_next_update_{false};     // Finish running on next tick
+  bool tool_call_wait_{false};            // Waiting on tool to complete
 };

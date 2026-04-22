@@ -83,6 +83,7 @@
 #include "game_settings.hpp"
 #include "imu_topic.hpp"
 #include "get_robot_pose_action.hpp"
+#include "tool_call_time_action.hpp"
 
 #define DEFAULT_BT_XML ""
 
@@ -181,7 +182,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotCatGameNextPoseAction>("RobotCatGameNextPoseAction");
     factory.registerNodeType<RobotCatGameInitAction>("RobotCatGameInitAction");
     factory.registerNodeType<AIAction>("AIAction");
-
+    factory.registerNodeType<ToolCallTimeAction>("ToolCallTimeAction");
+    
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
 
@@ -242,10 +244,16 @@ int main(int argc, char **argv)
 
     // Keep on ticking until you get either a SUCCESS or FAILURE state
     while (rclcpp::ok() && status == NodeStatus::RUNNING) {
+#if 1
         status = tree.tickWhileRunning(std::chrono::milliseconds(1)); 
 
         // Spin a while
         rclcpp::spin_until_future_complete(nh, std::promise<bool>().get_future(), std::chrono::milliseconds(50));
+#else
+        tree.tickWhileRunning(); 
+        rclcpp::spin_some(nh);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#endif                
     }
     return 0;
 }
