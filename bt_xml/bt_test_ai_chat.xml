@@ -1,155 +1,214 @@
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
 	<BehaviorTree ID="MainTree">
-		<Parallel>
-			<KeepRunningUntilFailure>
-				<ForceSuccess>
-					<Sequence>
-						<RunOnce>
-							<Sequence>
-								<ToolCallTimeAction command="init" />
-								<SetBlackboard output_key="run_tools" value="n" />
-								<GetTimeNowAction now="{end_response_time}" />
-							</Sequence>
-						</RunOnce>
+		<Sequence>
+			<RunOnce>
+				<Sequence>
+					<ToolCallTimeAction command="init" />
+					<SetBlackboard output_key="run_tools" value="n" />
+					<GetTimeNowAction now="{end_response_time}" />
+					<SetBlackboard output_key="antenna_state_cur" value="none" />
+					<SetBlackboard output_key="antenna_state_req" value="none" />
+				</Sequence>
+			</RunOnce>
 
-						<Fallback>
-							<ForceFailure>
-								<SetBlackboard output_key="run_tools" value="n" />
-							</ForceFailure>								
+			<Parallel>
+				<KeepRunningUntilFailure>
+					<ForceSuccess>
+						<Sequence>
 
-							<!-- Optionally allow prompt to be specified via a topic
-								(you can use the input_text.sh script for this)
-							-->
-							<UIInputAction action="ck_changed" property="text_input" value="{said}"/>
+							<Fallback>
+								<ForceFailure>
+									<SetBlackboard output_key="run_tools" value="n" />
+								</ForceFailure>								
 
-							<Sequence>
-								<Fallback>
-									<Sequence>
-										<!-- If still speaking the last model response, then don't use test for voice
-											 activity for triggering STT.  Also if still speaking, reset the end-response-time
-											 used in determining when to quit listening for the user response using VAD. -->
-										<Inverter>
-											<Sequence>
-												<TTSActiveAction />
-												<GetTimeNowAction now="{end_response_time}" />
-												<LogAction level="debug" msg="TTS active" />
-											</Sequence>												
-										</Inverter>
-										<!-- Only trigger STT on VAD N seconds after the response from the model is finished -->
-										<TimeSinceAction time_point="{end_response_time}" comparison="less" duration_sec="10" />
-										<LogAction level="debug" msg="VAD active" />
-										<VoiceDetected />
-										<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
-									</Sequence>							
-									<Sequence>
-										<WakeWordDetected since_sec="1.0" />
-										<SetBlackboard output_key="speech_to_text_delay" value="0.5" />
-									</Sequence>							
-								</Fallback>
-								<PauseAudioAction stream_type="fg" />
+								<ForceFailure>
+									<IfThenElse>
+										<TTSActiveAction />
+										<Sequence>
+											<SetBlackboard output_key="antenna_state_req" value="model_active" />
+											<GetTimeNowAction now="{end_response_time}" />
+											<LogAction level="debug" msg="TTS active" />
+										</Sequence>											
+										<Sequence>
+											<!-- Only allow VAD to trigger STT if speech occurs within N second of model output -->
+											<IfThenElse>
+												<TimeSinceAction time_point="{end_response_time}" comparison="less" duration_sec="10" />
+												<Sequence>
+													<SetBlackboard output_key="use_vad" value="1" />
+													<SetBlackboard output_key="antenna_state_req" value="waiting_for_user_vad" />
+												</Sequence>
+												<Sequence>													
+													<SetBlackboard output_key="use_vad" value="0" />
+													<SetBlackboard output_key="antenna_state_req" value="waiting_for_user" />
+												</Sequence>													
+											</IfThenElse>												
+										</Sequence>											
+									</IfThenElse>
+								</ForceFailure>
 
-								<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
+								<!-- Optionally allow prompt to be specified via a topic
+									(you can use the input_text.sh script for this)
+								-->
+								<UIInputAction action="ck_changed" property="text_input" value="{said}"/>
 
-								<SpeechToTextActionClient text="{said}" timeout="25" delay="{speech_to_text_delay}" />
-							</Sequence>							
-						</Fallback>
-												
-						<LogAction level="info" msg="Using prompt: " arg1="{said}" />
-						<SetBlackboard output_key="text_to_speak" value="" />
-		
-						<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
-
-						<!-- Resume current audio playback (if any) if TTS is empty -->
-						<Inverter>
-							<Sequence>
-								<TextCompareAction text="{said}" ck_for="" />
-								<ResumeAudioAction stream_type="fg" />
-							</Sequence>
-						</Inverter>
-
-						<CancelAudioAction req_id="all" />
-						<ResumeAudioAction stream_type="fg" />
-
-						<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />
-
-						<!--SetBlackboard output_key="tool_call_result" value="" /-->
-
-						<!-- Call AIAction node until it is finished -->
-						<ReactiveSequence>
-							<!-- If wake work spoken while processing the AI request, then cancel it and any TTS from it -->
-							<Inverter>
 								<Sequence>
 									<Fallback>
-										<!--VoiceDetected /-->
-										<WakeWordDetected since_sec="1.0" />
-									</Fallback>	
-									<CancelAudioAction req_id="all" />
-									<SetBlackboard output_key="text_to_speak" value="" />
-									<SetBlackboard output_key="run_tools" value="n" />
+										<Sequence>
+											<Precondition if="use_vad == 1" else="FAILURE">
+												<Sequence>
+													<LogAction level="debug" msg="VAD enabled" />
+													<VoiceDetected />
+													<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
+												</Sequence>
+											</Precondition>
+										</Sequence>							
+										<Sequence>
+											<WakeWordDetected since_sec="1.0" />
+											<SetBlackboard output_key="speech_to_text_delay" value="0.5" />
+										</Sequence>							
+									</Fallback>
+									<PauseAudioAction stream_type="fg" />
+
+									<SetBlackboard output_key="antenna_state_req" value="listening" />
+									<!-- Fix - needed so that antenna state gets updated since SpeechToTextActionClient is
+										 sync.  Make it async instead. -->
+									<Delay delay_msec="100">
+										<SpeechToTextActionClient text="{said}" timeout="25" delay="{speech_to_text_delay}" />
+									</Delay>										
+								</Sequence>							
+							</Fallback>
+													
+							<LogAction level="info" msg="Using prompt: " arg1="{said}" />
+							<SetBlackboard output_key="text_to_speak" value="" />
+			
+							<SetBlackboard output_key="antenna_state_req" value="waiting_for_user" />
+
+							<!-- Resume current audio playback (if any) if TTS is empty -->
+							<Inverter>
+								<Sequence>
+									<TextCompareAction text="{said}" ck_for="" />
+									<ResumeAudioAction stream_type="fg" />
 								</Sequence>
 							</Inverter>
 
-							<!-- Revert to normal antenna pattern on first speech output -->
-							<ForceSuccess>
-								<Sequence>
-									<Inverter>
-										<TextCompareAction text="{text_to_speak}" ck_for="" />
-									</Inverter>
-									<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
-								</Sequence>
-							</ForceSuccess>							
+							<CancelAudioAction req_id="all" />
+							<ResumeAudioAction stream_type="fg" />
 
-							<!-- On each pass try to play text output from the previous update-->
-							<TextToSpeechAction text="{text_to_speak}" />
-							<SetBlackboard output_key="text_to_speak" value="" />
+							<SetBlackboard output_key="antenna_state_req" value="model_active" />
 
-							<!-- Enable the tool call execution sequence -->
-							<SetBlackboard output_key="run_tools" value="y" />
-
-							<AIAction prompt="{said}" result="{text_to_speak}" tool_call_name="{tool_call_name}" tool_call_args="{tool_call_args}"
-								tool_call_result="{tool_call_result}"
-								system_prompt= "You are a robot called elsabot (pronounced as elsuh-bot) but you should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4, with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
-								Do not use asterisks (*) for actions. Do not describe actions.
-								Only use 'face' emojis as a secondary way to express emotions.
-								Keep your responses concise and don't make assumptions.
-								You can be fun, witty, or amusing."
-								/>
-						</ReactiveSequence>
-						<!-- Say the remaining part of the response if any -->
-						<TextToSpeechAction text="{text_to_speak}" />
-						<GetTimeNowAction now="{end_response_time}" />
-						<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
-					</Sequence>
-				</ForceSuccess>
-			</KeepRunningUntilFailure>
-
-			<!-- This sequence runs in 'parallel' with the main sequence.  It executes the tool calls from the model.
-				 The Keep running and force success are used to keep the sequence running forever. -->
-			<KeepRunningUntilFailure>
-				<ForceSuccess>
-					<Sequence>
-						<Precondition if="run_tools=='y'" else="FAILURE">
-							<Sequence>
-								<SetBlackboard output_key="running_tool" value="{tool_call_name}" />
-								<SetBlackboard output_key="tool_call_name" value="" />
-
+							<!-- Call AIAction node until it is finished -->
+							<ReactiveSequence>
+								<!-- If wake work spoken while processing the AI request, then cancel it and any TTS from it -->
 								<Inverter>
-									<TextCompareAction text="{running_tool}" ck_for="" />
+									<Sequence>
+										<Fallback>
+											<!--VoiceDetected /-->
+											<WakeWordDetected since_sec="1.0" />
+										</Fallback>	
+										<CancelAudioAction req_id="all" />
+										<SetBlackboard output_key="text_to_speak" value="" />
+										<SetBlackboard output_key="run_tools" value="n" />
+									</Sequence>
 								</Inverter>
 
-								<LogAction level="info" msg="Running tool: " arg1="{running_tool}" />
-								<Switch2 variable="{running_tool}" case_1="get_local_date_and_time" case_2="" >
-									<ToolCallTimeAction command="run" args_json="tool_call_args" result_json="{tool_call_result}" />
-									<SetBlackboard output_key="dummy_until_2_or_more_tools" value="" />
-									<!-- make this fail-->
-									<SetBlackboard output_key="bad_tool" value="" />
-								</Switch2>
-							</Sequence>								
-						</Precondition>
-						<LogAction level="info" msg="Finished run sequence" />
-					</Sequence>						
-				</ForceSuccess>
-			</KeepRunningUntilFailure>
-		</Parallel>					
+								<!-- Revert to normal antenna pattern on first speech output -->
+								<ForceSuccess>
+									<Sequence>
+										<Inverter>
+											<TextCompareAction text="{text_to_speak}" ck_for="" />
+										</Inverter>
+										<!--AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" /-->
+									</Sequence>
+								</ForceSuccess>							
+
+								<!-- On each pass try to play text output from the previous update-->
+								<TextToSpeechAction text="{text_to_speak}" />
+								<SetBlackboard output_key="text_to_speak" value="" />
+
+								<!-- Enable the tool call execution sequence -->
+								<SetBlackboard output_key="run_tools" value="y" />
+
+								<AIAction prompt="{said}" result="{text_to_speak}" tool_call_name="{tool_call_name}" tool_call_args="{tool_call_args}"
+									tool_call_result="{tool_call_result}"
+									system_prompt= "You are a robot called elsabot (pronounced as elsuh-bot) but you should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4, with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
+									Do not use asterisks (*) for actions. Do not describe actions.
+									Only use 'face' emojis as a secondary way to express emotions.
+									Keep your responses concise and don't make assumptions.
+									You can be fun, witty, or amusing."
+									/>
+							</ReactiveSequence>
+							<!-- Say the remaining part of the response if any -->
+							<TextToSpeechAction text="{text_to_speak}" />
+							<GetTimeNowAction now="{end_response_time}" />
+							<!--AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" /-->
+						</Sequence>
+					</ForceSuccess>
+				</KeepRunningUntilFailure>
+
+				<!-- This sequence runs in 'parallel' with the main sequence.  It executes the tool calls from the model.
+						The Keep running and force success are used to keep the sequence running forever. -->
+				<KeepRunningUntilFailure>
+					<ForceSuccess>
+						<Sequence>
+							<Precondition if="run_tools=='y'" else="FAILURE">
+								<Sequence>
+									<SetBlackboard output_key="running_tool" value="{tool_call_name}" />
+									<SetBlackboard output_key="tool_call_name" value="" />
+
+									<Inverter>
+										<TextCompareAction text="{running_tool}" ck_for="" />
+									</Inverter>
+
+									<LogAction level="info" msg="Running tool: " arg1="{running_tool}" />
+									<Switch2 variable="{running_tool}" case_1="get_local_date_and_time" case_2="" >
+										<ToolCallTimeAction command="run" args_json="tool_call_args" result_json="{tool_call_result}" />
+										<SetBlackboard output_key="dummy_until_2_or_more_tools" value="" />
+										<!-- make this fail-->
+										<SetBlackboard output_key="bad_tool" value="" />
+									</Switch2>
+								</Sequence>								
+							</Precondition>
+							<LogAction level="info" msg="Finished run sequence" />
+						</Sequence>						
+					</ForceSuccess>
+				</KeepRunningUntilFailure>
+				<KeepRunningUntilFailure>
+					<ForceSuccess>
+						<Sequence>
+							<Precondition if="antenna_state_req != antenna_state_cur" else="SUCCESS">
+								<Sequence>
+									<LogAction level="info" msg="New antenna state" arg1="{antenna_state_req}" />
+									<Precondition if="antenna_state_req == 'waiting_for_user'" else="SUCCESS">
+										<Sequence>
+											<SetBlackboard output_key="antenna_state_cur" value="waiting_for_user" />
+											<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
+										</Sequence>											
+									</Precondition>
+									<Precondition if="antenna_state_req == 'waiting_for_user_vad'" else="SUCCESS">
+										<Sequence>
+											<SetBlackboard output_key="antenna_state_cur" value="waiting_for_user_vad" />
+											<AntennaAction rate="2" intensity="100" left_blink_pattern="111110" right_blink_pattern="111110" />
+										</Sequence>											
+									</Precondition>
+									<Precondition if="antenna_state_req == 'model_active'" else="SUCCESS">
+										<Sequence>
+											<SetBlackboard output_key="antenna_state_cur" value="model_active" />
+											<AntennaAction rate="0" intensity="10" left_blink_pattern="0011" right_blink_pattern="1100" />
+										</Sequence>											
+									</Precondition>
+									<Precondition if="antenna_state_req == 'listening'" else="SUCCESS">
+										<Sequence>
+											<SetBlackboard output_key="antenna_state_cur" value="listening" />
+											<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111"
+												right_blink_pattern="11111111" />									
+										</Sequence>											
+									</Precondition>
+								</Sequence>
+							</Precondition>
+						</Sequence>
+					</ForceSuccess>
+				</KeepRunningUntilFailure>
+			</Parallel>					
+		</Sequence>			
 	</BehaviorTree>
 </root>
