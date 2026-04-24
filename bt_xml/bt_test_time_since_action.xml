@@ -1,0 +1,28 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>
+      <GetTimeNowAction now="{time_point}" />
+      <LogAction level="info" msg="Starting less than check" />
+      <Sequence>      
+        <ForceSuccess>
+          <KeepRunningUntilFailure>
+            <TimeSinceAction time_point="{time_point}" comparison="less" duration_sec="10" />
+          </KeepRunningUntilFailure>
+        </ForceSuccess>
+      </Sequence>          
+      <LogAction level="info" msg="After less than check" />
+
+      <LogAction level="info" msg="Starting greater than check" />
+      <Sequence>      
+        <ForceSuccess>
+          <KeepRunningUntilFailure>
+            <Inverter>
+              <TimeSinceAction time_point="{time_point}" comparison="greater" duration_sec="20" />
+            </Inverter>              
+          </KeepRunningUntilFailure>
+        </ForceSuccess>
+      </Sequence>          
+      <LogAction level="info" msg="After greater than check" />
+    </Sequence>
+	</BehaviorTree>
+</root>

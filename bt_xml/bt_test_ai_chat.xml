@@ -8,6 +8,7 @@
 							<Sequence>
 								<ToolCallTimeAction command="init" />
 								<SetBlackboard output_key="run_tools" value="n" />
+								<GetTimeNowAction now="{end_response_time}" />
 							</Sequence>
 						</RunOnce>
 
@@ -20,9 +21,23 @@
 								(you can use the input_text.sh script for this)
 							-->
 							<UIInputAction action="ck_changed" property="text_input" value="{said}"/>
+
 							<Sequence>
 								<Fallback>
 									<Sequence>
+										<!-- If still speaking the last model response, then don't use test for voice
+											 activity for triggering STT.  Also if still speaking, reset the end-response-time
+											 used in determining when to quit listening for the user response using VAD. -->
+										<Inverter>
+											<Sequence>
+												<TTSActiveAction />
+												<GetTimeNowAction now="{end_response_time}" />
+												<LogAction level="debug" msg="TTS active" />
+											</Sequence>												
+										</Inverter>
+										<!-- Only trigger STT on VAD N seconds after the response from the model is finished -->
+										<TimeSinceAction time_point="{end_response_time}" comparison="less" duration_sec="10" />
+										<LogAction level="debug" msg="VAD active" />
 										<VoiceDetected />
 										<SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
 									</Sequence>							
@@ -65,7 +80,7 @@
 							<Inverter>
 								<Sequence>
 									<Fallback>
-										<VoiceDetected />
+										<!--VoiceDetected /-->
 										<WakeWordDetected since_sec="1.0" />
 									</Fallback>	
 									<CancelAudioAction req_id="all" />
@@ -102,6 +117,7 @@
 						</ReactiveSequence>
 						<!-- Say the remaining part of the response if any -->
 						<TextToSpeechAction text="{text_to_speak}" />
+						<GetTimeNowAction now="{end_response_time}" />
 						<AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" />
 					</Sequence>
 				</ForceSuccess>

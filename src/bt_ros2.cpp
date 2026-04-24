@@ -84,6 +84,9 @@
 #include "imu_topic.hpp"
 #include "get_robot_pose_action.hpp"
 #include "tool_call_time_action.hpp"
+#include "get_time_now_action.hpp"
+#include "time_since_action.hpp"
+#include "tts_active_action.hpp"
 
 #define DEFAULT_BT_XML ""
 
@@ -183,6 +186,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<RobotCatGameInitAction>("RobotCatGameInitAction");
     factory.registerNodeType<AIAction>("AIAction");
     factory.registerNodeType<ToolCallTimeAction>("ToolCallTimeAction");
+    factory.registerNodeType<GetTimeNowAction>("GetTimeNowAction");
+    factory.registerNodeType<TimeSinceAction>("TimeSinceAction");
     
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
@@ -207,6 +212,7 @@ int main(int argc, char **argv)
     REGISTER_BUILDER_WITH_ROS_NODE(PauseAudioAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(ResumeAudioAction, nh);
     REGISTER_BUILDER_WITH_ROS_NODE(PlayAudioFileAction, nh);
+    REGISTER_BUILDER_WITH_ROS_NODE(TTSActiveAction, nh);
 
     // Trees are created at deployment-time (i.e. at run-time, but only once at
     // the beginning). The currently supported format is XML. IMPORTANT: when the
