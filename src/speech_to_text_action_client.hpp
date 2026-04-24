@@ -46,6 +46,7 @@ public:
     static BT::PortsList providedPorts()
     {
         return{ BT::InputPort<float>("delay"),
+                BT::InputPort<unsigned int>("timeout"),
                 BT::OutputPort<std::string>("text") };
     }
 
@@ -56,6 +57,9 @@ public:
     		const std::lock_guard<std::mutex> lock(_mutex);
     		node_name << "speech_to_text_action_client" << instance++;
     	}
+
+       	unsigned int timeout = 10;
+		getInput<unsigned int>("timeout", timeout);
 
     	float delay = 0.0f;
 		getInput<float>("delay", delay);
@@ -72,7 +76,7 @@ public:
         RCLCPP_INFO(node_->get_logger(), "Sending speech-to-text goal, delay: %f", delay);
 
         auto goal_msg = Recognize::Goal();
-        goal_msg.timeout = 10;
+        goal_msg.timeout = timeout;
         goal_msg.delay = delay;
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);

@@ -50,7 +50,7 @@
 
 								<AntennaAction rate="3" intensity="100" left_blink_pattern="11111111" right_blink_pattern="11111111" />
 
-								<SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
+								<SpeechToTextActionClient text="{said}" timeout="25" delay="{speech_to_text_delay}" />
 							</Sequence>							
 						</Fallback>
 												
