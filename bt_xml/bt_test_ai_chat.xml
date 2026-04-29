@@ -4,6 +4,8 @@
 			<RunOnce>
 				<Sequence>
 					<ToolCallTimeAction command="init" />
+					<ToolCallGetCameraFrameAction command="init" />
+					<ToolCallAnalyzeCameraFrameAction command="init" />
 					<SetBlackboard output_key="run_tools" value="n" />
 					<GetTimeNowAction now="{end_response_time}" />
 					<SetBlackboard output_key="antenna_state_cur" value="none" />
@@ -18,7 +20,10 @@
 
 							<Fallback>
 								<ForceFailure>
-									<SetBlackboard output_key="run_tools" value="n" />
+									<Sequence>
+										<SetBlackboard output_key="run_tools" value="n" />
+										<SetBlackboard output_key="tool_call_result" value="" />
+									</Sequence>										
 								</ForceFailure>								
 
 								<ForceFailure>
@@ -160,12 +165,20 @@
 									</Inverter>
 
 									<LogAction level="info" msg="Running tool: " arg1="{running_tool}" />
-									<Switch2 variable="{running_tool}" case_1="get_local_date_and_time" case_2="" >
-										<ToolCallTimeAction command="run" args_json="tool_call_args" result_json="{tool_call_result}" />
-										<SetBlackboard output_key="dummy_until_2_or_more_tools" value="" />
-										<!-- make this fail-->
-										<SetBlackboard output_key="bad_tool" value="" />
-									</Switch2>
+
+									<Switch3 variable="{running_tool}" case_1="get_local_date_and_time" case_2="get_camera_frame"
+											 case_3="analyze_camera_frame" >
+										<ToolCallTimeAction command="run" args_json="{tool_call_args}" result_json="{tool_call_result}" />
+										<!-- Does not work! -->
+										<SubTree ID="ToolCallGetCameraFrame" _autoremap="true"/>
+										<SubTree ID="AnalyzeCameraFrame" _autoremap="true"/>
+
+										<!-- Unrecognized tool-->
+										<ForceFailure>
+											<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
+										</ForceFailure>											
+									</Switch3>
+
 								</Sequence>								
 							</Precondition>
 							<LogAction level="info" msg="Finished run sequence" />
@@ -211,4 +224,19 @@
 			</Parallel>					
 		</Sequence>			
 	</BehaviorTree>
+
+	<BehaviorTree ID="ToolCallGetCameraFrame">
+        <Sequence>
+			<GetCameraFrameAction base64_image="{b64_image}" />
+			<ToolCallGetCameraFrameAction command="run" base64_image="{b64_image}" result_json="{tool_call_result}" />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="AnalyzeCameraFrame">
+        <Sequence>
+			<GetCameraFrameAction base64_image="{b64_image}" />
+			<ToolCallAnalyzeCameraFrameAction command="run" args_json="{tool_call_args}" base64_image="{b64_image}" result_json="{tool_call_result}" />
+		</Sequence>
+    </BehaviorTree>
+
 </root>

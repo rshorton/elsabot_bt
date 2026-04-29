@@ -1,0 +1,8 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>          
+      <ToolCallGetCameraFrameAction command="run" args_json="tool_call_args" result_json="{tool_call_result}" />
+      <LogAction level="info" msg="Result" arg1="{tool_call_result}" />
+    </Sequence>
+	</BehaviorTree>
+</root>

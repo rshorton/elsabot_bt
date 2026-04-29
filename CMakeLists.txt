@@ -33,6 +33,9 @@ find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(robot_localization REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(CURL REQUIRED)
 
 #find_package(moveit_ros_planning REQUIRED)
@@ -66,6 +69,9 @@ set(dependencies
   nav_msgs
   visualization_msgs
   robot_localization
+  image_transport
+  sensor_msgs
+  cv_bridge
   CURL
   #moveit_ros_planning
   #moveit_ros_planning_interface
@@ -90,6 +96,8 @@ add_executable(elsabot_bt
   src/http_request.cpp
   src/ai_session.cpp
   src/tool_call_data.cpp
+  src/base64.cpp
+  src/ai_action.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}

@@ -43,13 +43,20 @@ void AISession::send_tool_result(const std::string &id, const std::string &name,
 #endif                            
 }
 
-void AISession::user_prompt(const std::string &prompt, const std::string &tools_json) {
+void AISession::user_prompt(const std::string &prompt, const std::string &tools_json, const std::string &b64_image) {
+  // Fix, account for images
   int num_tokens = fetch_token_count(prompt);
-  history_.push_back(std::make_unique<SessionMessage_UserPrompt>("user", num_tokens, prompt));
+  history_.push_back(std::make_unique<SessionMessage_UserPrompt>("user", num_tokens, prompt, b64_image));
   current_tokens_ += num_tokens;
 
 #if defined(VLLM_GEMMA)                              
-  nlohmann::json tools = nlohmann::json::parse(tools_json);
+  nlohmann::json tools;
+  if (tools_json.empty()) {
+    tools = nlohmann::json::array();
+  } else {
+    tools = nlohmann::json::parse(tools_json);
+  }    
+
 
   request_data_ = {{"model", model_},
                    {"stream", true},
@@ -90,7 +97,8 @@ void AISession::perform() {
 
   auto req_text = request_data_.dump();
 
-  RCLCPP_INFO(logger_, "New request: %s", req_text.c_str());
+  // Limit length since b64 images can be large
+  RCLCPP_INFO(logger_, "New request: %s", req_text.substr(0, 400).c_str());
 
   auto url = host_and_port_ + resource_;
 
@@ -232,7 +240,9 @@ void AISession::perform() {
             } else if (j["choices"][0]["delta"].contains("content")) {
               std::string delta = j["choices"][0]["delta"]["content"];
               full_response_ += delta;
-              callback_data_(delta);
+              if (callback_data_) {
+                callback_data_(delta);
+              }                
             }            
           }
         }
@@ -292,10 +302,14 @@ bool AISession::is_finished(std::string &response, bool &is_tool_call, AISession
     RCLCPP_INFO(logger_, "Future is ready, result: %s", result_to_str(result).c_str());
 
     if (result == AISession::Result::success) {
-      response = tool_call_;
       is_tool_call = is_tool_call_;
+      if (is_tool_call_) {
+        response = tool_call_;  
+      } else {
+        response = full_response_;
+      }
 
-      int num_tokens = fetch_token_count(full_response_);
+      int num_tokens = fetch_token_count(response);
       if (is_tool_call) {
         history_.push_back(std::make_unique<SessionMessage_ToolRequest>("assistant", num_tokens, full_response_));
       } else {
@@ -329,7 +343,7 @@ std::string AISession::result_to_str(AISession::Result result) {
   }
 }
 
-int AISession::fetch_token_count(const std::string& text) {
+int AISession::fetch_token_count(const std::string& text) const {
 #if defined(VLLM_GEMMA)
   int count = (int)text.length() / 4;
 
@@ -363,7 +377,7 @@ int AISession::fetch_token_count(const std::string& text) {
 }
 
 #if defined(VLLM_GEMMA)
-nlohmann::json AISession::format_prompt() {
+nlohmann::json AISession::format_prompt() const {
 
   nlohmann::json prompt = nlohmann::json::array();
   prompt.push_back({{"role", "system"}, {"content", system_prompt_}});
@@ -400,5 +414,6 @@ std::string AISession::format_prompt() {
   }
   return prompt;
 }
-#endif  
+#endif
+
 

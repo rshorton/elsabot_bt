@@ -27,7 +27,7 @@ class AISession {
          CallbackData callback_data);
   ~AISession();
 
-  void user_prompt(const std::string &prompt, const std::string &tools_json);
+  void user_prompt(const std::string &prompt, const std::string &tools_json, const std::string &b64_image = std::string());
   void send_tool_result(const std::string &id, const std::string &name, const std::string &result_json);
 
   void cancel();
@@ -38,10 +38,10 @@ class AISession {
 
  private:
   void perform();
-  int fetch_token_count(const std::string& text);
+  int fetch_token_count(const std::string& text) const;
 
 #if defined(VLLM_GEMMA)
-  nlohmann::json format_prompt();
+  nlohmann::json format_prompt() const;
 #else
   std::string format_prompt();
 #endif
@@ -63,18 +63,28 @@ class AISession {
 
   class SessionMessage_UserPrompt: public SessionMessage {
   public:
-    SessionMessage_UserPrompt(const std::string role, const int token_count, const std::string &prompt):
+    SessionMessage_UserPrompt(const std::string role, const int token_count, const std::string &prompt,
+                              const std::string &b64_image):
       SessionMessage(role, token_count),
-      prompt_(prompt)
+      prompt_(prompt),
+      b64_image_(b64_image)
     {}
 
     nlohmann::json get_json(bool is_last) override {
       nlohmann::json m = SessionMessage::get_json(is_last);
-      m["content"] = prompt_;
+      if (b64_image_.empty()) {
+        m["content"] = prompt_;
+      } else {
+        nlohmann::json msg = nlohmann::json::array();
+        msg.push_back({{"type", "image_url"}, {"image_url", {{"url", b64_image_}}}});
+        msg.push_back({{"type", "text"}, {"text", prompt_}});
+        m["content"] = msg;
+      }
       return m;
     }
 
     std::string prompt_;
+    std::string b64_image_;
   };
 
   class SessionMessage_Response: public SessionMessage {
@@ -129,7 +139,11 @@ class AISession {
       // An example is the time/date tool call.  After the first call, it
       // uses the previous result without another tool call. 
       if (is_last) {
-        m["content"] = tool_result_json_;
+        if (name_ == "get_camera_frame") {
+          m["content"] = nlohmann::json::parse(tool_result_json_);
+        } else {
+          m["content"] = tool_result_json_;
+        }          
       } else {
         m["content"] = R"({})";
       }        
