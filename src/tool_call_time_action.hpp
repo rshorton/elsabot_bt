@@ -9,7 +9,7 @@
 #include "ros_common.hpp"
 #include "tool_call_data.hpp"
 
-#define TEST_HOLDING_OFF_RESULT   // Simulates a long running action
+#undef TEST_HOLDING_OFF_RESULT   // Simulates a long running action
 
 using namespace std::chrono_literals;
 
