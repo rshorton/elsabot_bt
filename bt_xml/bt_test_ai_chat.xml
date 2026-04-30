@@ -10,6 +10,24 @@
 					<GetTimeNowAction now="{end_response_time}" />
 					<SetBlackboard output_key="antenna_state_cur" value="none" />
 					<SetBlackboard output_key="antenna_state_req" value="none" />
+
+					<IfThenElse>
+						<TextCompareAction text="{def_value_1}" ck_for="" />
+						<SetBlackboard output_key="system_prompt" value="You are a robot called elsabot (pronounced as elsuh-bot) but you
+							should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4,
+							with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword
+							for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
+							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis as a secondary way to express
+							emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, or amusing." />
+						<SetBlackboard output_key="system_prompt" value="{def_value_1}" />
+					</IfThenElse>
+					<IfThenElse>
+						<TextCompareAction text="{def_value_2}" ck_for="" />
+						<LogAction level="info" msg="No prompt modifier specified" />
+						<Script code=" system_prompt:= system_prompt + def_value_2 " />
+					</IfThenElse>
+
+					<LogAction level="info" msg="Using system prompt: " arg1="{system_prompt}" />
 				</Sequence>
 			</RunOnce>
 
@@ -134,13 +152,7 @@
 								<SetBlackboard output_key="run_tools" value="y" />
 
 								<AIAction prompt="{said}" result="{text_to_speak}" tool_call_name="{tool_call_name}" tool_call_args="{tool_call_args}"
-									tool_call_result="{tool_call_result}"
-									system_prompt= "You are a robot called elsabot (pronounced as elsuh-bot) but you should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4, with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
-									Do not use asterisks (*) for actions. Do not describe actions.
-									Only use 'face' emojis as a secondary way to express emotions.
-									Keep your responses concise and don't make assumptions.
-									You can be fun, witty, or amusing."
-									/>
+									tool_call_result="{tool_call_result}" system_prompt= "{system_prompt}"/>
 							</ReactiveSequence>
 							<!-- Say the remaining part of the response if any -->
 							<TextToSpeechAction text="{text_to_speak}" />
@@ -235,7 +247,9 @@
 	<BehaviorTree ID="AnalyzeCameraFrame">
         <Sequence>
 			<GetCameraFrameAction base64_image="{b64_image}" />
-			<ToolCallAnalyzeCameraFrameAction command="run" args_json="{tool_call_args}" base64_image="{b64_image}" result_json="{tool_call_result}" />
+			<PlayAudioFileAction file_path="/robot_ws/audio_files/camera_shutter.mp3" stream_type="bg" req_id="3" />
+			<ToolCallAnalyzeCameraFrameAction command="run" args_json="{tool_call_args}" base64_image="{b64_image}"
+			 result_json="{tool_call_result}" />
 		</Sequence>
     </BehaviorTree>
 

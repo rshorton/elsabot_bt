@@ -1,0 +1,10 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>          
+      <LogAction level="info" msg="Def tree value 1" arg1="{def_value_1}" />
+      <LogAction level="info" msg="Def tree value 2" arg1="{def_value_2}" />
+      <LogAction level="info" msg="Def tree value 3" arg1="{def_value_3}" />
+      <LogAction level="info" msg="Def tree value 4" arg1="{def_value_4}" />
+    </Sequence>
+	</BehaviorTree>
+</root>

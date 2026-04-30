@@ -128,6 +128,19 @@ int main(int argc, char **argv)
     auto & settings = GameSettings::getInstance(GAME_SETTINGS_FILENAME);
     settings.Set(bt_settings);
 
+    // Some generic parameters that are set in the blackboard of the main tree on init
+    nh->declare_parameter("bt_tree_value_1", "");
+    std::string bt_tree_value_1 = nh->get_parameter("bt_tree_value_1").as_string();
+
+    nh->declare_parameter("bt_tree_value_2", "");
+    std::string bt_tree_value_2 = nh->get_parameter("bt_tree_value_2").as_string();
+
+    nh->declare_parameter("bt_tree_value_3", "");
+    std::string bt_tree_value_3 = nh->get_parameter("bt_tree_value_3").as_string();
+
+    nh->declare_parameter("bt_tree_value_4", "");
+    std::string bt_tree_value_4 = nh->get_parameter("bt_tree_value_4").as_string();
+
     // ROS common helpers and expose node 
     ROSCommon::Create(nh);
 
@@ -224,6 +237,14 @@ int main(int argc, char **argv)
     // the beginning). The currently supported format is XML. IMPORTANT: when the
     // object "tree" goes out of scope, all the TreeNodes are destroyed
     auto tree = factory.createTreeFromFile(bt_xml);
+
+    // Get the root blackboard and set initial values
+    auto blackboard = tree.rootBlackboard();
+
+    blackboard->set<std::string>("def_value_1", bt_tree_value_1);
+    blackboard->set<std::string>("def_value_2", bt_tree_value_2);
+    blackboard->set<std::string>("def_value_3", bt_tree_value_3);
+    blackboard->set<std::string>("def_value_4", bt_tree_value_4);
 
     // Create loggers
     std::shared_ptr<StdCoutLogger> logger;
