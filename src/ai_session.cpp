@@ -25,11 +25,13 @@ AISession::AISession(const std::string &model, int max_context_size, const std::
 AISession::~AISession() {
 }
 
-void AISession::send_tool_result(const std::string &id, const std::string &name, const std::string &result_json) {
+void AISession::report_tool_result(const std::string &id, const std::string &name, const std::string &result_json) {
   int num_tokens = fetch_token_count(result_json);
   history_.push_back(std::make_unique<SessionMessage_ToolResult>("tool", num_tokens, name, id, result_json));
   current_tokens_ += num_tokens;
+}
 
+void AISession::tool_calls_finished() {
 #if defined(VLLM_GEMMA)                              
   request_data_ = {{"model", model_},
                    {"stream", true},
@@ -40,7 +42,7 @@ void AISession::send_tool_result(const std::string &id, const std::string &name,
 #else
   // Not supported                            
   return;                                
-#endif                            
+#endif
 }
 
 void AISession::user_prompt(const std::string &prompt, const std::string &tools_json, const std::string &b64_image) {
@@ -56,7 +58,6 @@ void AISession::user_prompt(const std::string &prompt, const std::string &tools_
   } else {
     tools = nlohmann::json::parse(tools_json);
   }    
-
 
   request_data_ = {{"model", model_},
                    {"stream", true},
@@ -93,12 +94,12 @@ void AISession::perform() {
   if (token_cnt_before != current_tokens_) {
     RCLCPP_DEBUG(logger_, "Purged history to reduce context size: before: %d, after: %d",
       token_cnt_before, current_tokens_);
-    }      
+  }
 
   auto req_text = request_data_.dump();
 
   // Limit length since b64 images can be large
-  RCLCPP_INFO(logger_, "New request: %s", req_text.substr(0, 400).c_str());
+  RCLCPP_INFO(logger_, "New request: %s", req_text.substr(0, 5000).c_str());
 
   auto url = host_and_port_ + resource_;
 
@@ -159,96 +160,73 @@ void AISession::perform() {
 
       std::string json_str = data.substr(pos, end - pos);
       if (json_str == "[DONE]") {
-        tool_call_args_json_ = std::string("");
         break;
       }
 
+      nlohmann::json j;
       try {
-        if (json_str.find("tool_calls\":[") != std::string::npos) {
+        j = nlohmann::json::parse(json_str);
+      } catch (nlohmann::json::parse_error& ex) {
+        RCLCPP_ERROR(logger_, "model data parse error args %s, at: %ld", json_str.c_str(), ex.byte);
+        return;
+      }
 
-          const std::string TC_SEARCH_STR = "delta\":{\"tool_calls\":[";
-          if ((pos = json_str.find(TC_SEARCH_STR)) != std::string::npos) {
-            // When streaming output from the model is enabled, the tool_calls are also streamed.
-            // However, only the 'argument' property is broken into fragments.  See
-            // https://github.com/vllm-project/vllm/issues/9693
-            // The first part includes the toolcall id and everything but the arguments.  The arguments
-            // are specified as an empty string. The first part is valid json.  Subsequent fragments
-            // include some of the overall toolcall previously sent, but with the 'arguments'
-            // property incrementally sent.  The fragments are invalid json.
-            // 
-            // To parse:
-            // 1. For the fragment including the 'id', consider that the base of the json.
-            // 2. For each part following, use a regex to extract the contents of the 'arguments'
-            //    property and append to an accumulated value.
-            // 3. Check for "finish_reason": "tool_calls" to signal the end of the fragments, and
-            //    then insert the accumulated args into the base json.
-
-            if (json_str.find("\"id\"", pos) != std::string::npos) {
-              
-              tool_call_build_ = nlohmann::json::parse(json_str);
-              RCLCPP_DEBUG(logger_, "tc parse base, %s", tool_call_build_.dump().c_str());
-            } else {
-              RCLCPP_DEBUG(logger_, "tc parse frag");
-
-              std::regex pattern(".*arguments\":\"(.*)\"}}].*");
-              std::smatch match;
-              if (std::regex_search(json_str, match, pattern) && match.size() > 1) {
-                tool_call_args_json_ += match[1].str();
-                RCLCPP_DEBUG(logger_, "tc parse, arg fragment: %s, args accum: %s", match[1].str().c_str(), tool_call_args_json_.c_str());
-              }
+      try {
+        if (j.contains("choices") && !j["choices"].empty()) {
+          if (j["choices"][0]["delta"].contains("content")) {
+            const std::string &delta = j["choices"][0]["delta"]["content"];
+            full_response_ += delta;
+            if (callback_data_) {
+              callback_data_(delta);
             }
-          }
 
-        } else {
-          auto j = nlohmann::json::parse(json_str);
-          if (j.contains("choices") && !j["choices"].empty()) {
-            if (j["choices"][0]["finish_reason"] == "tool_calls") {
-              // All of the fragments for the tool_call should have been received.
-              RCLCPP_DEBUG(logger_, "tc parse, accumulated args: %s", tool_call_args_json_.c_str());
-              try {
-                // The assembed args have /" instead of just " around the strings.  Replace with just "
-                tool_call_args_json_ = std::regex_replace(tool_call_args_json_, std::regex(R"(\\\")"), R"(")");
-              } catch (const std::regex_error& e) {
-                RCLCPP_ERROR(logger_, "tc parse error, ex: %s", e.what());  
-              }                
-              RCLCPP_DEBUG(logger_, "tc parse, accumulated args (escapes removed): %s", tool_call_args_json_.c_str());
-             
-              nlohmann::json args;
-              try {
-                args = nlohmann::json::parse(tool_call_args_json_);
-              } catch (nlohmann::json::parse_error& ex) {
-                RCLCPP_ERROR(logger_, "tc parse error args %s, at: %ld", tool_call_args_json_.c_str(), ex.byte);
-                continue;
-              }
+          } else if (j["choices"][0]["delta"].contains("tool_calls")) {
+            const auto &tc = j["choices"][0]["delta"]["tool_calls"][0];
+            size_t index = tc["index"];
+            RCLCPP_DEBUG(logger_, "tc parse, index: %ld, base: %s", index, tc.dump().c_str());
 
-              // Build a full tool call with the string format of the args since this needs to go into the message history
-              auto tool_call_with_str_args = tool_call_build_;
-              tool_call_with_str_args["choices"][0]["delta"]["tool_calls"][0]["function"]["arguments"] = tool_call_args_json_;
-              full_response_ = tool_call_with_str_args["choices"][0]["delta"]["tool_calls"][0].dump();
+            if (tc.contains("id")) {
+              toolcall_[index] = tc;
+              toolcall_args_[index] = "";
+            } else {
+              // Aggregate the argument fragments
+              std::string arg_frag = tc["function"]["arguments"];
+              toolcall_args_[index] += arg_frag;
+              RCLCPP_DEBUG(logger_, "tc parse, args, index: %ld, frag: %s, args accum: %s", index,
+                          arg_frag.c_str(), toolcall_args_[index].c_str());
+            }
+          } else if (j["choices"][0]["finish_reason"] == "tool_calls") {
+            // End of tool calls.  Assemble them into one object
+            auto tool_calls = nlohmann::json::parse(R"( {"choices": [ {"delta": {"tool_calls": []} } ]} )");
+            auto full_response_obj = tool_calls;
 
-              // Build a full tool call with the args as an object
-              tool_call_build_["choices"][0]["delta"]["tool_calls"][0]["function"]["arguments"] = args;
-              RCLCPP_DEBUG(logger_, "tc parse, with inserted args: %s", tool_call_build_.dump().c_str());
+            RCLCPP_DEBUG(logger_, "tc parse, prefix: %s", tool_calls.dump().c_str());
 
-              // Now pluck-out the toolcall details
-              auto tool_call = tool_call_build_["choices"][0]["delta"]["tool_calls"][0];
-              tool_call_ = tool_call.dump();
-              is_tool_call_ = true;
+            for (auto const& [key, value] : toolcall_) {
+              RCLCPP_DEBUG(logger_, "tc parse, key: %ld, value: %s, args: %s",
+                          key, value.dump().c_str(), toolcall_args_[key].c_str());
 
-              RCLCPP_DEBUG(logger_, "Toolcall: %s", tool_call_.c_str());
+              nlohmann::json tc_temp = value;
+              tc_temp["function"]["arguments"] = nlohmann::json::parse(toolcall_args_[key]);
+              tool_calls["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
 
-            } else if (j["choices"][0]["delta"].contains("content")) {
-              std::string delta = j["choices"][0]["delta"]["content"];
-              full_response_ += delta;
-              if (callback_data_) {
-                callback_data_(delta);
-              }                
-            }            
+              // Insert the args as json for the full_response since it that format is required
+              // for the message history
+              tc_temp = value;
+              tc_temp["function"]["arguments"] = toolcall_args_[key];
+              full_response_obj["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
+            }
+
+            tool_call_ = tool_calls["choices"][0]["delta"]["tool_calls"].dump();
+            is_tool_call_ = true;
+
+            full_response_ = full_response_obj["choices"][0]["delta"]["tool_calls"].dump();
+            RCLCPP_DEBUG(logger_, "tc parse, tool_call_: %s", tool_call_.c_str());
           }
         }
       } catch (...) {
         RCLCPP_ERROR(logger_, "Failed parsing response data fragment");
-      } 
+      }
       pos = end;
     }
   };

@@ -19,7 +19,7 @@ BT::PortsList AIAction::providedPorts() {
   return {BT::InputPort<std::string>("system_prompt"),
           BT::InputPort<bool>("new_session"),
           BT::InputPort<std::string>("prompt"),
-          BT::InputPort<std::string>("tool_call_result"),
+          BT::BidirectionalPort<std::string>("tool_call_result"),
           BT::OutputPort<std::string>("result"),
           BT::OutputPort<std::string>("tool_call_name"),
           BT::OutputPort<std::string>("tool_call_args")};
@@ -80,8 +80,11 @@ BT::NodeStatus AIAction::onRunning() {
       setOutput("tool_call_result", "");
       tool_call_wait_ = false;
 
-      RCLCPP_INFO(node_->get_logger(), "Sending tool result to model: %s", tool_call_result.c_str());
-      ai_session_->send_tool_result(tool_call_id_, tool_call_name_, tool_call_result);
+      RCLCPP_INFO(node_->get_logger(), "Reporting tool call result, id: %s, name: %s, result: %s",
+                  tool_call_id_.c_str(), tool_call_name_.c_str(), tool_call_result.c_str());
+      ai_session_->report_tool_result(tool_call_id_, tool_call_name_, tool_call_result);
+      return next_tool_call();
+
     } else {
       auto now = std::chrono::steady_clock::now();
 		  auto elapsed_sec = std::chrono::duration_cast<std::chrono::duration<float>>(now - tool_start_time_).count();
@@ -122,22 +125,9 @@ BT::NodeStatus AIAction::onRunning() {
 
     } else {
       if (is_tool_call) {
-        nlohmann::json tool_call = nlohmann::json::parse(full_response);
-
-        tool_call_id_ = tool_call["id"];
-        tool_call_name_ = tool_call["function"]["name"];
-        nlohmann::json tool_call_args = tool_call["function"]["arguments"];
-        RCLCPP_INFO(node_->get_logger(), "Tool call, id: %s, name: %s, args: %s",
-          tool_call_id_.c_str(), tool_call_name_.c_str(), tool_call_args.dump().c_str());
-
-        setOutput("result", "");
-        setOutput("tool_call_name", tool_call_name_);
-        setOutput("tool_call_args", tool_call_args.dump());
-        tool_call_wait_ = true;
-        tool_start_time_ = std::chrono::steady_clock::now();
-        last_tool_wait_report_ = 0.0f;
-        return BT::NodeStatus::RUNNING;
-
+        tool_calls_ = nlohmann::json::parse(full_response);
+        tool_call_index_ = 0;
+        return next_tool_call();
       } else {
         // Run one more tick to allow the last of the response to be processed by other BT node(s)
         setOutput("result", streaming_data_buffer_);
@@ -155,6 +145,33 @@ void AIAction::onHalted() {
   if (ai_session_) {
     ai_session_->cancel();
   }
+}
+
+BT::NodeStatus AIAction::next_tool_call() {
+  auto num_tools = tool_calls_.size();
+  if (tool_call_index_ < num_tools) {
+    tool_call_id_ = tool_calls_[tool_call_index_]["id"];
+    tool_call_name_ = tool_calls_[tool_call_index_]["function"]["name"];
+    nlohmann::json tool_call_args = tool_calls_[tool_call_index_]["function"]["arguments"];
+
+    RCLCPP_INFO(node_->get_logger(), "Tool call, index: %ld, id: %s, name: %s, args: %s",
+      tool_call_index_, tool_call_id_.c_str(), tool_call_name_.c_str(), tool_call_args.dump().c_str());
+
+    tool_call_index_++;
+
+    setOutput("result", "");
+    setOutput("tool_call_name", tool_call_name_);
+    setOutput("tool_call_args", tool_call_args.dump());
+    
+    tool_call_wait_ = true;
+    tool_start_time_ = std::chrono::steady_clock::now();
+    last_tool_wait_report_ = 0.0f;
+
+  } else {
+    RCLCPP_INFO(node_->get_logger(), "Tool calls completed");
+    ai_session_->tool_calls_finished();
+  }
+  return BT::NodeStatus::RUNNING;
 }
 
 void AIAction::add_new_streaming_data(const std::string& delta) {

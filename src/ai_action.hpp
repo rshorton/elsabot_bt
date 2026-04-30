@@ -17,6 +17,7 @@ class AIAction : public BT::StatefulActionNode {
   void onHalted();
 
  private:
+  BT::NodeStatus next_tool_call();
   void add_new_streaming_data(const std::string& delta);
 
   const std::size_t MIN_SENTENCE_LEN = 30;
@@ -42,6 +43,9 @@ class AIAction : public BT::StatefulActionNode {
 
   std::mutex new_sentence_mutex_;         // Protects new_sentence var
   std::string new_sentence_;              // New sentence ready to output
+
+  nlohmann::json tool_calls_;             // Tool calls to make
+  size_t tool_call_index_{0};             // Index of current tool call
 
   std::string tool_call_id_;              // ID of current tool call in progress
   std::string tool_call_name_;            // Name of current tool call in progress

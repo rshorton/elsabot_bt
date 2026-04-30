@@ -28,7 +28,9 @@ class AISession {
   ~AISession();
 
   void user_prompt(const std::string &prompt, const std::string &tools_json, const std::string &b64_image = std::string());
-  void send_tool_result(const std::string &id, const std::string &name, const std::string &result_json);
+  
+  void report_tool_result(const std::string &id, const std::string &name, const std::string &result_json);
+  void tool_calls_finished();
 
   void cancel();
 
@@ -112,8 +114,7 @@ class AISession {
 
     nlohmann::json get_json(bool is_last) override {
       nlohmann::json m = SessionMessage::get_json(is_last);
-      m["tool_calls"] = nlohmann::json::array();
-      m["tool_calls"].push_back(nlohmann::json::parse(tool_call_json_));
+      m["tool_calls"] = nlohmann::json::parse(tool_call_json_);
       return m;
     }
 
@@ -134,16 +135,14 @@ class AISession {
       nlohmann::json m = SessionMessage::get_json(is_last);
       m["tool_call_id"] = id_;
       m["name"] = name_;
-      // Only send tool result if this is the most recent message.
-      // This attempts to prevent the model from using old tool call results.
-      // An example is the time/date tool call.  After the first call, it
-      // uses the previous result without another tool call. 
-      if (is_last) {
+      // Only send tool result once (ie. for the turn it was created)
+      if (!reported_) {
         if (name_ == "get_camera_frame") {
           m["content"] = nlohmann::json::parse(tool_result_json_);
         } else {
           m["content"] = tool_result_json_;
         }          
+        reported_ = true;
       } else {
         m["content"] = R"({})";
       }        
@@ -153,6 +152,7 @@ class AISession {
     std::string name_;
     std::string id_;
     std::string tool_result_json_;
+    bool reported_{false};
   };
 
   const std::string model_;
@@ -181,9 +181,8 @@ class AISession {
 
   std::unique_ptr<HttpRequest> request_;
 
-  nlohmann::json tool_call_build_;
-  std::string tool_call_args_json_;
-
+  std::map<size_t, nlohmann::json> toolcall_;
+  std::map<size_t, std::string> toolcall_args_;
 };
 
 #endif  // AI_SESSION_H
