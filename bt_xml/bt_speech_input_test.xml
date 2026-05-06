@@ -1,0 +1,22 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+        <KeepRunningUntilFailure>
+            <ForceSuccess>
+                <Sequence>
+                    <Fallback>
+                        <Sequence>
+                            <VoiceDetected />
+                            <SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
+                        </Sequence>							
+                        <Sequence>
+                            <WakeWordDetected since_sec="1.0" />
+                            <SetBlackboard output_key="speech_to_text_delay" value="0.5" />
+                        </Sequence>							
+                    </Fallback>
+                    <SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
+                    <TextToSpeechAction text="{said}" />
+                </Sequence>
+            </ForceSuccess>
+        </KeepRunningUntilFailure>
+    </BehaviorTree>
+</root>
