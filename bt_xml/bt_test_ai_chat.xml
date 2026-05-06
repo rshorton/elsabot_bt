@@ -3,9 +3,32 @@
 		<Sequence>
 			<RunOnce>
 				<Sequence>
+					<!-- Declare the tool calls to be exposed to the model -->
 					<ToolCallTimeAction command="init" />
 					<ToolCallGetCameraFrameAction command="init" />
 					<ToolCallAnalyzeCameraFrameAction command="init" />
+					<ToolCallGetPositionAction command="init" />
+
+					<ToolCallDeclareAction tc_definition='\{
+      					"type": "function",
+       					"function": {
+           					"name": "get_position",
+           					"description": "returns the current position in meters and heading in degrees of the robot"
+						}\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "move_to",
+            				"description": "Use this tool to move the robot to the specified location.",
+							"parameters": {
+                				"type": "object",
+								"properties": {
+                					"location_and_orientation": {
+                    					"type": "string",
+                    					"description": "The location and final orientation (yaw) as a common-separated string of this format: x,y,yaw  , where x and y are in meters, and yaw is in degrees" }},
+                				"required": ["location_and_orientation"]}}\}' />
+
 					<SetBlackboard output_key="run_tools" value="n" />
 					<GetTimeNowAction now="{end_response_time}" />
 					<SetBlackboard output_key="antenna_state_cur" value="none" />
@@ -18,7 +41,7 @@
 							with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword
 							for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
 							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis as a secondary way to express
-							emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, or amusing." />
+							emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, and amusing." />
 						<SetBlackboard output_key="system_prompt" value="{def_value_1}" />
 					</IfThenElse>
 					<IfThenElse>
@@ -32,6 +55,30 @@
 			</RunOnce>
 
 			<Parallel>
+				<KeepRunningUntilFailure>
+					<ForceSuccess>
+						<Sequence>
+							<RunOnce>
+								<Sequence>
+									<GetTimeNowAction now="{last_battery_chk_time}" />
+								</Sequence>
+							</RunOnce>
+							<Sequence>
+								<IfThenElse>
+									<TimeSinceAction time_point="{last_battery_chk_time}" comparison="greater" duration_sec="30" />
+									<Sequence>
+										<LogAction level="info" msg="fix - add battery check here" />
+										<GetTimeNowAction now="{last_battery_chk_time}" />
+									</Sequence>
+									<Sequence>													
+										<SetBlackboard output_key="dummy" value="0" />
+									</Sequence>													
+								</IfThenElse>												
+							</Sequence>								
+						</Sequence>
+					</ForceSuccess>
+				</KeepRunningUntilFailure>
+
 				<KeepRunningUntilFailure>
 					<ForceSuccess>
 						<Sequence>
@@ -152,12 +199,11 @@
 								<SetBlackboard output_key="run_tools" value="y" />
 
 								<AIAction prompt="{said}" result="{text_to_speak}" tool_call_name="{tool_call_name}" tool_call_args="{tool_call_args}"
-									tool_call_result="{tool_call_result}" system_prompt= "{system_prompt}"/>
+									tool_call_result="{tool_call_result}" tool_call_timeout_sec="180" system_prompt="{system_prompt}"/>
 							</ReactiveSequence>
 							<!-- Say the remaining part of the response if any -->
 							<TextToSpeechAction text="{text_to_speak}" />
 							<GetTimeNowAction now="{end_response_time}" />
-							<!--AntennaAction rate="2" intensity="100" left_blink_pattern="10100000" right_blink_pattern="00001010" /-->
 						</Sequence>
 					</ForceSuccess>
 				</KeepRunningUntilFailure>
@@ -178,18 +224,22 @@
 
 									<LogAction level="info" msg="Running tool: " arg1="{running_tool}" />
 
-									<Switch3 variable="{running_tool}" case_1="get_local_date_and_time" case_2="get_camera_frame"
-											 case_3="analyze_camera_frame" >
+									<Switch6 variable="{running_tool}" case_1="get_local_date_and_time" case_2="get_camera_frame"
+											 case_3="analyze_camera_frame" case_4="say_text" case_5="get_robot_position"
+											 case_6="move_to" >
 										<ToolCallTimeAction command="run" args_json="{tool_call_args}" result_json="{tool_call_result}" />
 										<!-- Does not work! -->
 										<SubTree ID="ToolCallGetCameraFrame" _autoremap="true"/>
 										<SubTree ID="AnalyzeCameraFrame" _autoremap="true"/>
+										<SubTree ID="SayText" _autoremap="true" />
+										<ToolCallGetPositionAction command="run" result_json="{tool_call_result}"/>
+										<SubTree ID="MoveTo" _autoremap="true" />
 
-										<!-- Unrecognized tool-->
+										<!-- Unrecognized tool -->
 										<ForceFailure>
 											<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
 										</ForceFailure>											
-									</Switch3>
+									</Switch6>
 
 								</Sequence>								
 							</Precondition>
@@ -250,6 +300,30 @@
 			<PlayAudioFileAction file_path="/robot_ws/audio_files/camera_shutter.mp3" stream_type="bg" req_id="3" />
 			<ToolCallAnalyzeCameraFrameAction command="run" args_json="{tool_call_args}" base64_image="{b64_image}"
 			 result_json="{tool_call_result}" />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="SayText">
+        <Sequence>
+			<LogAction level="info" msg="SayText Subtree" arg1="{tool_call_args}" />
+			<!-- Parse json containing text to say and store text in BB /-->
+			<ToolCallParseParamToBBAction tc_args="{tool_call_args}" obj_name="text_to_say" output="{text_to_speak}" />
+			<TextToSpeechAction text="{text_to_speak}" />
+			<SetBlackboard output_key="text_to_speak" value="" />
+			<SetBlackboard output_key="tool_call_result" value="success" />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="MoveTo">
+        <Sequence>
+			<LogAction level="info" msg="MoveTo Subtree" arg1="{tool_call_args}" />
+			<!-- Parse json containing position and store text in BB /-->
+			<ToolCallParseParamToBBAction tc_args="{tool_call_args}" obj_name="location_and_orientation" output="{move_to_goal}" />
+			<IfThenElse>
+				<Nav2Client goal="{move_to_goal}" />
+				<SetBlackboard output_key="tool_call_result" value="arrived" />
+				<SetBlackboard output_key="tool_call_result" value="failed" />
+			</IfThenElse>
 		</Sequence>
     </BehaviorTree>
 
