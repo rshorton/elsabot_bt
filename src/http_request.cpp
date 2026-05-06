@@ -90,9 +90,12 @@ void HttpRequest::requestLoop() {
     headers = curl_slist_append(headers, auth_header.c_str());
   }
 
+  std::string accept_header = "Accept: application/json";
+  headers =  curl_slist_append(headers, accept_header.c_str());
+
   // Temp workaround for openclaw 3/28 issue: https://github.com/openclaw/openclaw/issues/46997
-  std::string hdr = "x-openclaw-scopes: operator.read,operator.write";
-  headers = curl_slist_append(headers, hdr.c_str());
+  //std::string hdr = "x-openclaw-scopes: operator.read,operator.write";
+  //headers = curl_slist_append(headers, hdr.c_str());
 
   curl_easy_setopt(easy_handle_, CURLOPT_HTTPHEADER, headers);
 
