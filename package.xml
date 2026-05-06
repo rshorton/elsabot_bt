@@ -26,7 +26,7 @@
   <depend>nav2_util</depend>
   <depend>robot_localization</depend>
   <depend>image_transport</depend>
-  <depend>image_transport-plugins</depend>
+  <depend>image_transport_plugins</depend>
   <depend>cv_bridge</depend>
 
 <!--
