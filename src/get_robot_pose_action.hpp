@@ -22,6 +22,8 @@ limitations under the License.
 #include "rclcpp/rclcpp.hpp"
 #include <behaviortree_cpp/action_node.h>
 
+#include "robot_status.hpp"
+
 class GetRobotPoseAction: public BT::SyncActionNode
 {
     public:
