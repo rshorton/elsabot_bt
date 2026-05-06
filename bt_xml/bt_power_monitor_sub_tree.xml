@@ -1,0 +1,51 @@
+<root BTCPP_format="4">
+	<BehaviorTree ID="PowerMonitorSubTree">
+        <Sequence>
+            <KeepRunningUntilFailure>
+                <ForceSuccess>
+                    <Sequence>
+                        <RunOnce>
+                            <Sequence>
+                                <GetTimeNowAction now="{last_battery_chk_time}" />
+                                <Script code=" power_ck_period_normal:=30 " />
+                                <Script code=" power_ck_period_critical:=15 " />
+                                <Script code=" power_ck_period:=power_ck_period_normal " />
+                                <Script code=" critical_voltage_thresh:=16.0 " />
+                                <Script code=" charge_pct_warn_thresh:=25.0 " />
+                            </Sequence>
+                        </RunOnce>
+                        <Sequence>
+                            <IfThenElse>
+                                <TimeSinceAction time_point="{last_battery_chk_time}" comparison="greater" duration_sec="{power_ck_period}" />
+                                <Sequence>
+                                    <GetPowerStatusAction voltage="{voltage}" charge_pct="{charge_pct}" />
+                                    <Precondition if="charge_pct<=charge_pct_warn_thresh" else="SUCCESS">
+                                        <Sequence>
+                                            <LogAction level="info" msg="BATTERY IS LOW" />
+                                            <PlayAudioFileAction file_path="/robot_ws/audio_files/low_battery.mp3" stream_type="bg" req_id="3" />
+                                            
+                                            <Precondition if="voltage<=critical_voltage_thresh" else="SUCCESS">
+                                                <Sequence>
+                                                    <PlayAudioFileAction file_path="/robot_ws/audio_files/low_battery.mp3" stream_type="bg" req_id="3" />
+                                                    <TextToSpeechAction text="My battery is very low" />
+                                                    <Script code=" power_ck_period:=power_ck_period_critical " />
+                                                </Sequence>
+                                            </Precondition>
+                                        </Sequence>
+                                    </Precondition>
+                                    <Precondition if="charge_pct>charge_pct_warn_thresh" else="SUCCESS">
+                                        <Script code=" power_ck_period:=power_ck_period_normal " />
+                                    </Precondition>
+                                    <GetTimeNowAction now="{last_battery_chk_time}" />
+                                </Sequence>
+                                <Sequence>													
+                                    <SetBlackboard output_key="noop" value="0" />
+                                </Sequence>													
+                            </IfThenElse>												
+                        </Sequence>								
+                    </Sequence>
+                </ForceSuccess>
+            </KeepRunningUntilFailure>
+        </Sequence>
+    </BehaviorTree>
+</root>

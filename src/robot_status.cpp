@@ -20,6 +20,7 @@ limitations under the License.
 #include <chrono>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
+
 #include "tf2/transform_datatypes.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2/LinearMath/Matrix3x3.h"
@@ -37,6 +38,12 @@ RobotStatus::RobotStatus(rclcpp::Node::SharedPtr node):
 				rclcpp::SystemDefaultsQoS(),
 				std::bind(&RobotStatus::TrackStatusCallback, this, std::placeholders::_1));
 	RCLCPP_DEBUG(node_->get_logger(), "Sub to /head/track_status");
+
+	battery_status_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
+				"/battery/status",
+				rclcpp::SystemDefaultsQoS(),
+				std::bind(&RobotStatus::BatteryStatusCallback, this, std::placeholders::_1));
+	RCLCPP_DEBUG(node_->get_logger(), "Sub to /battery/status");
 }
 
 void RobotStatus::TrackStatusCallback(robot_head_interfaces::msg::TrackStatus::SharedPtr msg)
@@ -46,7 +53,14 @@ void RobotStatus::TrackStatusCallback(robot_head_interfaces::msg::TrackStatus::S
 	RCLCPP_DEBUG(node_->get_logger(), "Got track status");
 }
 
-bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
+void RobotStatus::BatteryStatusCallback(sensor_msgs::msg::BatteryState::SharedPtr msg)
+{
+	battery_status_ = *msg;
+	valid_battery_status_ = true;
+	RCLCPP_DEBUG(node_->get_logger(), "Got battery status");
+}
+
+bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw) const
 {
 	geometry_msgs::msg::TransformStamped xf;
 	if (!TransformHelper::GetInstance()->GetTransform("base_link", "map", xf)) {
@@ -57,9 +71,9 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 		return false;
 	}
 
-	pos_x_ = xf.transform.translation.x;
-	pos_y_ = xf.transform.translation.y;
-	pos_z_ = xf.transform.translation.z;
+	x = xf.transform.translation.x;
+	y = xf.transform.translation.y;
+	z = xf.transform.translation.z;
 
 	double quatx = xf.transform.rotation.x;
 	double quaty = xf.transform.rotation.y;
@@ -71,17 +85,12 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 	double roll, pitch;
 	m.getRPY(roll, pitch, yaw);
 
-	x = pos_x_;
-	y = pos_y_;
-	z = pos_z_;
-	yaw_ = yaw;
-
 	RCLCPP_DEBUG(node_->get_logger(), "Robot pose: x,y,yaw: %f, %f, %f",
-		pos_x_, pos_y_, yaw_);
+		x, y, yaw);
 	return true;		
 }
 
-bool RobotStatus::GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status)
+bool RobotStatus::GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status) const
 {
 	if (valid_track_status_) {
 		status = track_status_;
@@ -90,4 +99,12 @@ bool RobotStatus::GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status
 	return false;
 }
 
+bool RobotStatus::GetBatteryStatus(sensor_msgs::msg::BatteryState &status) const
+{
+	if (valid_battery_status_) {
+		status = battery_status_;
+		return true;
+	}
+	return false;
+}
 	

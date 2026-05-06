@@ -93,6 +93,7 @@
 #include "tool_call_parse_param_to_bb_action.hpp"
 #include "tool_call_get_position_action.hpp"
 #include "get_camera_frame_action.hpp"
+#include "get_power_status_action.hpp"
 
 #define DEFAULT_BT_XML ""
 
@@ -212,6 +213,7 @@ int main(int argc, char **argv)
     factory.registerNodeType<ToolCallDeclareAction>("ToolCallDeclareAction");
     factory.registerNodeType<ToolCallParseParamToBBAction>("ToolCallParseParamToBBAction");
     factory.registerNodeType<ToolCallGetPositionAction>("ToolCallGetPositionAction");
+    factory.registerNodeType<GetPowerStatusAction>("GetPowerStatusAction");
     
     // Scratching your head because your new action isn't working?
     // Check the template type above since you probably copy and pasted and forgot to change both!!!!
