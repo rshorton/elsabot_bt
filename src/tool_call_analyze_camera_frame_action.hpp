@@ -88,7 +88,7 @@ public:
         
         std::string prompt = args["prompt"];
         RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, prompt: %s", prompt.c_str());
-        ai_session_->user_prompt(prompt, "", base64_image);
+        ai_session_->user_prompt(prompt, false, "", base64_image);
         return BT::NodeStatus::RUNNING;
     }
 
