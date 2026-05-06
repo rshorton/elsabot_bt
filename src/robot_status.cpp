@@ -49,7 +49,7 @@ void RobotStatus::TrackStatusCallback(robot_head_interfaces::msg::TrackStatus::S
 bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 {
 	geometry_msgs::msg::TransformStamped xf;
-	if (!TransformHelper::GetInstance()->GetTransform("map", "base_link", xf)) {
+	if (!TransformHelper::GetInstance()->GetTransform("base_link", "map", xf)) {
 		x = 0.0;
 		y = 0.0;
 		z = 0.0;
@@ -70,6 +70,10 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw)
 	tf2::Matrix3x3 m(q);
 	double roll, pitch;
 	m.getRPY(roll, pitch, yaw);
+
+	x = pos_x_;
+	y = pos_y_;
+	z = pos_z_;
 	yaw_ = yaw;
 
 	RCLCPP_DEBUG(node_->get_logger(), "Robot pose: x,y,yaw: %f, %f, %f",
