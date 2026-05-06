@@ -237,7 +237,10 @@
 
 										<!-- Unrecognized tool -->
 										<ForceFailure>
-											<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
+											<Sequence>
+												<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
+												<SetBlackboard output_key="tool_call_result" value="failed, unrecognized tool call" />
+											</Sequence>												
 										</ForceFailure>											
 									</Switch6>
 
