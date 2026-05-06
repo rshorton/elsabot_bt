@@ -19,6 +19,7 @@ BT::PortsList AIAction::providedPorts() {
   return {BT::InputPort<std::string>("system_prompt"),
           BT::InputPort<bool>("new_session"),
           BT::InputPort<std::string>("prompt"),
+          BT::InputPort<float>("tool_call_timeout_sec"),
           BT::BidirectionalPort<std::string>("tool_call_result"),
           BT::OutputPort<std::string>("result"),
           BT::OutputPort<std::string>("tool_call_name"),
@@ -54,14 +55,16 @@ BT::NodeStatus AIAction::onStart() {
   new_sentence_ = std::string();
   tool_call_wait_ = false;
 
+  getInput<float>("tool_call_timeout_sec", tool_call_timeout_sec_);
+
   setOutput("tool_call_name", "");
   setOutput("tool_call_result", "");
 
   ToolCallData& tc_data = ToolCallData::getInstance();
-  auto tools_json = tc_data.get_available_tools_json();
-  RCLCPP_INFO(node_->get_logger(), "tools_json: %s", tools_json.c_str());
+  tools_json_ = tc_data.get_available_tools_json();
+  RCLCPP_DEBUG(node_->get_logger(), "tools_json_: %s", tools_json_.c_str());
 
-  ai_session_->user_prompt(prompt, tools_json);
+  ai_session_->user_prompt(prompt, stream_, tools_json_);
   return BT::NodeStatus::RUNNING;
 }
 
@@ -133,6 +136,7 @@ BT::NodeStatus AIAction::onRunning() {
         setOutput("result", streaming_data_buffer_);
         streaming_data_buffer_.clear();
         finish_on_next_update_ = true;
+
       }          
       return BT::NodeStatus::RUNNING;
     }
@@ -169,9 +173,28 @@ BT::NodeStatus AIAction::next_tool_call() {
 
   } else {
     RCLCPP_INFO(node_->get_logger(), "Tool calls completed");
-    ai_session_->tool_calls_finished();
+
+    // Don't request streaming in case there are subsequent tool calls for the current
+    // prompt. It was found that after a few back-to-back calls a new call would not be
+    // converted to json format, but rather passed in the native model tool call format.
+    // This assumes that at least the first call is correctly output as json.  Re-test
+    // after the next vllm update since the tool call parser may change and resolve this.
+    ai_session_->tool_calls_finished(false, tools_json_);
   }
   return BT::NodeStatus::RUNNING;
+}
+
+void AIAction::remove_silent_chars(std::string &str) {
+  // Remove characters that should be silent
+  std::string chars_to_replace = "*";
+  for (char c : chars_to_replace) {
+    std::replace(str.begin(), str.end(), c, ' ');
+  }
+}
+
+void AIAction::process_full_response(const std::string& response) {
+  streaming_data_buffer_ = response;
+  remove_silent_chars(streaming_data_buffer_);
 }
 
 void AIAction::add_new_streaming_data(const std::string& delta) {
@@ -181,7 +204,8 @@ void AIAction::add_new_streaming_data(const std::string& delta) {
     return;
   }
 
-  // Remove characters that should be silent
+  remove_silent_chars(streaming_data_buffer_);
+
   std::string chars_to_replace = "*";
   for (char c : chars_to_replace) {
     std::replace(streaming_data_buffer_.begin(), streaming_data_buffer_.end(),

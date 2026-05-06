@@ -18,7 +18,9 @@ class AIAction : public BT::StatefulActionNode {
 
  private:
   BT::NodeStatus next_tool_call();
+  void remove_silent_chars(std::string &str);
   void add_new_streaming_data(const std::string& delta);
+  void process_full_response(const std::string& response);
 
   const std::size_t MIN_SENTENCE_LEN = 30;
 
@@ -38,6 +40,9 @@ class AIAction : public BT::StatefulActionNode {
   int timeout_ms_ = 8000;
 
   std::unique_ptr<AISession> ai_session_;
+  bool stream_{true};                     // True to have LLM output streamed vs receive one full response
+
+  std::string tools_json_;                // Current tools available to the model
 
   std::string streaming_data_buffer_;     // Buffer for streamed results
 

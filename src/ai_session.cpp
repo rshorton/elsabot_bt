@@ -6,6 +6,7 @@
 #include <string>
 
 using namespace std::chrono_literals;
+using json = nlohmann::json;
 
 AISession::AISession(const std::string &model, int max_context_size, const std::string &auth_token,
                      const std::string &host_and_port, const std::string &resource, 
@@ -31,10 +32,19 @@ void AISession::report_tool_result(const std::string &id, const std::string &nam
   current_tokens_ += num_tokens;
 }
 
-void AISession::tool_calls_finished() {
-#if defined(VLLM_GEMMA)                              
+void AISession::tool_calls_finished(bool stream, const std::string &tools_json) {
+#if defined(VLLM_GEMMA)              
+  json tools;
+  if (tools_json.empty()) {
+    tools = json::array();
+  } else {
+    tools = json::parse(tools_json);
+  }
+
   request_data_ = {{"model", model_},
-                   {"stream", true},
+                   {"stream", stream},
+                   {"tools", tools},
+                   {"tool_choice", "auto"},
                    {"messages", format_prompt()}
                   };
 
@@ -45,23 +55,24 @@ void AISession::tool_calls_finished() {
 #endif
 }
 
-void AISession::user_prompt(const std::string &prompt, const std::string &tools_json, const std::string &b64_image) {
+void AISession::user_prompt(const std::string &prompt, bool stream, const std::string &tools_json, const std::string &b64_image) {
   // Fix, account for images
   int num_tokens = fetch_token_count(prompt);
   history_.push_back(std::make_unique<SessionMessage_UserPrompt>("user", num_tokens, prompt, b64_image));
   current_tokens_ += num_tokens;
 
 #if defined(VLLM_GEMMA)                              
-  nlohmann::json tools;
+  json tools;
   if (tools_json.empty()) {
-    tools = nlohmann::json::array();
+    tools = json::array();
   } else {
-    tools = nlohmann::json::parse(tools_json);
+    tools = json::parse(tools_json);
   }    
 
   request_data_ = {{"model", model_},
-                   {"stream", true},
+                   {"stream", stream},
                    {"tools", tools},
+                   {"tool_choice", "auto"},
                    {"messages", format_prompt()}
                   };
 #else
@@ -104,7 +115,7 @@ void AISession::perform() {
   auto url = host_and_port_ + resource_;
 
   auto completion_callback = [&](std::string data, CURLcode curl_result) {
-    RCLCPP_INFO(logger_, "Completion_callback: length: %ld", data.length());
+    RCLCPP_DEBUG(logger_, "Completion_callback: length: %ld", data.length());
 
     AISession::Result result;
 
@@ -128,7 +139,7 @@ void AISession::perform() {
   auto data_callback = [&](std::string data) {
 
     // vLLM sends data in Server-Sent Events (SSE) format: "data: {...}"
-    std::cout << "data_callback: " << data << std::endl;
+    //std::cout << "data_callback: " << data << std::endl;
 
     size_t pos = 0;
 
@@ -141,7 +152,7 @@ void AISession::perform() {
       if (end != std::string::npos) {
         std::string json_str = data.substr(pos, end - pos);
         try {
-          auto j = nlohmann::json::parse(json_str);
+          auto j = json::parse(json_str);
           if (j.contains("message") && !j["message"].empty()) {
             error_msg = j["message"];
         }
@@ -153,82 +164,26 @@ void AISession::perform() {
 
     pos = 0;
     const std::string DATA = "data: ";
-    while ((pos = data.find(DATA, pos)) != std::string::npos) {
-      pos += DATA.length();
-      size_t end = data.find("\n\n", pos);
-      if (end == std::string::npos) break;
-
-      std::string json_str = data.substr(pos, end - pos);
-      if (json_str == "[DONE]") {
-        break;
-      }
-
-      nlohmann::json j;
-      try {
-        j = nlohmann::json::parse(json_str);
-      } catch (nlohmann::json::parse_error& ex) {
-        RCLCPP_ERROR(logger_, "model data parse error args %s, at: %ld", json_str.c_str(), ex.byte);
-        return;
-      }
-
-      try {
-        if (j.contains("choices") && !j["choices"].empty()) {
-          if (j["choices"][0]["delta"].contains("content")) {
-            const std::string &delta = j["choices"][0]["delta"]["content"];
-            full_response_ += delta;
-            if (callback_data_) {
-              callback_data_(delta);
-            }
-
-          } else if (j["choices"][0]["delta"].contains("tool_calls")) {
-            const auto &tc = j["choices"][0]["delta"]["tool_calls"][0];
-            size_t index = tc["index"];
-            RCLCPP_DEBUG(logger_, "tc parse, index: %ld, base: %s", index, tc.dump().c_str());
-
-            if (tc.contains("id")) {
-              toolcall_[index] = tc;
-              toolcall_args_[index] = "";
-            } else {
-              // Aggregate the argument fragments
-              std::string arg_frag = tc["function"]["arguments"];
-              toolcall_args_[index] += arg_frag;
-              RCLCPP_DEBUG(logger_, "tc parse, args, index: %ld, frag: %s, args accum: %s", index,
-                          arg_frag.c_str(), toolcall_args_[index].c_str());
-            }
-          } else if (j["choices"][0]["finish_reason"] == "tool_calls") {
-            // End of tool calls.  Assemble them into one object
-            auto tool_calls = nlohmann::json::parse(R"( {"choices": [ {"delta": {"tool_calls": []} } ]} )");
-            auto full_response_obj = tool_calls;
-
-            RCLCPP_DEBUG(logger_, "tc parse, prefix: %s", tool_calls.dump().c_str());
-
-            for (auto const& [key, value] : toolcall_) {
-              RCLCPP_DEBUG(logger_, "tc parse, key: %ld, value: %s, args: %s",
-                          key, value.dump().c_str(), toolcall_args_[key].c_str());
-
-              nlohmann::json tc_temp = value;
-              tc_temp["function"]["arguments"] = nlohmann::json::parse(toolcall_args_[key]);
-              tool_calls["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
-
-              // Insert the args as json for the full_response since it that format is required
-              // for the message history
-              tc_temp = value;
-              tc_temp["function"]["arguments"] = toolcall_args_[key];
-              full_response_obj["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
-            }
-
-            tool_call_ = tool_calls["choices"][0]["delta"]["tool_calls"].dump();
-            is_tool_call_ = true;
-
-            full_response_ = full_response_obj["choices"][0]["delta"]["tool_calls"].dump();
-            RCLCPP_DEBUG(logger_, "tc parse, tool_call_: %s", tool_call_.c_str());
-          }
+    if (data.find(DATA, pos) != std::string::npos) {
+      pos = 0;
+      while ((pos = data.find(DATA, pos)) != std::string::npos) {
+        pos += DATA.length();
+        size_t end = data.find("\n\n", pos);
+        if (end == std::string::npos) {
+          break;
         }
-      } catch (...) {
-        RCLCPP_ERROR(logger_, "Failed parsing response data fragment");
+
+        std::string json_str = data.substr(pos, end - pos);
+        if (json_str == "[DONE]") {
+          break;
+        }
+
+        process_message(json_str);
+        pos = end;
       }
-      pos = end;
-    }
+    } else {
+      process_message(data);
+    }      
   };
 #else
   auto data_callback = [&](std::string data) {
@@ -247,7 +202,7 @@ void AISession::perform() {
         break;
       }
       try {
-        std::string c = nlohmann::json::parse(data.substr(pos, end - pos))["content"];
+        std::string c = json::parse(data.substr(pos, end - pos))["content"];
         //std::cout << c << std::flush;
         full_response_ += c;
         callback_data_(c);
@@ -277,7 +232,8 @@ bool AISession::is_finished(std::string &response, bool &is_tool_call, AISession
 
   if (status == std::future_status::ready) {
     result = future_.get();
-    RCLCPP_INFO(logger_, "Future is ready, result: %s", result_to_str(result).c_str());
+    RCLCPP_INFO(logger_, "Future is ready, result: %s, full_response: %s",
+                result_to_str(result).c_str(), full_response_.c_str());
 
     if (result == AISession::Result::success) {
       is_tool_call = is_tool_call_;
@@ -326,7 +282,7 @@ int AISession::fetch_token_count(const std::string& text) const {
   int count = (int)text.length() / 4;
 
 #else
-  nlohmann::json body = {{"content", text}};
+  json body = {{"content", text}};
   // Default count to length/4 if cannot request
   int count = (int)text.length() / 4;
 
@@ -335,7 +291,7 @@ int AISession::fetch_token_count(const std::string& text) const {
 
     if (result == CURLE_OK) {
       RCLCPP_DEBUG(logger_, "Token count request successful. Data length: %ld bytes", data.length());
-      count = (int)nlohmann::json::parse(data)["tokens"].size();
+      count = (int)json::parse(data)["tokens"].size();
     } else if (result == CURLE_OPERATION_TIMEDOUT) {
       RCLCPP_ERROR(logger_, "Token count request timed-out.");
     } else {
@@ -355,9 +311,9 @@ int AISession::fetch_token_count(const std::string& text) const {
 }
 
 #if defined(VLLM_GEMMA)
-nlohmann::json AISession::format_prompt() const {
+json AISession::format_prompt() const {
 
-  nlohmann::json prompt = nlohmann::json::array();
+  json prompt = json::array();
   prompt.push_back({{"role", "system"}, {"content", system_prompt_}});
 
   auto last_index = (long int)history_.size() - 1;
@@ -393,5 +349,126 @@ std::string AISession::format_prompt() {
   return prompt;
 }
 #endif
+
+void AISession::process_message(const std::string& msg_json) {      
+  json j;
+  try {
+    j = json::parse(msg_json);
+  } catch (json::parse_error& ex) {
+    RCLCPP_ERROR(logger_, "model message parse error, msg: %s, at: %ld", msg_json.c_str(), ex.byte);
+    return;
+  }
+
+  try {
+    if (!j.contains("choices") || j["choices"].empty()) {
+      RCLCPP_ERROR(logger_, "model message missing choices, msg: %s", msg_json.c_str());
+      return;
+    }
+
+    // Streaming case where deltas are received
+    if (j["choices"][0].contains("delta")) {
+      if (j["choices"][0]["delta"].contains("content")) {
+        const std::string &delta = j["choices"][0]["delta"]["content"];
+        full_response_ += delta;
+        if (callback_data_) {
+          callback_data_(delta);
+        }
+
+      } else if (j["choices"][0]["delta"].contains("tool_calls")) {
+        const auto &tc = j["choices"][0]["delta"]["tool_calls"][0];
+        size_t index = tc["index"];
+        RCLCPP_DEBUG(logger_, "tc parse, index: %ld, base: %s", index, tc.dump().c_str());
+
+        if (tc.contains("id")) {
+          toolcall_[index] = tc;
+          toolcall_args_[index] = "";
+        } else {
+          // Aggregate the argument fragments
+          std::string arg_frag = tc["function"]["arguments"];
+          toolcall_args_[index] += arg_frag;
+          RCLCPP_DEBUG(logger_, "tc parse, args, index: %ld, frag: %s, args accum: %s", index,
+                      arg_frag.c_str(), toolcall_args_[index].c_str());
+        }
+
+      } else if (j["choices"][0]["finish_reason"] == "tool_calls") {
+        // End of tool calls.  Assemble them into one object
+        auto tool_calls = json::parse(R"( {"choices": [ {"delta": {"tool_calls": []} } ]} )");
+        auto full_response_obj = tool_calls;
+
+        RCLCPP_DEBUG(logger_, "tc parse, prefix: %s", tool_calls.dump().c_str());
+
+        for (auto const& [key, value] : toolcall_) {
+          RCLCPP_DEBUG(logger_, "tc parse, key: %ld, value: %s, args: %s",
+                      key, value.dump().c_str(), toolcall_args_[key].c_str());
+
+          json tc_temp = value;
+          tc_temp["function"]["arguments"] = json::parse(toolcall_args_[key]);
+          tool_calls["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
+
+          // Insert the args as json for the full_response since it that format is required
+          // for the message history
+          tc_temp = value;
+          tc_temp["function"]["arguments"] = toolcall_args_[key];
+          full_response_obj["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
+        }
+
+        tool_call_ = tool_calls["choices"][0]["delta"]["tool_calls"].dump();
+        is_tool_call_ = true;
+
+        full_response_ = full_response_obj["choices"][0]["delta"]["tool_calls"].dump();
+        RCLCPP_DEBUG(logger_, "tc parse, tool_call_ (from deltas): %s", tool_call_.c_str());
+
+      } else if (j["choices"][0]["finish_reason"] == "stop") {        
+        RCLCPP_DEBUG(logger_, "chat message end (from deltas): %s", full_response_.c_str());
+      }              
+
+    // Non-streaming cases
+    } else if (j["choices"][0]["finish_reason"] == "tool_calls") {
+
+      if (j["choices"][0].contains("message") && 
+          j["choices"][0]["message"].contains("tool_calls")) {
+
+        RCLCPP_DEBUG(logger_, "finish_reason tool_calls with a message");
+
+        // Full response needs to be as was received with args as json
+        full_response_ = j["choices"][0]["message"]["tool_calls"].dump();
+
+        // Parse the args of each tool call
+        auto tool_calls = json::array();
+
+        auto tc_array = j["choices"][0]["message"]["tool_calls"];
+        for (const auto &tc: tc_array) {
+          std::string args = tc["function"]["arguments"];
+          tool_calls.push_back(tc);
+
+          json arg_obj;
+          try {
+            arg_obj = json::parse(args);
+          } catch (json::parse_error& ex) {
+            RCLCPP_ERROR(logger_, "failed parsing tool call args: %s, at: %ld", args.c_str(), ex.byte);
+            return;
+          }
+          tool_calls.back()["function"]["arguments"] = arg_obj;
+        }
+
+        tool_call_ = tool_calls.dump();
+        is_tool_call_ = true;
+        RCLCPP_DEBUG(logger_, "tc parse, tool_call_(from non-delta): %s", tool_call_.c_str());
+      }              
+
+    } else if (j["choices"][0]["finish_reason"] == "stop") {
+      if (j["choices"][0].contains("message") && 
+          j["choices"][0]["message"].contains("content")) {
+          full_response_ =  j["choices"][0]["message"]["content"];
+          RCLCPP_DEBUG(logger_, "chat content (from non-delta): %s", full_response_.c_str());
+          if (callback_data_) {
+            callback_data_(full_response_);
+          }          
+      }
+    }
+  } catch (...) {
+    RCLCPP_ERROR(logger_, "Failed parsing model response message");
+  }
+}
 
 

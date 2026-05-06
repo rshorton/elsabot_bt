@@ -27,10 +27,10 @@ class AISession {
          CallbackData callback_data);
   ~AISession();
 
-  void user_prompt(const std::string &prompt, const std::string &tools_json, const std::string &b64_image = std::string());
+  void user_prompt(const std::string &prompt, bool stream, const std::string &tools_json, const std::string &b64_image = std::string());
   
   void report_tool_result(const std::string &id, const std::string &name, const std::string &result_json);
-  void tool_calls_finished();
+  void tool_calls_finished(bool stream, const std::string &tools_json);
 
   void cancel();
 
@@ -40,6 +40,7 @@ class AISession {
 
  private:
   void perform();
+  void process_message(const std::string& msg_json);
   int fetch_token_count(const std::string& text) const;
 
 #if defined(VLLM_GEMMA)
@@ -142,7 +143,7 @@ class AISession {
         } else {
           m["content"] = tool_result_json_;
         }          
-        reported_ = true;
+        //reported_ = true;
       } else {
         m["content"] = R"({})";
       }        
