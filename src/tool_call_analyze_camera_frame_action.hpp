@@ -18,11 +18,13 @@ limitations under the License.
 
 #include <stdio.h>
 #include <string>
+#include <fstream> 
 
 #include <behaviortree_cpp/action_node.h>
 
 #include "ai_session.hpp"
 #include "ros_common.hpp"
+#include "base64.hpp"
 #include "tool_call_data.hpp"
 
 #define VLLM_GEMMA
@@ -67,6 +69,8 @@ public:
       			throw BT::RuntimeError("missing base64_image");
         }
 
+        image_file_ = save_image(base64_image);
+
         std::string system_prompt = "You analyze images.";
         ai_session_ = std::make_unique<AISession>(model_, max_context_size_, auth_token_,
                                                   host_address_and_port_, resource_,
@@ -107,11 +111,13 @@ public:
                 result == AISession::Result::failed) {
                 return BT::NodeStatus::FAILURE;
             } else {
-                nlohmann::json result_obj = {{"result", full_response}};
-                auto result = result_obj.dump();
+                nlohmann::json result_obj;
+                result_obj["analysis"] = full_response;
+                result_obj["filename"] = image_file_;
 
-                RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction result: %s", result.c_str());
-                setOutput("result_json", result);
+                std::string result_json = result_obj.dump();
+                setOutput("result_json", result_json);
+                RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction result: %s", result_json.c_str());
                 return BT::NodeStatus::SUCCESS;
             }
         }
@@ -126,11 +132,45 @@ public:
     }
 
 private:
+
+    std::string get_image_filename(const std::string& extension) {
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+
+        std::ostringstream oss;
+        oss << image_dir_ << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S") << extension;
+        return oss.str();
+    }
+
+    std::string save_image(const std::string &b64_image) {
+
+        size_t found = b64_image.find(",");
+        if (found == std::string::npos) {
+            RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, failed to save image, bad b64 image");
+            return std::string();
+        }
+        auto b64_data = b64_image.substr(found + 1);
+
+        auto image_bytes = base64_decode(b64_data);
+
+        auto fname = get_image_filename(".jpg");
+        std::ofstream out_file(fname, std::ios::binary);
+        if (out_file.is_open()) {
+            out_file.write(reinterpret_cast<const char*>(image_bytes.data()), image_bytes.size());
+            out_file.close();
+        } else {
+            RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, failed to save image to: %s",
+                        fname.c_str());
+            return std::string();
+        }
+        return fname;
+    }
+
     std::string tool_desc_ = R"({
         "type": "function",
         "function": {
             "name": "analyze_camera_frame",
-            "description": "Gets a frame from the camera and runs VLM processing.",
+            "description": "Gets a frame from the camera and runs VLM processing. Returns an object with 'analysis' set to the VLM result, and 'filename' set to the pathname of the saved image.  Use this when asked 'what do you see' or when you need to know what the camera is viewing",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -154,5 +194,9 @@ private:
     std::string host_address_and_port_{"http://localhost:8000"};
     int timeout_ms_ = 8000;
 
+    std::string image_dir_{"/robot_ws/camera_snapshots/"};
+
     std::unique_ptr<AISession> ai_session_;
+
+    std::string image_file_;
 };
