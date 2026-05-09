@@ -10,7 +10,7 @@
                                 <Script code=" power_ck_period_normal:=30 " />
                                 <Script code=" power_ck_period_critical:=15 " />
                                 <Script code=" power_ck_period:=power_ck_period_normal " />
-                                <Script code=" critical_voltage_thresh:=16.0 " />
+                                <Script code=" critical_voltage_thresh:=16.5 " />
                                 <Script code=" charge_pct_warn_thresh:=25.0 " />
                             </Sequence>
                         </RunOnce>
