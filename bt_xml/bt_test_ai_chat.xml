@@ -10,13 +10,6 @@
 					<ToolCallGetPositionAction command="init" />
 
 					<ToolCallDeclareAction tc_definition='\{
-      					"type": "function",
-       					"function": {
-           					"name": "get_robot_position",
-           					"description": "returns the current position in meters and heading in degrees of the robot"
-						}\}' />
-
-					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
         				"function": {
             				"name": "move_to",
