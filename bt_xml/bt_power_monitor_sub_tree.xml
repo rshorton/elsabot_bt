@@ -18,7 +18,15 @@
                             <IfThenElse>
                                 <TimeSinceAction time_point="{last_battery_chk_time}" comparison="greater" duration_sec="{power_ck_period}" />
                                 <Sequence>
-                                    <GetPowerStatusAction voltage="{voltage}" charge_pct="{charge_pct}" />
+                                    <Fallback>
+                                        <GetPowerStatusAction voltage="{voltage}" charge_pct="{charge_pct}" />
+                                        <ForceFailure>
+                                            <Sequence>
+                                                <Script code=" power_ck_period:=power_ck_period_normal " />
+                                                <GetTimeNowAction now="{last_battery_chk_time}" />
+                                            </Sequence>                                                
+                                        </ForceFailure>                                            
+                                    </Fallback>                                        
                                     <Precondition if="charge_pct<=charge_pct_warn_thresh" else="SUCCESS">
                                         <Sequence>
                                             <LogAction level="info" msg="BATTERY IS LOW" />
