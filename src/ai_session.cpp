@@ -89,6 +89,9 @@ void AISession::perform() {
   is_tool_call_ = false;
   full_response_ = std::string();
 
+  response_parse_error_ = false;
+  response_parse_error_tool_call_ = false;
+
   RCLCPP_INFO(logger_, "History context size (approx): %d", current_tokens_);
 
   auto token_cnt_before = current_tokens_;
@@ -119,18 +122,26 @@ void AISession::perform() {
 
     AISession::Result result;
 
-    if (curl_result == CURLE_OK) {
-      RCLCPP_INFO(logger_, "Request successful");
-      result = Result::success;
-    } else if (curl_result == CURLE_ABORTED_BY_CALLBACK) {
-      RCLCPP_INFO(logger_, "Model request was cancelled");
-      result = Result::cancelled;
-    } else if (curl_result == CURLE_OPERATION_TIMEDOUT) {
-      RCLCPP_ERROR(logger_, "Model request timed-out");
-      result = Result::timeout;
+    if (response_parse_error_tool_call_) {
+      result = Result::failed_resp_parse_error_tc;
+      RCLCPP_INFO(logger_, "Request failed, tool call parse error");
+    } else if (response_parse_error_) {
+      result = Result::failed_resp_parse_error_general;
+      RCLCPP_INFO(logger_, "Request failed, general parse error");
     } else {
-      RCLCPP_ERROR(logger_, "Model request failed: %s", curl_easy_strerror(curl_result));
-      result = Result::failed;
+      if (curl_result == CURLE_OK) {
+        RCLCPP_INFO(logger_, "Request successful");
+        result = Result::success;
+      } else if (curl_result == CURLE_ABORTED_BY_CALLBACK) {
+        RCLCPP_INFO(logger_, "Model request was cancelled");
+        result = Result::cancelled;
+      } else if (curl_result == CURLE_OPERATION_TIMEDOUT) {
+        RCLCPP_ERROR(logger_, "Model request timed-out");
+        result = Result::timeout;
+      } else {
+        RCLCPP_ERROR(logger_, "Model request failed: %s", curl_easy_strerror(curl_result));
+        result = Result::failed;
+      }
     }
     promise_.set_value(result);
   };
@@ -139,7 +150,7 @@ void AISession::perform() {
   auto data_callback = [&](std::string data) {
 
     // vLLM sends data in Server-Sent Events (SSE) format: "data: {...}"
-    //std::cout << "data_callback: " << data << std::endl;
+    std::cout << "data_callback: " << data << std::endl;
 
     size_t pos = 0;
 
@@ -272,6 +283,10 @@ std::string AISession::result_to_str(AISession::Result result) {
       return "timeout";
     case AISession::Result::failed:
       return "failed";
+    case AISession::Result::failed_resp_parse_error_general:
+      return "failed, general message parse error";
+    case AISession::Result::failed_resp_parse_error_tc:
+      return "failed, tool call parse error";
     default:
       return "unknown";
   }
@@ -375,48 +390,60 @@ void AISession::process_message(const std::string& msg_json) {
         }
 
       } else if (j["choices"][0]["delta"].contains("tool_calls")) {
-        const auto &tc = j["choices"][0]["delta"]["tool_calls"][0];
-        size_t index = tc["index"];
-        RCLCPP_DEBUG(logger_, "tc parse, index: %ld, base: %s", index, tc.dump().c_str());
+        try {
+          const auto &tc = j["choices"][0]["delta"]["tool_calls"][0];
+          size_t index = tc["index"];
+          RCLCPP_DEBUG(logger_, "tc parse, index: %ld, base: %s", index, tc.dump().c_str());
 
-        if (tc.contains("id")) {
-          toolcall_[index] = tc;
-          toolcall_args_[index] = "";
-        } else {
-          // Aggregate the argument fragments
-          std::string arg_frag = tc["function"]["arguments"];
-          toolcall_args_[index] += arg_frag;
-          RCLCPP_DEBUG(logger_, "tc parse, args, index: %ld, frag: %s, args accum: %s", index,
-                      arg_frag.c_str(), toolcall_args_[index].c_str());
-        }
+          if (tc.contains("id")) {
+            toolcall_[index] = tc;
+            toolcall_args_[index] = "";
+          } else {
+            // Aggregate the argument fragments
+            std::string arg_frag = tc["function"]["arguments"];
+            toolcall_args_[index] += arg_frag;
+            RCLCPP_DEBUG(logger_, "tc parse, args, index: %ld, frag: %s, args accum: %s", index,
+                        arg_frag.c_str(), toolcall_args_[index].c_str());
+          }
+        } catch (...) {
+          RCLCPP_ERROR(logger_, "Failed parsing model tool call message (delta)");
+          response_parse_error_ = true;
+          response_parse_error_tool_call_ = true;
+        }          
 
       } else if (j["choices"][0]["finish_reason"] == "tool_calls") {
-        // End of tool calls.  Assemble them into one object
-        auto tool_calls = json::parse(R"( {"choices": [ {"delta": {"tool_calls": []} } ]} )");
-        auto full_response_obj = tool_calls;
+        try {
+          // End of tool calls.  Assemble them into one object
+          auto tool_calls = json::parse(R"( {"choices": [ {"delta": {"tool_calls": []} } ]} )");
+          auto full_response_obj = tool_calls;
 
-        RCLCPP_DEBUG(logger_, "tc parse, prefix: %s", tool_calls.dump().c_str());
+          RCLCPP_DEBUG(logger_, "tc parse, prefix: %s", tool_calls.dump().c_str());
 
-        for (auto const& [key, value] : toolcall_) {
-          RCLCPP_DEBUG(logger_, "tc parse, key: %ld, value: %s, args: %s",
-                      key, value.dump().c_str(), toolcall_args_[key].c_str());
+          for (auto const& [key, value] : toolcall_) {
+            RCLCPP_DEBUG(logger_, "tc parse, key: %ld, value: %s, args: %s",
+                        key, value.dump().c_str(), toolcall_args_[key].c_str());
 
-          json tc_temp = value;
-          tc_temp["function"]["arguments"] = json::parse(toolcall_args_[key]);
-          tool_calls["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
+            json tc_temp = value;
+            tc_temp["function"]["arguments"] = json::parse(toolcall_args_[key]);
+            tool_calls["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
 
-          // Insert the args as json for the full_response since it that format is required
-          // for the message history
-          tc_temp = value;
-          tc_temp["function"]["arguments"] = toolcall_args_[key];
-          full_response_obj["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
-        }
+            // Insert the args as json for the full_response since it that format is required
+            // for the message history
+            tc_temp = value;
+            tc_temp["function"]["arguments"] = toolcall_args_[key];
+            full_response_obj["choices"][0]["delta"]["tool_calls"].push_back(tc_temp);
+          }
 
-        tool_call_ = tool_calls["choices"][0]["delta"]["tool_calls"].dump();
-        is_tool_call_ = true;
+          tool_call_ = tool_calls["choices"][0]["delta"]["tool_calls"].dump();
+          is_tool_call_ = true;
 
-        full_response_ = full_response_obj["choices"][0]["delta"]["tool_calls"].dump();
-        RCLCPP_DEBUG(logger_, "tc parse, tool_call_ (from deltas): %s", tool_call_.c_str());
+          full_response_ = full_response_obj["choices"][0]["delta"]["tool_calls"].dump();
+          RCLCPP_DEBUG(logger_, "tc parse, tool_call_ (from deltas): %s", tool_call_.c_str());
+        } catch (...) {
+          RCLCPP_ERROR(logger_, "Failed parsing model tool call message");
+          response_parse_error_ = true;
+          response_parse_error_tool_call_ = true;
+        }          
 
       } else if (j["choices"][0]["finish_reason"] == "stop") {        
         RCLCPP_DEBUG(logger_, "chat message end (from deltas): %s", full_response_.c_str());
@@ -460,7 +487,7 @@ void AISession::process_message(const std::string& msg_json) {
       if (j["choices"][0].contains("message") && 
           j["choices"][0]["message"].contains("content")) {
           full_response_ =  j["choices"][0]["message"]["content"];
-          RCLCPP_DEBUG(logger_, "chat content (from non-delta): %s", full_response_.c_str());
+          RCLCPP_INFO(logger_, "chat content (from non-delta): %s", full_response_.c_str());
           if (callback_data_) {
             callback_data_(full_response_);
           }          
@@ -468,6 +495,7 @@ void AISession::process_message(const std::string& msg_json) {
     }
   } catch (...) {
     RCLCPP_ERROR(logger_, "Failed parsing model response message");
+    response_parse_error_ = true;
   }
 }
 

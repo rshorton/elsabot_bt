@@ -19,7 +19,7 @@ class AISession {
  public:
   using CallbackData = std::function<void(const std::string &data)>;
 
-  enum class Result { success, cancelled, timeout, failed };
+  enum class Result { success, cancelled, timeout, failed, failed_resp_parse_error_general, failed_resp_parse_error_tc };
 
   AISession(const std::string &model, int max_context_size, const std::string &auth_token,
          const std::string &host_and_port, const std::string &resource, long timeout_ms,
@@ -173,6 +173,10 @@ class AISession {
 
   nlohmann::json request_data_;
   AISession::Result result_{AISession::Result::failed};
+
+  bool response_parse_error_{false};
+  bool response_parse_error_tool_call_{false};
+
   std::string full_response_;
   std::string tool_call_;
   bool is_tool_call_{false};

@@ -126,7 +126,12 @@ BT::NodeStatus AIAction::onRunning() {
 
     if (result == AISession::Result::cancelled ||
         result == AISession::Result::timeout ||
-        result == AISession::Result::failed) {
+        result == AISession::Result::failed ||
+        result == AISession::Result::failed_resp_parse_error_general) {
+      return BT::NodeStatus::FAILURE;
+
+    } else if (result == AISession::Result::failed_resp_parse_error_tc) {
+      ai_session_->report_tool_result("", "", "Failed to parse tool call");
       return BT::NodeStatus::FAILURE;
 
     } else {
