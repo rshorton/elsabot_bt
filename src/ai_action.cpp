@@ -38,6 +38,9 @@ BT::NodeStatus AIAction::onStart() {
     std::string system_prompt = "You are a helpful assistant.";
     getInput<std::string>("system_prompt", system_prompt);
 
+    // Note that timeout is set to 0 to avoid prematuring timing-out on streamed response.
+    // Lower level handling uses a transfer based timeout that times-out if the rate is too low
+                                              0, system_prompt, node_->get_logger(),
     ai_session_ = std::make_unique<AISession>(model_, max_context_size_, auth_token_,
                                               host_address_and_port_, resource_,
                                               timeout_ms_, system_prompt, node_->get_logger(),
