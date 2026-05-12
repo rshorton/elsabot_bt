@@ -96,7 +96,7 @@ private:
         "type": "function",
         "function": {
             "name": "get_robot_position",
-            "description": "Gets the current position and orientation of the robot. Use this tool when you are asked for or need your position. Returns a json object containing, x: x position in meters, y: y position in meters, yaw: orientation in degrees"
+            "description": "Gets the current position and orientation of the robot. Use this tool when you are asked for or need your position.  Always re-request the position prior to calculating a new position in case the robot was moved manually since the last position request. Returns a json object containing, x: x position in meters, y: y position in meters, yaw: orientation in degrees in the range [-180, 180] where +degrees is toward the left, -degrees to the right, and yaw=0  pointing along the +x axis"
         }
     })";
 };
