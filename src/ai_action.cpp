@@ -40,10 +40,10 @@ BT::NodeStatus AIAction::onStart() {
 
     // Note that timeout is set to 0 to avoid prematuring timing-out on streamed response.
     // Lower level handling uses a transfer based timeout that times-out if the rate is too low
-                                              0, system_prompt, node_->get_logger(),
+    // for too long.
     ai_session_ = std::make_unique<AISession>(model_, max_context_size_, auth_token_,
                                               host_address_and_port_, resource_,
-                                              timeout_ms_, system_prompt, node_->get_logger(),
+                                              0, system_prompt, node_->get_logger(),
                                               data_callback);
     if (!ai_session_) {
       RCLCPP_ERROR(node_->get_logger(), "Failed to create an AI session object");
