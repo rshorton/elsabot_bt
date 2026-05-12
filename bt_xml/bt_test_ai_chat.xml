@@ -19,8 +19,12 @@
 								"properties": {
                 					"location_and_orientation": {
                     					"type": "string",
-                    					"description": "The location and final orientation (yaw) as a common-separated string of this format: x,y,yaw  , where x and y are in meters, and yaw is in degrees" }},
-                				"required": ["location_and_orientation"]}}\}' />
+                    					"description": "The location and final orientation (yaw) as a common-separated string of this format: x,y,yaw  , where x and y are in meters, and yaw is in degrees" }
+									},
+                				"required": ["location_and_orientation"]
+							}
+						}
+					\}' />
 
 					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
@@ -28,8 +32,43 @@
             				"name": "get_map_locations",
             				"description": "Use this tool to get a list of specific x,y,yaw locations you can move to.  Use this tool when asked for the room map location for a place. ",
 							"returns": "A JSON array of objects each specifying:  location_name,x,y,yaw"
-						}\}' />
+						}
+					\}' />
 
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "speak",
+            				"description": "Use this tool to speak using TTS prior to the final prompt result.  For example, use this during multi-step tool calls.  Dont use this for the final result since that result is always spoken",
+							"parameters": {
+                				"type": "object",
+								"properties": {
+                					"text_to_say": {
+                    					"type": "string",
+                    					"description": "The text to be spoken" }
+								},
+                				"required": ["text_to_say"]
+							}
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "ask_question",
+            				"description": "Use this tool to ask the user a question and get there response.",
+							"parameters": {
+                				"type": "object",
+								"properties": {
+                					"question": {
+                    					"type": "string",
+                    					"description": "The text to ask the user"}
+								},
+                				"required": ["question"]
+							},
+							"returns": "Text string containing the user response"
+						}
+					\}' />
 
 					<SetBlackboard output_key="run_tools" value="n" />
 					<GetTimeNowAction now="{end_response_time}" />
@@ -64,6 +103,10 @@
 				<KeepRunningUntilFailure>
 					<ForceSuccess>
 						<Sequence>
+
+							<!-- ============================== -->
+							<!-- Get a new prompt from the user -->
+							<!-- ============================== -->
 
 							<Fallback>
 								<!-- Always run these -->
@@ -129,7 +172,7 @@
 									<!-- Fix - needed so that antenna state gets updated since SpeechToTextActionClient is
 										 sync.  Make it async instead. -->
 									<Delay delay_msec="100">
-										<SpeechToTextActionClient text="{said}" timeout="25" delay="{speech_to_text_delay}" />
+										<SpeechToTextActionClient text="{said}" max_speech_duration="25" start_delay="{speech_to_text_delay}"  		pre_speech_timeout="5" post_speech_timeout="2" />
 									</Delay>										
 								</Sequence>							
 							</Fallback>
@@ -215,7 +258,7 @@
 									<LogAction level="info" msg="Running tool: " arg1="{running_tool}" />
 
 									<Switch6 variable="{running_tool}" case_1="get_local_date_and_time"
-											 case_2="analyze_camera_frame" case_3="say_text" case_4="get_robot_position"
+											 case_2="analyze_camera_frame" case_3="speak" case_4="get_robot_position"
 											 case_5="move_to" case_6="get_map_locations" >
 										<ToolCallTimeAction command="run" args_json="{tool_call_args}" result_json="{tool_call_result}" />
 										<SubTree ID="AnalyzeCameraFrame" _autoremap="true"/>
@@ -229,13 +272,18 @@
 											 {"location": "robot home", "x": 0.55, "y": -0.22, "yaw": 74.0}]'/>
 										</Sequence>
 
-										<!-- Unrecognized tool -->
-										<ForceFailure>
-											<Sequence>
-												<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
-												<SetBlackboard output_key="tool_call_result" value="failed, unrecognized tool call" />
-											</Sequence>												
-										</ForceFailure>											
+
+										<Switch2 variable="{running_tool}" case_1="ask_question" case_2="dummy" >
+											<SubTree ID="AskQuestionAndGetResponse" _autoremap="true" />
+											<LogAction level="info" msg="Dummy case" />
+											<!-- Unrecognized tool -->
+											<ForceFailure>
+												<Sequence>
+													<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
+													<SetBlackboard output_key="tool_call_result" value="failed, unrecognized tool call" />
+												</Sequence>												
+											</ForceFailure>											
+										</Switch2>											
 									</Switch6>
 
 								</Sequence>								
@@ -321,6 +369,40 @@
 				<SetBlackboard output_key="tool_call_result" value="arrived" />
 				<SetBlackboard output_key="tool_call_result" value="failed" />
 			</IfThenElse>
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="AskQuestionAndGetResponse">
+        <Sequence>
+			<LogAction level="info" msg="AskQuestionAndGetResponse Subtree" arg1="{tool_call_args}" />
+			<!-- Parse json containing question to ask and store text in BB /-->
+			<ToolCallParseParamToBBAction tc_args="{tool_call_args}" obj_name="question" output="{text_to_speak}" />
+			<TextToSpeechAction text="{text_to_speak}" />
+			<SetBlackboard output_key="text_to_speak" value="" />
+
+			<!-- Give some time for TTS to become active before waiting for it to finish -->
+			<Delay delay_msec="500">
+				<!-- Wait for TTS to finish, best effort -->
+				<ForceSuccess>
+					<TTSActiveAction inactive_wait_timeout_sec="30.0" result="{tts_is_active}" return_on_active="SUCCESS" />
+				</ForceSuccess>		
+			</Delay>
+
+			<SetBlackboard output_key="antenna_state_req" value="listening" />
+			<SetBlackboard output_key="said" value=" " />
+		
+			<ForceSuccess>
+				<SpeechToTextActionClient text="{said}" max_speech_duration="25" start_delay="0.5" pre_speech_timeout="10" post_speech_timeout="2" />
+			</ForceSuccess>
+
+			<Precondition if="said==''" else="SUCCESS">
+				<SetBlackboard output_key="said" value="<Nothing said>" />
+			</Precondition>
+
+			<SetBlackboard output_key="tool_call_result" value="{said}" />
+			<SetBlackboard output_key="said" value="" />
+			<SetBlackboard output_key="antenna_state_req" value="model_active" />
+
 		</Sequence>
     </BehaviorTree>
 
