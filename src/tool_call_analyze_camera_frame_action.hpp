@@ -74,7 +74,7 @@ public:
         std::string system_prompt = "You analyze images.";
         ai_session_ = std::make_unique<AISession>(model_, max_context_size_, auth_token_,
                                                   host_address_and_port_, resource_,
-                                                  timeout_ms_, system_prompt, node_->get_logger(),
+                                                  0, system_prompt, node_->get_logger(),
                                                   nullptr);
         if (!ai_session_) {
             RCLCPP_ERROR(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, failed to create an AI session object");
