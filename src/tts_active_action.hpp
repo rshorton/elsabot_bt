@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <stdio.h>
 #include <string>
+#include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -64,24 +65,75 @@ private:
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
 };
 
-class TTSActiveAction : public BT::SyncActionNode
+class TTSActiveAction : public BT::StatefulActionNode
 {
     public:
 	TTSActiveAction(const std::string& name, const BT::NodeConfig& config, rclcpp::Node::SharedPtr node)
-            : BT::SyncActionNode(name, config)
+            : BT::StatefulActionNode(name, config)
         {
 			node_if_ = TTSActiveActionROSNodeIf::instance(node);
         }
 
-        virtual BT::NodeStatus tick() override
-        {
+        static BT::PortsList providedPorts() {
+            return {BT::InputPort<float>("inactive_wait_timeout_sec"),  // Wait for TTS to be active up to this long
+                    BT::InputPort<BT::NodeStatus>("return_on_active"),  // Node status to return if active
+                    BT::OutputPort<bool>("result")};                    // Actual TTS state when node finished
+        }
+
+        BT::NodeStatus onStart() {
+            inactive_wait_timeout_sec_ = 0.0f;
+            getInput<float>("inactive_wait_timeout_sec", inactive_wait_timeout_sec_);
+
+            return_on_active_ = BT::NodeStatus::SUCCESS;
+            getInput<BT::NodeStatus>("return_on_active", return_on_active_);
+
+            start_time_ = std::chrono::steady_clock::now();
+            return onRunning();
+        }
+
+        BT::NodeStatus onRunning() {
            	node_if_->update();
-            if (node_if_->tts_active_) {
-                return BT::NodeStatus::SUCCESS; 
+            auto is_active = node_if_->tts_active_;
+
+            // If no wait, just return current state
+            if (inactive_wait_timeout_sec_ == 0.0f) {
+                setOutput("result", is_active);
+                return get_return(is_active);
+
+            // If wait, then return after timeout or when TTS becomes inactive
+            } else {
+                if (!is_active) {
+                    setOutput("result", false);
+                    return get_return(is_active);
+                }
+
+                auto now = std::chrono::steady_clock::now();
+	            auto elapsed_sec = std::chrono::duration_cast<std::chrono::duration<float>>(now - start_time_).count();
+                if (elapsed_sec > inactive_wait_timeout_sec_) {
+                    setOutput("result", is_active);
+                    return get_return(is_active);
+                }
             }
-    		return BT::NodeStatus::FAILURE;
+            return BT::NodeStatus::RUNNING;    
+        }            
+
+        void onHalted() {
         }
 
     private:
+        BT::NodeStatus get_return(bool is_active) {
+            if (is_active) {
+                return return_on_active_;
+            } else if (return_on_active_ == BT::NodeStatus::SUCCESS) {
+                return BT::NodeStatus::FAILURE;
+            } else {
+                return BT::NodeStatus::SUCCESS; 
+            }                    
+        }
+
         std::shared_ptr<TTSActiveActionROSNodeIf> node_if_;
+        float inactive_wait_timeout_sec_{0.0f};
+        BT::NodeStatus return_on_active_{BT::NodeStatus::SUCCESS};
+
+        std::chrono::time_point<std::chrono::steady_clock> start_time_;
 };

@@ -66,6 +66,7 @@
 						<Sequence>
 
 							<Fallback>
+								<!-- Always run these -->
 								<ForceFailure>
 									<Sequence>
 										<SetBlackboard output_key="run_tools" value="n" />
@@ -73,29 +74,32 @@
 									</Sequence>										
 								</ForceFailure>								
 
+								<!-- Wait for TTS to finish playing out.  After finishing, enable VAD for a specified duration -->
 								<ForceFailure>
-									<IfThenElse>
-										<TTSActiveAction />
-										<Sequence>
-											<SetBlackboard output_key="antenna_state_req" value="model_active" />
-											<GetTimeNowAction now="{end_response_time}" />
-											<LogAction level="debug" msg="TTS active" />
-										</Sequence>											
-										<Sequence>
-											<!-- Only allow VAD to trigger STT if speech occurs within N second of model output -->
-											<IfThenElse>
-												<TimeSinceAction time_point="{end_response_time}" comparison="less" duration_sec="10" />
-												<Sequence>
-													<SetBlackboard output_key="use_vad" value="1" />
-													<SetBlackboard output_key="antenna_state_req" value="waiting_for_user_vad" />
-												</Sequence>
-												<Sequence>													
-													<SetBlackboard output_key="use_vad" value="0" />
-													<SetBlackboard output_key="antenna_state_req" value="waiting_for_user" />
-												</Sequence>													
-											</IfThenElse>												
-										</Sequence>											
-									</IfThenElse>
+									<Sequence>
+										<IfThenElse>
+											<TTSActiveAction inactive_wait_timeout_sec="0.0" result="{tts_is_active}" return_on_active="SUCCESS" />
+											<Sequence>
+												<SetBlackboard output_key="antenna_state_req" value="model_active" />
+												<GetTimeNowAction now="{end_response_time}" />
+												<LogAction level="debug" msg="TTS active" />
+											</Sequence>											
+											<Sequence>
+												<!-- Only allow VAD to trigger STT if speech occurs within N second of model output -->
+												<IfThenElse>
+													<TimeSinceAction time_point="{end_response_time}" comparison="less" duration_sec="10" />
+													<Sequence>
+														<SetBlackboard output_key="use_vad" value="1" />
+														<SetBlackboard output_key="antenna_state_req" value="waiting_for_user_vad" />
+													</Sequence>
+													<Sequence>													
+														<SetBlackboard output_key="use_vad" value="0" />
+														<SetBlackboard output_key="antenna_state_req" value="waiting_for_user" />
+													</Sequence>													
+												</IfThenElse>												
+											</Sequence>											
+										</IfThenElse>
+									</Sequence>										
 								</ForceFailure>
 
 								<!-- Optionally allow prompt to be specified via a topic
@@ -129,7 +133,11 @@
 									</Delay>										
 								</Sequence>							
 							</Fallback>
-													
+
+							<!-- ================================== -->
+							<!-- Process the prompt using the model -->														
+							<!-- ================================== -->
+
 							<LogAction level="info" msg="Using prompt: " arg1="{said}" />
 							<SetBlackboard output_key="text_to_speak" value="" />
 			
