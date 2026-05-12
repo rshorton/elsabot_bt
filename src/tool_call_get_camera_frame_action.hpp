@@ -60,7 +60,7 @@ public:
         // FIX - this does not work!!!  How to pass image back in tool call result?
         std::string result_json;
         nlohmann::json result_obj = nlohmann::json::array();
-        result_obj.push_back({{"type", "text"}, {"text", "Camera frame obtained."}});
+        result_obj.push_back({{"type", "text"}, {"text", "Camera image captured."}});
         result_obj.push_back({{"type", "image_url"}, {"image_url", {{"url", base64_image}}}});
 
         result_json = result_obj.dump();
