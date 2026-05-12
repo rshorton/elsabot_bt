@@ -45,8 +45,10 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<float>("delay"),
-                BT::InputPort<unsigned int>("timeout"),
+        return{ BT::InputPort<float>("start_delay"),
+                BT::InputPort<unsigned int>("max_speech_duration"),
+                BT::InputPort<unsigned int>("pre_speech_timeout"),
+                BT::InputPort<unsigned int>("post_speech_timeout"),
                 BT::OutputPort<std::string>("text") };
     }
 
@@ -58,11 +60,17 @@ public:
     		node_name << "speech_to_text_action_client" << instance++;
     	}
 
-       	unsigned int timeout = 10;
-		getInput<unsigned int>("timeout", timeout);
+       	unsigned int max_speech_duration = 10;
+		getInput<unsigned int>("max_speech_duration", max_speech_duration);
 
-    	float delay = 0.0f;
-		getInput<float>("delay", delay);
+        unsigned int pre_speech_timeout = 2;
+		getInput<unsigned int>("pre_speech_timeout", pre_speech_timeout);
+
+        unsigned int post_speech_timeout = 2;
+		getInput<unsigned int>("post_speech_timeout", post_speech_timeout);
+
+    	float start_delay = 0.0f;
+		getInput<float>("start_delay", start_delay);
 
         auto action_client = rclcpp_action::create_client<speech_action_interfaces::action::Recognize>(node_, "recognize");
         // if no server is present, fail after 10 seconds
@@ -73,11 +81,13 @@ public:
 
         _aborted = false;
 
-        RCLCPP_INFO(node_->get_logger(), "Sending speech-to-text goal, delay: %f", delay);
+        RCLCPP_INFO(node_->get_logger(), "Sending speech-to-text goal, start_delay: %f", start_delay);
 
         auto goal_msg = Recognize::Goal();
-        goal_msg.timeout = timeout;
-        goal_msg.delay = delay;
+        goal_msg.max_speech_duration = max_speech_duration;
+        goal_msg.pre_speech_timeout = pre_speech_timeout;
+        goal_msg.post_speech_timeout = post_speech_timeout;
+        goal_msg.start_delay = start_delay;
 
         auto goal_handle_future = action_client->async_send_goal(goal_msg);
         if (rclcpp::spin_until_future_complete(node_, goal_handle_future) !=
