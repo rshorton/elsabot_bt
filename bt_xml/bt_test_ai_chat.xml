@@ -6,7 +6,14 @@
 				<Sequence>
 					<!-- Declare the tool calls to be exposed to the model -->
 					<ToolCallTimeAction command="init" />
-					<ToolCallAnalyzeCameraFrameAction command="init" />
+
+					<!-- Probably not needed now that ToolCallAnalyzeCameraFrameAction works -->
+					<!--ToolCallAnalyzeCameraFrameAction command="init" /-->
+
+					<!-- Requires fix from https://github.com/vllm-project/vllm/pull/41459
+						 to allow images to be returned in tool call results -->
+					<ToolCallGetCameraFrameAction command="init" />
+
 					<ToolCallGetPositionAction command="init" />
 
 					<ToolCallDeclareAction tc_definition='\{
@@ -272,9 +279,9 @@
 											 {"location": "robot home", "x": 0.55, "y": -0.22, "yaw": 74.0}]'/>
 										</Sequence>
 
-
-										<Switch2 variable="{running_tool}" case_1="ask_question" case_2="dummy" >
+										<Switch3 variable="{running_tool}" case_1="ask_question" case_2="get_camera_frame" case_3="dummy" >
 											<SubTree ID="AskQuestionAndGetResponse" _autoremap="true" />
+											<SubTree ID="GetCameraFrame" _autoremap="true" />
 											<LogAction level="info" msg="Dummy case" />
 											<!-- Unrecognized tool -->
 											<ForceFailure>
@@ -283,7 +290,7 @@
 													<SetBlackboard output_key="tool_call_result" value="failed, unrecognized tool call" />
 												</Sequence>												
 											</ForceFailure>											
-										</Switch2>											
+										</Switch3>											
 									</Switch6>
 
 								</Sequence>								
@@ -335,10 +342,12 @@
 	<BehaviorTree ID="ToolCallGetCameraFrame">
         <Sequence>
 			<GetCameraFrameAction base64_image="{b64_image}" />
+			<PlayAudioFileAction file_path="/robot_ws/audio_files/camera_shutter.mp3" stream_type="bg" req_id="3" />
 			<ToolCallGetCameraFrameAction command="run" base64_image="{b64_image}" result_json="{tool_call_result}" />
 		</Sequence>
     </BehaviorTree>
 
+	<!-- May not be needed now that images can be returned in tool calls-->
 	<BehaviorTree ID="AnalyzeCameraFrame">
         <Sequence>
 			<GetCameraFrameAction base64_image="{b64_image}" />
