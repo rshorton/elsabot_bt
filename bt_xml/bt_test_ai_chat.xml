@@ -339,7 +339,7 @@
 		</Sequence>			
 	</BehaviorTree>
 
-	<BehaviorTree ID="ToolCallGetCameraFrame">
+	<BehaviorTree ID="GetCameraFrame">
         <Sequence>
 			<GetCameraFrameAction base64_image="{b64_image}" />
 			<PlayAudioFileAction file_path="/robot_ws/audio_files/camera_shutter.mp3" stream_type="bg" req_id="3" />
