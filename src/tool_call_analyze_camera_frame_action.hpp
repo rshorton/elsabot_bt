@@ -18,16 +18,13 @@ limitations under the License.
 
 #include <stdio.h>
 #include <string>
-#include <fstream> 
 
 #include <behaviortree_cpp/action_node.h>
 
 #include "ai_session.hpp"
 #include "ros_common.hpp"
-#include "base64.hpp"
 #include "tool_call_data.hpp"
-
-#define VLLM_GEMMA
+#include "image_utils.hpp"
 
 class ToolCallAnalyzeCameraFrameAction : public BT::StatefulActionNode
 {
@@ -46,9 +43,6 @@ public:
     }
 
     BT::NodeStatus onStart() {
-        //auto data_callback = [&](const std::string &data) {
-        //};
-
         std::string command;
         getInput<std::string>("command", command);
 
@@ -69,7 +63,7 @@ public:
       			throw BT::RuntimeError("missing base64_image");
         }
 
-        image_file_ = save_image(base64_image);
+        image_utils::save_image(image_dir_, base64_image, image_file_);
 
         std::string system_prompt = "You analyze images.";
         ai_session_ = std::make_unique<AISession>(model_, max_context_size_, auth_token_,
@@ -132,40 +126,6 @@ public:
     }
 
 private:
-
-    std::string get_image_filename(const std::string& extension) {
-        auto t = std::time(nullptr);
-        auto tm = *std::localtime(&t);
-
-        std::ostringstream oss;
-        oss << image_dir_ << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S") << extension;
-        return oss.str();
-    }
-
-    std::string save_image(const std::string &b64_image) {
-
-        size_t found = b64_image.find(",");
-        if (found == std::string::npos) {
-            RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, failed to save image, bad b64 image");
-            return std::string();
-        }
-        auto b64_data = b64_image.substr(found + 1);
-
-        auto image_bytes = base64_decode(b64_data);
-
-        auto fname = get_image_filename(".jpg");
-        std::ofstream out_file(fname, std::ios::binary);
-        if (out_file.is_open()) {
-            out_file.write(reinterpret_cast<const char*>(image_bytes.data()), image_bytes.size());
-            out_file.close();
-        } else {
-            RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, failed to save image to: %s",
-                        fname.c_str());
-            return std::string();
-        }
-        return fname;
-    }
-
     std::string tool_desc_ = R"({
         "type": "function",
         "function": {

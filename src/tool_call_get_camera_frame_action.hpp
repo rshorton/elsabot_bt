@@ -23,6 +23,7 @@ limitations under the License.
 
 #include "ros_common.hpp"
 #include "tool_call_data.hpp"
+#include "image_utils.hpp"
 
 class ToolCallGetCameraFrameAction : public BT::SyncActionNode
 {
@@ -57,7 +58,9 @@ public:
         }
         RCLCPP_INFO(node_->get_logger(), "Tool call get camera frame, image size: %ld", base64_image.size());
 
-        // FIX - this does not work!!!  How to pass image back in tool call result?
+        std::string image_file;
+        image_utils::save_image(image_dir_, base64_image, image_file);
+
         std::string result_json;
         nlohmann::json result_obj = nlohmann::json::array();
         result_obj.push_back({{"type", "text"}, {"text", "Camera image captured."}});
@@ -79,4 +82,6 @@ private:
             "description": "Gets a frame from the camera.  Returns a base64 encoded jpeg image.  Always use this tool to get a new frame when you need to analyze/see things around you.  Dont use old frames."
         }
     })";
+
+    std::string image_dir_{"/robot_ws/camera_snapshots/"};
 };

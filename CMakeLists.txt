@@ -98,6 +98,7 @@ add_executable(elsabot_bt
   src/tool_call_data.cpp
   src/base64.cpp
   src/ai_action.cpp
+  src/image_utils.cpp
 )
 ament_target_dependencies(elsabot_bt
 	${dependencies}
