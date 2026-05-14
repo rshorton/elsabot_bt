@@ -27,14 +27,9 @@ class AIAction : public BT::StatefulActionNode {
 
   rclcpp::Node::SharedPtr node_;
 
-#if defined(VLLM_GEMMA)  
   std::string model_{"cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit"};
   std::string resource_{"/v1/chat/completions"};
   int max_context_size_{64000};
-#else
-  std::string resource_{"/completions"};
-  int max_context_size_{4096};
-#endif
   std::string auth_token_{"none"};
 
   std::string host_address_and_port_{"http://localhost:8000"};

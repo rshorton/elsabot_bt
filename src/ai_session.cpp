@@ -27,13 +27,13 @@ AISession::~AISession() {
 }
 
 void AISession::report_tool_result(const std::string &id, const std::string &name, const std::string &result_json) {
-  int num_tokens = fetch_token_count(result_json);
-  history_.push_back(std::make_unique<SessionMessage_ToolResult>("tool", num_tokens, name, id, result_json));
-  current_tokens_ += num_tokens;
+  // Limit length since b64 images can be large
+  RCLCPP_INFO(logger_, "Tool call result: %s", result_json.substr(0, 5000).c_str());
+  auto has_image = result_json.find("image_url") != std::string::npos;
+  history_.push_back(std::make_unique<SessionMessage_ToolResult>("tool", 0, name, id, result_json, has_image));
 }
 
 void AISession::tool_calls_finished(bool stream, const std::string &tools_json) {
-#if defined(VLLM_GEMMA)              
   json tools;
   if (tools_json.empty()) {
     tools = json::array();
@@ -42,26 +42,23 @@ void AISession::tool_calls_finished(bool stream, const std::string &tools_json) 
   }
 
   request_data_ = {{"model", model_},
-                   {"stream", stream},
                    {"tools", tools},
                    {"tool_choice", "auto"},
-                   {"messages", format_prompt()}
+                   {"messages", format_prompt()},
+                   {"stream", stream},
+                   {"extra_body", {{"chat_template_kwargs", {{"enable_thinking", true}}}}}
                   };
+  // Need to request usage streaming used
+  if (stream) {
+    request_data_["stream_options"] = {{"include_usage", true}};
+  }                  
 
   perform();
-#else
-  // Not supported                            
-  return;                                
-#endif
 }
 
 void AISession::user_prompt(const std::string &prompt, bool stream, const std::string &tools_json, const std::string &b64_image) {
-  // Fix, account for images
-  int num_tokens = fetch_token_count(prompt);
-  history_.push_back(std::make_unique<SessionMessage_UserPrompt>("user", num_tokens, prompt, b64_image));
-  current_tokens_ += num_tokens;
+  history_.push_back(std::make_unique<SessionMessage_UserPrompt>("user", 0, prompt, b64_image));
 
-#if defined(VLLM_GEMMA)                              
   json tools;
   if (tools_json.empty()) {
     tools = json::array();
@@ -70,18 +67,16 @@ void AISession::user_prompt(const std::string &prompt, bool stream, const std::s
   }    
 
   request_data_ = {{"model", model_},
-                   {"stream", stream},
                    {"tools", tools},
                    {"tool_choice", "auto"},
-                   {"messages", format_prompt()}
+                   {"messages", format_prompt()},
+                   {"stream", stream},
+                   {"extra_body", {{"chat_template_kwargs", {{"enable_thinking", true}}}}}
                   };
-#else
-  // We use the /completions endpoint for manual templating
-  request_data_ = {{"prompt", format_prompt()},
-                   {"stream", true},
-                   {"stop", {"</s>", "[INST]"}}
-                  };
-#endif                            
+  // Need to request usage streaming used
+  if (stream) {
+    request_data_["stream_options"] = {{"include_usage", true}};
+  }                  
   perform();
 }                                                            
 
@@ -91,24 +86,9 @@ void AISession::perform() {
 
   response_parse_error_ = false;
   response_parse_error_tool_call_ = false;
+  token_usage_cur_msg_ = TokenUsage();
 
-  RCLCPP_INFO(logger_, "History context size (approx): %d", current_tokens_);
-
-  auto token_cnt_before = current_tokens_;
-  while (current_tokens_ > (max_context_size_ - 1000) && !history_.empty()) {
-    current_tokens_ -= history_.front()->token_count_;
-    history_.pop_front();
-    // Pop by prompt/response pairs
-    if (!history_.empty()) {
-      current_tokens_ -= history_.front()->token_count_;
-      history_.pop_front();
-    }
-  }
-
-  if (token_cnt_before != current_tokens_) {
-    RCLCPP_DEBUG(logger_, "Purged history to reduce context size: before: %d, after: %d",
-      token_cnt_before, current_tokens_);
-  }
+  prune_message_history_as_needed();
 
   auto req_text = request_data_.dump();
 
@@ -146,7 +126,6 @@ void AISession::perform() {
     promise_.set_value(result);
   };
 
-#if defined(VLLM_GEMMA)
   auto data_callback = [&](std::string data) {
 
     // vLLM sends data in Server-Sent Events (SSE) format: "data: {...}"
@@ -189,48 +168,20 @@ void AISession::perform() {
           break;
         }
 
-        process_message(json_str);
+        process_message(json_str, token_usage_cur_msg_);
         pos = end;
       }
     } else {
-      process_message(data);
+      process_message(data, token_usage_cur_msg_);
     }      
   };
-#else
-  auto data_callback = [&](std::string data) {
-    // std::cout << "data_callback: " << data << std::endl;
-    //  Example:  data:
-    //    delta update
-    //  data: {"index":0,"content":","tokens":[29871],"stop":false,"id_slot":-1,"tokens_predicted":44,"tokens_evaluated":239}\n
-    //
-    //  When finished:  "stop": true
 
-    size_t pos = 0;
-    while ((pos = data.find("data: ", pos)) != std::string::npos) {
-      pos += 6;
-      size_t end = data.find("\n", pos);
-      if (end == std::string::npos) {
-        break;
-      }
-      try {
-        std::string c = json::parse(data.substr(pos, end - pos))["content"];
-        //std::cout << c << std::flush;
-        full_response_ += c;
-        callback_data_(c);
+  promise_ = std::move(std::promise<AISession::Result>());
+  future_ = std::move(promise_.get_future());
 
-      } catch (...) {
-      }
-      pos = end;
-    }
-  };
-#endif
-
-    promise_ = std::move(std::promise<AISession::Result>());
-    future_ = std::move(promise_.get_future());
-
-    request_ = std::make_unique<HttpRequest>(true, url, timeout_ms_, std::string(), req_text,
-                                             true, completion_callback, data_callback);
-    request_->perform();
+  request_ = std::make_unique<HttpRequest>(true, url, timeout_ms_, std::string(), req_text,
+                                            true, completion_callback, data_callback);
+  request_->perform();
 }
 
 bool AISession::is_finished(std::string &response, bool &is_tool_call, AISession::Result &result) {
@@ -254,13 +205,16 @@ bool AISession::is_finished(std::string &response, bool &is_tool_call, AISession
         response = full_response_;
       }
 
-      int num_tokens = fetch_token_count(response);
+      // Set the token size for the last prompt/tool response based on the prompt_token delta since the previous msg
+      update_tokens_for_last_prompt(token_usage_cur_msg_.prompt_tokens_ - token_usage_.prompt_tokens_);
+      current_tokens_ = token_usage_cur_msg_.total_tokens_;
+      token_usage_ = token_usage_cur_msg_;
+
       if (is_tool_call) {
-        history_.push_back(std::make_unique<SessionMessage_ToolRequest>("assistant", num_tokens, full_response_));
+        history_.push_back(std::make_unique<SessionMessage_ToolRequest>("assistant", token_usage_cur_msg_.completion_tokens_, full_response_));
       } else {
-        history_.push_back(std::make_unique<SessionMessage_Response>("assistant", num_tokens, full_response_));
+        history_.push_back(std::make_unique<SessionMessage_Response>("assistant", token_usage_cur_msg_.completion_tokens_, full_response_));
       }        
-      current_tokens_ += num_tokens;
     }
     return true;
   }
@@ -292,40 +246,17 @@ std::string AISession::result_to_str(AISession::Result result) {
   }
 }
 
+// Rough estimate - doesn't handle images
 int AISession::fetch_token_count(const std::string& text) const {
-#if defined(VLLM_GEMMA)
-  int count = (int)text.length() / 4;
-
-#else
-  json body = {{"content", text}};
-  // Default count to length/4 if cannot request
-  int count = (int)text.length() / 4;
-
-  auto completion_callback = [&](std::string data, CURLcode result) {
-    RCLCPP_DEBUG(logger_, "Completion_callback (token count): %s", data.c_str());
-
-    if (result == CURLE_OK) {
-      RCLCPP_DEBUG(logger_, "Token count request successful. Data length: %ld bytes", data.length());
-      count = (int)json::parse(data)["tokens"].size();
-    } else if (result == CURLE_OPERATION_TIMEDOUT) {
-      RCLCPP_ERROR(logger_, "Token count request timed-out.");
-    } else {
-      RCLCPP_ERROR(logger_, "Token count request failed: %s", curl_easy_strerror(result));
-    }
-  };
-
-  auto url = host_address_and_port_ + "/tokenize";
-  auto timeout = 8000;
-
-  request_ = std::make_unique<HttpRequest>(
-      false, url, timeout, std::string(), body.dump(), false,
-      completion_callback, nullptr);
-  request_->perform();
-#endif    
-  return count;
+  return (int)text.length() / 4;
 }
 
-#if defined(VLLM_GEMMA)
+void AISession::update_tokens_for_last_prompt(size_t tokens) {
+  if (history_.size()) {
+    history_.back()->set_token_count(tokens);
+  }
+}
+
 json AISession::format_prompt() const {
 
   json prompt = json::array();
@@ -333,39 +264,17 @@ json AISession::format_prompt() const {
 
   auto last_index = (long int)history_.size() - 1;
 
+  RCLCPP_INFO(logger_, "Context summary:");
   for (auto it = history_.begin(); it != history_.end(); ++it) {
     auto index = std::distance(history_.begin(), it);
     auto m = (*it)->get_json(last_index == index);
     prompt.push_back(m);
+    RCLCPP_INFO(logger_, "%s", (*it)->get_description().c_str());
   }
   return prompt;
 }
 
-#else
-// Manual Llama 2 Template Builder
-std::string AISession::format_prompt() {
-  std::string prompt =
-      "<s>[INST] <<SYS>>\n" + system_prompt_ + "\n<</SYS>>\n\n";
-  
-  bool first_user = true;
-
-  for (const auto& msg : history_) {
-    if (msg.role == "user") {
-      if (!first_user) {
-        prompt += "<s>[INST] ";
-      }
-
-      prompt += msg.content + " [/INST] ";
-      first_user = false;
-    } else {
-      prompt += msg.content + " </s>";
-    }
-  }
-  return prompt;
-}
-#endif
-
-void AISession::process_message(const std::string& msg_json) {      
+void AISession::process_message(const std::string& msg_json, TokenUsage &usage) {      
   json j;
   try {
     j = json::parse(msg_json);
@@ -375,8 +284,20 @@ void AISession::process_message(const std::string& msg_json) {
   }
 
   try {
+    if (j.contains("usage")) {
+      if (j["usage"].contains("prompt_tokens")) {
+        usage.prompt_tokens_ = j["usage"]["prompt_tokens"];
+      }
+      if (j["usage"].contains("total_tokens")) {
+        usage.total_tokens_ = j["usage"]["total_tokens"];
+      }
+      if (j["usage"].contains("completion_tokens")) {
+        usage.completion_tokens_ = j["usage"]["completion_tokens"];
+      }
+    }
+
     if (!j.contains("choices") || j["choices"].empty()) {
-      RCLCPP_ERROR(logger_, "model message missing choices, msg: %s", msg_json.c_str());
+      RCLCPP_DEBUG(logger_, "message missing choices, msg: %s", msg_json.c_str());
       return;
     }
 
@@ -499,4 +420,50 @@ void AISession::process_message(const std::string& msg_json) {
   }
 }
 
+std::string AISession::session_message_to_str(AISession::SessionMessageType msg_type) {
+  switch (msg_type) {
+    case AISession::SessionMessageType::prompt:
+      return "prompt";
+    case AISession::SessionMessageType::response:
+      return "response";
+    case AISession::SessionMessageType::tool_request:
+      return "tool_request";
+    case AISession::SessionMessageType::tool_result:
+      return "tool_response";
+    default:
+      return "unknown";
+  }
+}
 
+void AISession::prune_message_history_as_needed() {
+  RCLCPP_INFO(logger_, "Context size (est): %d, | Usage from last response, prompt_tokens: %ld, completion_tokens: %ld, total_tokens: %ld",
+    current_tokens_, token_usage_.prompt_tokens_, token_usage_.completion_tokens_, token_usage_.total_tokens_);
+
+  auto token_cnt_before = current_tokens_;
+
+  if (current_tokens_ > max_context_size_ && !history_.empty()) {
+    // Remove images from oldest to newest
+    for (auto &item: history_) {
+      if (item->has_image()) {
+        current_tokens_ -= item->get_token_count();
+        item->set_use_image(false);
+      }
+    }      
+  }
+
+  // If history still too large, drop message pairs
+  while (current_tokens_ > max_context_size_ && !history_.empty()) {
+    current_tokens_ -= history_.front()->token_count_;
+    history_.pop_front();
+    // Pop by prompt/response pairs
+    if (!history_.empty()) {
+      current_tokens_ -= history_.front()->token_count_;
+      history_.pop_front();
+    }
+  }
+
+  if (token_cnt_before != current_tokens_) {
+    RCLCPP_DEBUG(logger_, "Purged history to reduce context size: before: %d, after: %d",
+      token_cnt_before, current_tokens_);
+  }
+}

@@ -86,8 +86,6 @@ BT::NodeStatus AIAction::onRunning() {
       setOutput("tool_call_result", "");
       tool_call_wait_ = false;
 
-      RCLCPP_INFO(node_->get_logger(), "Reporting tool call result, id: %s, name: %s, result: %s",
-                  tool_call_id_.c_str(), tool_call_name_.c_str(), tool_call_result.c_str());
       ai_session_->report_tool_result(tool_call_id_, tool_call_name_, tool_call_result);
       return next_tool_call();
 

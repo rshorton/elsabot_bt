@@ -13,14 +13,13 @@
 #include <future>
 #include <memory>
 
-#define VLLM_GEMMA
-
 class AISession {
  public:
   using CallbackData = std::function<void(const std::string &data)>;
 
   enum class Result { success, cancelled, timeout, failed, failed_resp_parse_error_general, failed_resp_parse_error_tc };
-
+  enum class SessionMessageType { prompt, response, tool_request, tool_result};
+ 
   AISession(const std::string &model, int max_context_size, const std::string &auth_token,
          const std::string &host_and_port, const std::string &resource, long timeout_ms,
          const std::string &system_prompt, rclcpp::Logger logger,
@@ -38,37 +37,92 @@ class AISession {
 
   static std::string result_to_str(AISession::Result result);
 
+  static std::string session_message_to_str(AISession::SessionMessageType);
+
  private:
+  class TokenUsage {
+  public:    
+    TokenUsage() {};
+
+    TokenUsage(size_t prompt_tokens, size_t completion_tokens, size_t total_tokens):
+      prompt_tokens_(prompt_tokens),
+      completion_tokens_(completion_tokens),
+      total_tokens_(total_tokens)
+    {}
+
+    size_t prompt_tokens_{0};       // The number of tokens sent to the model
+    size_t completion_tokens_{0};   // The number of tokens the model generated in last response
+    size_t total_tokens_{0};        // Sum of prompt + completion tokens
+  };
+
   void perform();
-  void process_message(const std::string& msg_json);
+  void process_message(const std::string& msg_json, TokenUsage &usage);
   int fetch_token_count(const std::string& text) const;
+  void update_tokens_for_last_prompt(size_t tokens);
+  void prune_message_history_as_needed();
 
-#if defined(VLLM_GEMMA)
   nlohmann::json format_prompt() const;
-#else
-  std::string format_prompt();
-#endif
-
+  
   class SessionMessage {
   public:
-    SessionMessage(const std::string role, const int token_count):
+    SessionMessage(SessionMessageType msg_type, const std::string &role, const int token_count, bool has_image):
+      msg_type_(msg_type),
       role_(role),
-      token_count_(token_count)
+      token_count_(token_count),
+      has_image_(has_image)
     {}
 
     virtual nlohmann::json get_json(bool) {
         return {{"role", role_}};
     }
+    void set_token_count(size_t count) {
+      token_count_ = count;
+    }
 
+    virtual std::string get_description() {
+      std::stringstream ss;
+      ss << "type: " << session_message_to_str(msg_type_) << ", role: " << role_ << ", tokens: " << token_count_;
+      return ss.str();
+    }
+
+    SessionMessageType get_type() const {
+      return msg_type_;
+    }
+
+    bool has_image() const {
+      return has_image_ && use_image_;
+    }
+
+    bool use_image() const {
+      return use_image_;
+    }
+
+    void set_use_image(bool use) {
+      use_image_ = use;
+    }
+    
+    size_t get_token_count() const {
+      // If the image is omitted, the token count
+      // will be > 0 but small.  
+      if (has_image_ && !use_image_) {
+        return 0;
+      } else {
+        return token_count_;
+      }
+    }
+
+    SessionMessageType msg_type_;
     std::string role_;
     int token_count_;
+    bool has_image_;
+    bool use_image_{true};
   };
 
   class SessionMessage_UserPrompt: public SessionMessage {
   public:
     SessionMessage_UserPrompt(const std::string role, const int token_count, const std::string &prompt,
                               const std::string &b64_image):
-      SessionMessage(role, token_count),
+      SessionMessage(SessionMessageType::prompt, role, token_count, !b64_image.empty()),
       prompt_(prompt),
       b64_image_(b64_image)
     {}
@@ -79,8 +133,12 @@ class AISession {
         m["content"] = prompt_;
       } else {
         nlohmann::json msg = nlohmann::json::array();
-        msg.push_back({{"type", "image_url"}, {"image_url", {{"url", b64_image_}}}});
-        msg.push_back({{"type", "text"}, {"text", prompt_}});
+        if (use_image()) {
+          msg.push_back({{"type", "image_url"}, {"image_url", {{"url", b64_image_}}}});
+          msg.push_back({{"type", "text"}, {"text", prompt_}});
+        } else {
+          msg.push_back({{"type", "text"}, {"text", prompt_ + "[image removed to reduce context size]"}});
+        }
         m["content"] = msg;
       }
       return m;
@@ -93,7 +151,7 @@ class AISession {
   class SessionMessage_Response: public SessionMessage {
   public:
     SessionMessage_Response(const std::string role, const int token_count, const std::string &response):
-      SessionMessage(role, token_count),
+      SessionMessage(SessionMessageType::response, role, token_count, false),
       response_(response)
     {}
 
@@ -109,7 +167,7 @@ class AISession {
   class SessionMessage_ToolRequest: public SessionMessage {
   public:
     SessionMessage_ToolRequest(const std::string role, const int token_count, const std::string &tool_call_json):
-      SessionMessage(role, token_count),
+      SessionMessage(SessionMessageType::tool_request, role, token_count, false),
       tool_call_json_(tool_call_json)
     {}
 
@@ -125,8 +183,8 @@ class AISession {
   class SessionMessage_ToolResult: public SessionMessage {
   public:
     SessionMessage_ToolResult(const std::string role, const int token_count, const std::string &name,
-      const std::string &id, const std::string &tool_result_json):
-      SessionMessage(role, token_count),
+      const std::string &id, const std::string &tool_result_json, bool has_image):
+      SessionMessage(SessionMessageType::tool_result, role, token_count, has_image),
       name_(name),
       id_(id),
       tool_result_json_(tool_result_json)
@@ -136,24 +194,41 @@ class AISession {
       nlohmann::json m = SessionMessage::get_json(is_last);
       m["tool_call_id"] = id_;
       m["name"] = name_;
-      // Only send tool result once (ie. for the turn it was created)
-      if (!reported_) {
-        if (name_ == "get_camera_frame") {
-          m["content"] = nlohmann::json::parse(tool_result_json_);
-        } else {
-          m["content"] = tool_result_json_;
-        }          
-        //reported_ = true;
+
+      if (has_image()) {
+        // Content for image type is an object
+        m["content"] = nlohmann::json::parse(tool_result_json_);
+
+        // If the image should be purged, then remove the url and update the text field to indicate
+        // the image was removed
+        if (!use_image()) {
+          if (m["content"].is_array()) {
+            // The following handles multiple images in the result
+            for (auto it = m["content"].begin(); it != m["content"].end(); ) {
+              if (it->is_object() && it->value("type", "") == "image_url") {
+                it = m["content"].erase(it);
+              } else {
+                ++it;
+              }
+            }
+
+            for (auto &item: m["content"]) {
+              if (item.contains("text")) {
+                item["text"] += " [image removed to reduce context size]";
+              }
+            }
+          }
+        }
       } else {
-        m["content"] = R"({})";
-      }        
+        // Otherwise content contains json
+        m["content"] = tool_result_json_;
+      }          
       return m;
     }
 
     std::string name_;
     std::string id_;
     std::string tool_result_json_;
-    bool reported_{false};
   };
 
   const std::string model_;
@@ -176,6 +251,9 @@ class AISession {
 
   bool response_parse_error_{false};
   bool response_parse_error_tool_call_{false};
+
+  TokenUsage token_usage_;
+  TokenUsage token_usage_cur_msg_;
 
   std::string full_response_;
   std::string tool_call_;
