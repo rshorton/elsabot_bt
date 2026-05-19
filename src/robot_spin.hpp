@@ -22,14 +22,11 @@ limitations under the License.
 #include <thread>
 
 #include "rclcpp/rclcpp.hpp"
-
 #include "geometry_msgs/msg/pose_stamped.hpp"
-
-#include "tf2/utils.h"
-
 #include "geometry_msgs/msg/twist.hpp"
-
+#include "tf2/utils.h"
 #include <behaviortree_cpp/action_node.h>
+#include "robot_status.hpp"
 
 using namespace std;
 
@@ -83,7 +80,7 @@ class RobotSpin : public BT::ThreadedAction
         		RCLCPP_ERROR(node_->get_logger(), "Did not receive current robot pose");
         		return BT::NodeStatus::FAILURE;
         	}
-
+			
         	strt_yaw_ = cur_yaw;
         	prev_yaw_ = cur_yaw;
         	relative_yaw_ = 0.0;
@@ -106,47 +103,58 @@ class RobotSpin : public BT::ThreadedAction
         	vel_ = copysign(vel_, delta_yaw_goal_);
 
         	geometry_msgs::msg::Twist cmd_vel;
+			cmd_vel.linear.x = 0.0;
+			cmd_vel.linear.y = 0.0;
+			cmd_vel.linear.z = 0.0;
+
         	cmd_vel.angular.z = vel_;
         	vel_pub_->publish(cmd_vel);
 
-        	rclcpp::Rate rate(20);
-        	while (rclcpp::ok()) {
-        		if (robot_status->GetPose(cur_x, cur_y, cur_z, cur_yaw)) {
-					
-                	// From Nav2_recoveries/plugings/spin.cpp
-                	double delta_yaw = cur_yaw - prev_yaw_;
-                	if (abs(delta_yaw) > M_PI) {
-                	    delta_yaw = copysign(2 * M_PI - abs(delta_yaw), prev_yaw_);
-                	}
+			try {
+				rclcpp::Rate rate(20);
+				while (rclcpp::ok() && !isHaltRequested()) {
+					if (robot_status->GetPose(cur_x, cur_y, cur_z, cur_yaw)) {
+						
+						// From Nav2_recoveries/plugings/spin.cpp
+						double delta_yaw = cur_yaw - prev_yaw_;
+						if (abs(delta_yaw) > M_PI) {
+							delta_yaw = copysign(2 * M_PI - abs(delta_yaw), prev_yaw_);
+						}
 
-                	relative_yaw_ += delta_yaw;
-                	prev_yaw_ = cur_yaw;
+						relative_yaw_ += delta_yaw;
+						prev_yaw_ = cur_yaw;
 
-                	double remaining_yaw = abs(delta_yaw_goal_) - abs(relative_yaw_);
+						double remaining_yaw = abs(delta_yaw_goal_) - abs(relative_yaw_);
 
-                	//RCLCPP_INFO(node_->get_logger(), "Spin: cur: %.2f, prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
-                	//		cur_yaw, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
+						RCLCPP_DEBUG(node_->get_logger(), "Spin: cur: %.2f (%.2f), prev: %.2f, delta: %.2f, rel: %.2f, remain: %.2f",
+								cur_yaw, cur_yaw*180.0/M_PI, prev_yaw_, delta_yaw, relative_yaw_, remaining_yaw);
 
-                	if (remaining_yaw < 1e-6 || _aborted) {
-                    	cmd_vel.angular.z = 0.0;
-                    	vel_pub_->publish(cmd_vel);
-                    	break;
-                	}
+						if (remaining_yaw < 1e-6 || isHaltRequested()) {
+							cmd_vel.angular.z = 0.0;
+							vel_pub_->publish(cmd_vel);
+							break;
+						}
 
-                	vel_pub_->publish(cmd_vel);
-        		}
-        		rclcpp::spin_some(node_);
-        		rate.sleep();
-        	}
+						vel_pub_->publish(cmd_vel);
+					}
+					rate.sleep();
+				}
+ 			} catch (const std::exception& e) {
+				RCLCPP_ERROR(node_->get_logger(), "%s; exception: %s", name().c_str(), e.what());
+			}				
+
+			cmd_vel.angular.z = 0.0;
+			vel_pub_->publish(cmd_vel);
+
         	if (_aborted) {
         		_aborted = false;
-        		return BT::NodeStatus::IDLE;
         	}
        		return BT::NodeStatus::SUCCESS;
         }
 
         virtual void halt() override {
             _aborted = true;
+			BT::ThreadedAction::halt();	// Must call base class
         }
 
     private:

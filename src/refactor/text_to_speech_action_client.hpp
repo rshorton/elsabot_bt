@@ -33,7 +33,9 @@ limitations under the License.
 #include "std_msgs/msg/header.hpp"
 #include "behaviortree_cpp/action_node.h"
 
+#if defined(USE_GAME_FEATURES)		
 #include "game_settings.hpp"
+#endif
 
 class TextToSpeechActionClient : public BT::SyncActionNode
 {
@@ -176,6 +178,7 @@ public:
 
         _aborted = false;
 
+#if defined(USE_GAME_FEATURES)		
     	// Substitute placeholders
     	auto & settings = GameSettings::getInstance();
     	std::map<std::string, std::string> text_map;
@@ -185,6 +188,7 @@ public:
 		    	ReplaceAllOccurrences(item.first, item.second, msg);
 			}
     	}
+#endif		
 
         // Unescape any SSML in the string(s)
         UnescapeXML(msg);

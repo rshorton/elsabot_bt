@@ -29,6 +29,7 @@ limitations under the License.
 #include <behaviortree_cpp/action_node.h>
 
 #include "base64.hpp"
+#include "ros_common.hpp"
 
 // Singleton for subscribing to camera topic
 class GetCameraFrameActionROSNodeIf
@@ -45,7 +46,6 @@ public:
 
     void update()
     {
-    	rclcpp::spin_some(node_);
     }
 
     float time_since_sub() {

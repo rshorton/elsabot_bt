@@ -1,6 +1,10 @@
 #pragma once
 
-#include "behaviortree_cpp/action_node.h"
+#include <nlohmann/json.hpp>
+
+#include <behaviortree_cpp/json_export.h>
+
+using json = nlohmann::json;
 
 // Custom types
 struct Pose2D
@@ -12,6 +16,28 @@ struct Pose2D
     double x, y, yaw;
 };
 
+BT_JSON_CONVERTER(Pose2D, pose2d)
+{
+  add_field("x", &pose2d.x);
+  add_field("y", &pose2d.y);
+  add_field("yaw", &pose2d.yaw);
+}
+
+struct Pose2DRelative
+{
+    Pose2DRelative():
+        distance(0.0), heading(0.0) {}
+    Pose2DRelative(double distance, double heading):
+        distance(distance), heading(heading) {}        
+    double distance, heading;
+};
+
+BT_JSON_CONVERTER(Pose2DRelative, pose2d_relative)
+{
+  add_field("distance", &pose2d_relative.distance);
+  add_field("heading", &pose2d_relative.heading);
+}
+
 struct Position
 {
     Position():
@@ -20,6 +46,13 @@ struct Position
         x(x), y(y), z(z) {}
     double x, y, z;
 };
+
+BT_JSON_CONVERTER(Position, position)
+{
+  add_field("x", &position.x);
+  add_field("y", &position.y);
+  add_field("z", &position.z);
+}
 
 struct OrientationRPY
 {
@@ -30,11 +63,33 @@ struct OrientationRPY
     double r, p, y;
 };
 
+BT_JSON_CONVERTER(OrientationRPY, orientation_rpy)
+{
+  add_field("r", &orientation_rpy.r);
+  add_field("p", &orientation_rpy.p);
+  add_field("y", &orientation_rpy.y);
+}
+
 namespace BT
 {
 template <> inline
 Pose2D convertFromString(StringView key)
 {
+    if (key.size() > 0 && key[0] == '{') {
+        try {
+            json j = json::parse(key);
+            
+            Pose2D output;
+            output.x = j["x"];
+            output.y = j["y"];
+            output.yaw = j["yaw"];
+		    return output;
+
+        } catch (json::parse_error& ex) {
+            RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "Pose2D, str not json, at: %ld", ex.byte);
+        }            
+    }
+
     // three real numbers separated by commas
     auto parts = BT::splitString(key, ',');
     if (parts.size() != 3)
@@ -58,6 +113,48 @@ std::string convertToString(const Pose2D &pose)
 	str << pose.x << ","
 		<< pose.y << ","
         << pose.yaw
+		<< std::endl;
+    return str.str();
+}
+
+template <> inline
+Pose2DRelative convertFromString(StringView key)
+{
+    if (key.size() > 0 && key[0] == '{') {
+        try {
+            json j = json::parse(key);
+            
+            Pose2DRelative output;
+            output.distance = j["distance"];
+            output.heading = j["heading"];
+		    return output;
+
+        } catch (json::parse_error& ex) {
+            RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "Pose2DRelative, str not json, at: %ld", ex.byte);
+        }            
+    }
+
+    // three real numbers separated by commas
+    auto parts = BT::splitString(key, ',');
+    if (parts.size() != 2)
+    {
+        throw BT::RuntimeError("invalid input)");
+    }
+    else
+    {
+        Pose2DRelative output;
+        output.distance = convertFromString<double>(parts[0]);
+        output.heading = convertFromString<double>(parts[1]);
+		return output;
+    }
+}
+
+inline
+std::string convertToString(const Pose2DRelative &pose)
+{
+	std::stringstream str;
+	str << pose.distance << ","
+		<< pose.heading
 		<< std::endl;
     return str.str();
 }
@@ -148,3 +245,10 @@ std::vector<Pose2D> convertPose2DListFromString(BT::StringView key, char sep, bo
     return poses;        
 }
 
+inline
+void RegisterCustomTypeHelpersJson()
+{
+    BT::RegisterJsonDefinition<Position>();
+    BT::RegisterJsonDefinition<Pose2D>();
+    BT::RegisterJsonDefinition<OrientationRPY>();
+}

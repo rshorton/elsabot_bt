@@ -5,15 +5,15 @@
                 <Sequence>
                     <Fallback>
                         <Sequence>
-                            <VoiceDetected />
+                            <VoiceDetectedAction />
                             <SetBlackboard output_key="speech_to_text_delay" value="-2.0" />
                         </Sequence>							
                         <Sequence>
-                            <WakeWordDetected since_sec="1.0" />
+                            <WakeWordDetectedAction since_sec="1.0" />
                             <SetBlackboard output_key="speech_to_text_delay" value="0.5" />
                         </Sequence>							
                     </Fallback>
-                    <SpeechToTextActionClient text="{said}" delay="{speech_to_text_delay}" />
+                    <SpeechToTextAction text="{said}" start_delay="{speech_to_text_delay}" />
                     <TextToSpeechAction text="{said}" />
                 </Sequence>
             </ForceSuccess>

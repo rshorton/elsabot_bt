@@ -59,7 +59,7 @@
 
                   <TextToSpeechActionClient msg1="I'll move to the ball bin now."/>
                   <!-- Move to the ball bin -->
-                  <Nav2Client goal="1.50, -0.654, 90.0" />
+                  <Nav2NavigateAction goal="1.50, -0.654, 90.0" />
 
                   <TextToSpeechActionClient msg1="I'm at the ball bin and will drop it in."/>
                   <!-- Extend the arm over the bin -->
@@ -75,7 +75,7 @@
                   <TextToSpeechActionClient msg1="Back to the pickup area!"/>
 
                   <!-- Move to pick area -->
-                  <Nav2Client goal="0.633, -0.981, 90.0" />
+                  <Nav2NavigateAction goal="0.633, -0.981, 90.0" />
                 </Sequence>
               </ForceSuccess>
           </Sequence>

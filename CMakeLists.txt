@@ -15,6 +15,16 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+option(USE_GAME_FEATURES "Include game features" OFF)
+option(USE_ROBOT_ARM_SUPPORT "Include robot arm support" OFF)
+
+if(USE_ROBOT_ARM_SUPPORT)
+    add_compile_definitions(USE_ROBOT_ARM_SUPPORT)
+endif()
+
+message(STATUS ${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/submodules/BehaviorTree.ROS2/behaviortree_ros2/include/)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -53,53 +63,71 @@ if(BUILD_TESTING)
 endif()
 
 set(dependencies
-  rclcpp
-  rclcpp_action
-  std_msgs
+  behaviortree_cpp
+  CURL
+  cv_bridge
+  elsabot_audio_output_interfaces
   geometry_msgs
+  image_transport
+  nav_msgs
   nav2_behavior_tree
   nav2_msgs
-  behaviortree_cpp
-  speech_action_interfaces
-  elsabot_audio_output_interfaces
-  robot_head_interfaces
-  robot_ui_interfaces
-  object_detection_msgs
   nav2_util
-  nav_msgs
-  visualization_msgs
+  object_detection_msgs
+  rclcpp
+  rclcpp_action
+  robot_head_interfaces
   robot_localization
-  image_transport
+  robot_ui_interfaces
   sensor_msgs
-  cv_bridge
-  CURL
+  speech_action_interfaces
+  std_msgs
+  visualization_msgs
   #moveit_ros_planning
   #moveit_ros_planning_interface
 )
 
-add_executable(elsabot_bt
-  src/bt_ros2.cpp
-  src/robot_says_game.cpp
-  src/robot_seek_game.cpp
-  src/robot_find_game.cpp
-  src/robot_cat_game.cpp
-  src/nav2_compute_path_client_util.cpp
-  src/game_settings.cpp
-  src/detection_processor.cpp
-  src/detection_processor_container.cpp
-  src/transform_helper.cpp
-  src/robot_status.cpp
-  src/ui_topics.cpp
-  src/imu_topic.cpp
-  src/ros_common.cpp
-  src/nav_utils.cpp
-  src/http_request.cpp
-  src/ai_session.cpp
-  src/tool_call_data.cpp
-  src/base64.cpp
+set(elsabot_bt_sources
   src/ai_action.cpp
+  src/ai_session.cpp
+  src/base64.cpp
+  src/bt_ros2.cpp
+  src/cancel_audio_action.cpp
+  src/copy_bb_value_into_json_key_action.cpp
+  src/copy_json_key_value_into_bb_action.cpp
+  src/detection_processor_container.cpp
+  src/detection_processor.cpp
+  src/http_request.cpp
   src/image_utils.cpp
+  src/imu_topic.cpp
+  src/log_action.cpp
+  src/nav_utils.cpp
+  src/nav2_navigate_action.cpp
+  src/pause_audio_action.cpp
+  src/play_audio_file_action.cpp
+  src/resume_audio_action.cpp
+  src/robot_status.cpp
+  src/ros_common.cpp
+  src/speech_to_text_action.cpp
+  src/text_to_speech_action.cpp
+  src/tool_call_data.cpp
+  src/transform_helper.cpp
+  src/ui_topics.cpp
 )
+
+if(USE_GAME_FEATURES)
+  set(elsabot_bt_sources ${elsabot_bt_sources}
+      src/game_support/game_settings.cpp
+      src/game_support/robot_cat_game.cpp
+      src/game_support/robot_find_game.cpp
+      src/game_support/robot_says_game.cpp
+      src/game_support/robot_seek_game.cpp
+  )
+  add_compile_definitions(USE_GAME_FEATURES)
+endif()
+
+add_executable(elsabot_bt ${elsabot_bt_sources})
+
 ament_target_dependencies(elsabot_bt
 	${dependencies}
 )

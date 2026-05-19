@@ -32,19 +32,19 @@ public:
 			ros_common_ = new ROSCommon(node);
 		}			
 		return ros_common_;
-	};
+	}
 
 	static ROSCommon* GetInstance()
 	{
 		return ros_common_;
-	};
+	}
 
 	rclcpp::Node::SharedPtr GetNode() {
 		return node_;
-	};
+	}
 
 private:
-	ROSCommon(rclcpp::Node::SharedPtr node): node_(node) {};
+	ROSCommon(rclcpp::Node::SharedPtr node): node_(node) {}
 	~ROSCommon() {};
 
 private:

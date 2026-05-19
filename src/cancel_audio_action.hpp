@@ -16,60 +16,27 @@ limitations under the License.
 
 #pragma once
 
-#include <chrono>
-#include <iostream>
-#include <memory>
-#include <string>
-
-#include "behaviortree_cpp/action_node.h"
+#include <behaviortree_ros2/bt_service_node.hpp>
 #include "elsabot_audio_output_interfaces/srv/cancel_audio.hpp"
-#include "rclcpp/rclcpp.hpp"
 
-class CancelAudioAction : public BT::SyncActionNode {
- public:
-  using CancelAudio = elsabot_audio_output_interfaces::srv::CancelAudio;
+using CancelAudio = elsabot_audio_output_interfaces::srv::CancelAudio;
 
-  CancelAudioAction(const std::string& name,
-                    const BT::NodeConfiguration& config,
-                    rclcpp::Node::SharedPtr node)
-      : BT::SyncActionNode(name, config) {
-    node_ = node;
+class CancelAudioAction : public BT::RosServiceNode<CancelAudio>
+{
+public:
+  explicit CancelAudioAction(const std::string& name, const BT::NodeConfig& conf,
+                             const BT::RosNodeParams& params)
+    : RosServiceNode<CancelAudio>(name, conf, params)
+  {}
+
+  static BT::PortsList providedPorts()
+  {
+    return providedBasicPorts({ BT::InputPort<std::string>("req_id") });
   }
 
-  static BT::PortsList providedPorts() {
-    return {BT::InputPort<std::string>("req_id")};
-  }
+  bool setRequest(Request::SharedPtr& request) override;
 
-  virtual BT::NodeStatus tick() override {
-    std::string req_id = "all";
-    getInput<std::string>("req_id", req_id);
+  BT::NodeStatus onResponseReceived(const Response::SharedPtr& response) override;
 
-    auto client = node_->create_client<CancelAudio>("cancel_audio");
-
-    if (!client->wait_for_service(std::chrono::seconds(5))) {
-      RCLCPP_ERROR(node_->get_logger(),
-                   "CancelAudioAction, failed waiting for service");
-      return BT::NodeStatus::FAILURE;
-    }
-
-    auto request = std::make_shared<CancelAudio::Request>();
-    request->req_id = req_id;
-
-    auto result_future = client->async_send_request(request);
-    if (rclcpp::spin_until_future_complete(node_, result_future) !=
-        rclcpp::FutureReturnCode::SUCCESS) {
-      RCLCPP_ERROR(node_->get_logger(),
-                   "CancelAudioAction service call failed");
-      client->remove_pending_request(result_future);
-      return BT::NodeStatus::FAILURE;
-    }
-
-    auto result = result_future.get();
-    RCLCPP_INFO(node_->get_logger(), "CancelAudioAction result: %s",
-                result->result.c_str());
-    return BT::NodeStatus::SUCCESS;
-  }
-
- private:
-  rclcpp::Node::SharedPtr node_;
+  virtual BT::NodeStatus onFailure(BT::ServiceNodeErrorCode error) override;
 };

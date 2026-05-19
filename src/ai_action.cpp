@@ -17,8 +17,10 @@ AIAction::AIAction(const std::string& name, const BT::NodeConfiguration& config)
 
 BT::PortsList AIAction::providedPorts() {
   return {BT::InputPort<std::string>("system_prompt"),
+          BT::InputPort<bool>("abort"),
           BT::InputPort<bool>("new_session"),
           BT::InputPort<std::string>("prompt"),
+          BT::InputPort<bool>("streaming"),
           BT::InputPort<float>("tool_call_timeout_sec"),
           BT::BidirectionalPort<std::string>("tool_call_result"),
           BT::OutputPort<std::string>("result"),
@@ -50,9 +52,15 @@ BT::NodeStatus AIAction::onStart() {
       return BT::NodeStatus::FAILURE;
     }                                                  
   }
-
+ 
   std::string prompt;
-  getInput<std::string>("prompt", prompt);
+  if (!getInput<std::string>("prompt", prompt)) {
+    throw BT::RuntimeError("missing prompt");
+  }
+
+  // Optional
+  bool streaming_ = false;
+  getInput<bool>("streaming", streaming_);
 
   finish_on_next_update_ = false;
   new_sentence_ = std::string();
@@ -63,6 +71,8 @@ BT::NodeStatus AIAction::onStart() {
   setOutput("tool_call_name", "");
   setOutput("tool_call_result", "");
 
+  RCLCPP_INFO(node_->get_logger(), "AIAction prompt: %s", prompt.c_str());
+
   ToolCallData& tc_data = ToolCallData::getInstance();
   tools_json_ = tc_data.get_available_tools_json();
   RCLCPP_DEBUG(node_->get_logger(), "tools_json_: %s", tools_json_.c_str());
@@ -72,6 +82,15 @@ BT::NodeStatus AIAction::onStart() {
 }
 
 BT::NodeStatus AIAction::onRunning() {
+  RCLCPP_DEBUG(node_->get_logger(), "%s: OnRunning", name().c_str());
+
+  bool abort = false;
+  getInput<bool>("abort", abort);
+  if (abort) {
+    RCLCPP_INFO(node_->get_logger(), "%s: Aborting", name().c_str());
+  }
+
+
   if (finish_on_next_update_) {
     return BT::NodeStatus::SUCCESS;
   }
@@ -79,6 +98,21 @@ BT::NodeStatus AIAction::onRunning() {
   // Send tool cal result if waiting and the result is ready
   if (tool_call_wait_) {
     std::string tool_call_result;
+
+
+    if (abort) {
+      // Report the call as aborted.  This bookends the tool call for the session context.be
+      tool_call_result = R"({"result": "tool call was aborted in progress"})";
+      ai_session_->report_tool_result(tool_call_id_, tool_call_name_, tool_call_result);
+      ai_session_->cancel();
+
+      setOutput("tool_call_name", "");
+      setOutput("tool_call_result", "");
+      tool_call_wait_ = false;
+
+      return BT::NodeStatus::SUCCESS;
+    }
+
     if (getInput<std::string>("tool_call_result", tool_call_result) &&
         !tool_call_result.empty()) {
 
@@ -104,10 +138,16 @@ BT::NodeStatus AIAction::onRunning() {
     return BT::NodeStatus::RUNNING;
   }
 
+  if (abort) {
+    ai_session_->cancel();
+    return BT::NodeStatus::SUCCESS;
+  }
+
   // Output the latest sentence(s)
   {
     std::lock_guard<std::mutex> guard(new_sentence_mutex_);
     if (!new_sentence_.empty()) {
+      RCLCPP_INFO(node_->get_logger(), "%s: new sentence result: %s", name().c_str(), new_sentence_.c_str());
       setOutput("result", new_sentence_);
       new_sentence_ = std::string();
       return BT::NodeStatus::RUNNING;
@@ -138,6 +178,8 @@ BT::NodeStatus AIAction::onRunning() {
         tool_call_index_ = 0;
         return next_tool_call();
       } else {
+        RCLCPP_INFO(node_->get_logger(), "%s: final result: %s", name().c_str(), streaming_data_buffer_.c_str());
+
         // Run one more tick to allow the last of the response to be processed by other BT node(s)
         setOutput("result", streaming_data_buffer_);
         streaming_data_buffer_.clear();
@@ -164,14 +206,15 @@ BT::NodeStatus AIAction::next_tool_call() {
     tool_call_name_ = tool_calls_[tool_call_index_]["function"]["name"];
     nlohmann::json tool_call_args = tool_calls_[tool_call_index_]["function"]["arguments"];
 
+    std::string args = tool_call_args.dump();
     RCLCPP_INFO(node_->get_logger(), "Tool call, index: %ld, id: %s, name: %s, args: %s",
-      tool_call_index_, tool_call_id_.c_str(), tool_call_name_.c_str(), tool_call_args.dump().c_str());
+      tool_call_index_, tool_call_id_.c_str(), tool_call_name_.c_str(), args.c_str());
 
     tool_call_index_++;
 
     setOutput("result", "");
     setOutput("tool_call_name", tool_call_name_);
-    setOutput("tool_call_args", tool_call_args.dump());
+    setOutput("tool_call_args", args);
     
     tool_call_wait_ = true;
     tool_start_time_ = std::chrono::steady_clock::now();

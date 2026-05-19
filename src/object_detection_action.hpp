@@ -27,6 +27,7 @@ limitations under the License.
 #include "object_detection_msgs/msg/object_desc_array.hpp"
 
 #include <behaviortree_cpp/action_node.h>
+#include "ros_common.hpp"
 
 typedef std::chrono::duration<float> float_seconds;
 
@@ -45,7 +46,7 @@ public:
 
     void update()
     {
-    	rclcpp::spin_some(node_);
+		//ROSCommon::GetInstance()->spin_some();
     }
 
     rclcpp::Node::SharedPtr node_;

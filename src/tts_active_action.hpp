@@ -22,8 +22,8 @@ limitations under the License.
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-
 #include <behaviortree_cpp/action_node.h>
+#include "ros_common.hpp"
 
 // Singleton for subscribing to audio output TTS status
 class TTSActiveActionROSNodeIf
@@ -40,16 +40,14 @@ public:
 
     void update()
     {
-    	rclcpp::spin_some(node_);
     }
 
     rclcpp::Node::SharedPtr node_;
-    bool tts_active_;
+    bool tts_active_{false};
 
 private:
     TTSActiveActionROSNodeIf(rclcpp::Node::SharedPtr node):
-    	node_(node),
-    	tts_active_(false)
+    	node_(node)
 	{
         sub_ = node_->create_subscription<std_msgs::msg::String>(
             "/audio_output/status/tts",
@@ -106,7 +104,6 @@ class TTSActiveAction : public BT::StatefulActionNode
                     setOutput("result", false);
                     return get_return(is_active);
                 }
-
                 auto now = std::chrono::steady_clock::now();
 	            auto elapsed_sec = std::chrono::duration_cast<std::chrono::duration<float>>(now - start_time_).count();
                 if (elapsed_sec > inactive_wait_timeout_sec_) {

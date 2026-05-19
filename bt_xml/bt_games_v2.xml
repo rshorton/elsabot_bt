@@ -117,7 +117,7 @@
         		<!-- Main game sequence -->
 				<Sequence>
 				  	<!-- Move the saved location that faces the playing field -->
-          			<Nav2Client goal="{robot_pose}" />
+          			<Nav2NavigateAction goal="{robot_pose}" />
 					<TextToSpeechActionClient msg1="I'm ready, let's play!" />
 
 					<ForceSuccess>
@@ -212,7 +212,7 @@
 														<!-- Check for wake word and if detected speak the game menu and get the response -->
 														<Sequence>
 															<SetBlackboard output_key="dummy" value="0" />
-															<WakeWordDetected since_sec="3.0" />
+															<WakeWordDetectedAction since_sec="3.0" />
 															<HeadTiltAction angle="10" dwell_ms="1500" />
 															<TextToSpeechActionClient
 																msg1="Hey there. Say stop to end, say continue to keep playing, say next to go to the next pose. To change the level say level easy, level left, level right, level challenging, or level all." />
@@ -528,7 +528,7 @@
 							<ReactiveSequence>
 								<ForceSuccess>
 									<Sequence>
-										<WakeWordDetected since_sec="3.0" />
+										<WakeWordDetectedAction since_sec="3.0" />
 										<!--TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone1.wav"/-->
 										<SpeechToTextActionClient text="{said}" />
 										<!--TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone2.wav"/-->
@@ -569,7 +569,7 @@
 																			<PublishPositionAsGoalAction position="{tracked_position}"/>
 																		</Sequence>                                                                
 																	</ForceSuccess>                                                          
-																	<Nav2Client goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
+																	<Nav2NavigateAction goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
 																	<TextToSpeechActionClient msg1="I'll stay here for now." />    
 																	<SetBlackboard output_key="go" value="0" />
 																	<SetBlackboard output_key="moving" value="0" />
@@ -628,7 +628,7 @@
 
 	<BehaviorTree ID="MoveRobot">
 		<Sequence name="SetGoal">
-			<Nav2Client goal="{target}" />
+			<Nav2NavigateAction goal="{target}" />
 		</Sequence>
 	</BehaviorTree>
 
@@ -814,7 +814,7 @@
 
 							<!-- Update wake word detection and enable greeting and menu if heard -->
 							<IfThenElse>
-								<WakeWordDetected since_sec="4.0" />
+								<WakeWordDetectedAction since_sec="4.0" />
 								<!-- Detected -->
 								<Sequence>
 									<AntennaAction rate="0" intensity="10" left_blink_pattern="01" right_blink_pattern="10" />

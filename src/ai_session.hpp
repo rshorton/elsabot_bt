@@ -144,6 +144,12 @@ class AISession {
       return m;
     }
 
+    std::string get_description() override {
+      auto desc = SessionMessage::get_description();
+      desc += ", prompt: " + prompt_ + ", has_image: " + (b64_image_.empty()? "N": "Y");
+      return desc;
+    }
+
     std::string prompt_;
     std::string b64_image_;
   };
@@ -161,6 +167,12 @@ class AISession {
       return m;
     }
 
+    std::string get_description() override {
+      auto desc = SessionMessage::get_description();
+      desc += ", response: " + response_;
+      return desc;
+    }
+
     std::string response_;
   };
 
@@ -175,6 +187,12 @@ class AISession {
       nlohmann::json m = SessionMessage::get_json(is_last);
       m["tool_calls"] = nlohmann::json::parse(tool_call_json_);
       return m;
+    }
+
+    std::string get_description() override {
+      auto desc = SessionMessage::get_description();
+      desc += ", tool_call_json: " + tool_call_json_;
+      return desc;
     }
 
     std::string tool_call_json_;
@@ -224,6 +242,12 @@ class AISession {
         m["content"] = tool_result_json_;
       }          
       return m;
+    }
+
+    std::string get_description() override {
+      auto desc = SessionMessage::get_description();
+      desc += ", tool: " + name_ + ", tool_result_json: " + tool_result_json_;
+      return desc;
     }
 
     std::string name_;

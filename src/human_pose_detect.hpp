@@ -27,6 +27,7 @@ limitations under the License.
 #include "robot_head_interfaces/msg/detected_pose.hpp"
 
 #include <behaviortree_cpp/action_node.h>
+#include "ros_common.hpp"
 
 using namespace std::chrono_literals;
 using std::map;
@@ -46,7 +47,6 @@ public:
 
     void update()
     {
-    	rclcpp::spin_some(node_);
     }
 
     rclcpp::Node::SharedPtr node_;

@@ -36,7 +36,7 @@ class AIAction : public BT::StatefulActionNode {
   int timeout_ms_ = 8000;
 
   std::unique_ptr<AISession> ai_session_;
-  bool stream_{true};                     // True to have LLM output streamed vs receive one full response
+  bool stream_{false};                    // True to have LLM output streamed vs receive one full response
 
   std::string tools_json_;                // Current tools available to the model
 

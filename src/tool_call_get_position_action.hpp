@@ -57,27 +57,16 @@ public:
     		return BT::NodeStatus::FAILURE;
     	}
 
-        double x, y, z, yaw = 0.0;
-        auto valid_pose = false;
-
-        for (int t = 0; t < 20; t++) {
-            valid_pose = robot_status->GetPose(x, y, z, yaw);
-            if (valid_pose) {
-                break;
-            }
-        }
-        
-        if (!valid_pose) {
+        Pose2D pose;
+        if (!robot_status->GetPose2D(pose)) {
             set_failure_result();
             return BT::NodeStatus::SUCCESS;
         }
 
-        yaw = yaw*180.0f/M_PI;
-
         nlohmann::json result_obj;
-        result_obj["x"] = x;
-        result_obj["y"] = y;
-        result_obj["yaw"] = yaw;
+        result_obj["x"] = pose.x;
+        result_obj["y"] = pose.y;
+        result_obj["yaw"] = pose.yaw;
 
         std::string result_json = result_obj.dump();
         setOutput("result_json", result_json);

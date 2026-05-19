@@ -23,7 +23,7 @@
 
     <BehaviorTree ID="MoveRobot">
         <Sequence name="SetGoal">
-            <Nav2Client goal="{target}" />
+            <Nav2NavigateAction goal="{target}" />
         </Sequence>
     </BehaviorTree>
 </root>

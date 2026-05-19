@@ -68,7 +68,7 @@
 					</BlackboardCheckInt>
 
 					<Sequence>
-						<Nav2Client goal="{robot_pose}" />
+						<Nav2NavigateAction goal="{robot_pose}" />
 						<TextToSpeechActionClient msg1="Let's play the game!" />
 
 						<TrackAction mode="Track" rate="3" detect_voice="0" turn_base="0" />

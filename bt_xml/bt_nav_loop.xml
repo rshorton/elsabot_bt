@@ -8,7 +8,7 @@
                 <ReactiveSequence>
                     <ForceSuccess>
                         <Sequence>
-                            <WakeWordDetected since_sec="3.0" />
+                            <WakeWordDetectedAction since_sec="3.0" />
                             <SpeechToTextActionClient text="{said}" />
                             <Fallback>
                                 <Sequence>
@@ -35,7 +35,7 @@
                                                     <TextToSpeechActionClient msg1="Here we go." />
                                                     <SetBlackboard output_key="moving" value="1" />
                                                     <ReactiveSequence>
-                                                        <Nav2ClientLoop loop_end_pos="{end_pos}" loop_intermediate_pos="{intermediate_pos}"/>
+                                                        <Nav2NavigateActionLoop loop_end_pos="{end_pos}" loop_intermediate_pos="{intermediate_pos}"/>
                                                         <TextToSpeechActionClient msg1="That was fun." />    
                                                         <SetBlackboard output_key="go" value="0" />
                                                         <SetBlackboard output_key="moving" value="0" />

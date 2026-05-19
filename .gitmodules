@@ -1,0 +1,3 @@
+[submodule "submodules/BehaviorTree.ROS2"]
+	path = submodules/BehaviorTree.ROS2
+	url = https://github.com/BehaviorTree/BehaviorTree.ROS2.git

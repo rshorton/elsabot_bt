@@ -42,7 +42,6 @@ public:
 
     void update()
     {
-    	rclcpp::spin_some(node_);
     }
 
     rclcpp::Node::SharedPtr node_;

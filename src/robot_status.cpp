@@ -90,6 +90,26 @@ bool RobotStatus::GetPose(double &x, double &y, double &z, double &yaw) const
 	return true;		
 }
 
+bool RobotStatus::GetPose2D(Pose2D &pose) const
+{
+	double z = 0.0;
+	auto valid_pose = false;
+
+	for (int t = 0; t < 20; t++) {
+		if (GetPose(pose.x, pose.y, z, pose.yaw)) {
+			valid_pose = true;
+			break;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	}
+	
+	if (!valid_pose) {
+		return false;
+	}
+	pose.yaw = pose.yaw*180.0f/M_PI;
+	return true;
+}
+
 bool RobotStatus::GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status) const
 {
 	if (valid_track_status_) {

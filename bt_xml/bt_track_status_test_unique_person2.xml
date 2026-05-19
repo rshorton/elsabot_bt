@@ -7,7 +7,7 @@
 					<Sequence>
 						<ForceSuccess>
 							<Sequence>
-								<WakeWordDetected since_sec="10.0" />
+								<WakeWordDetectedAction since_sec="10.0" />
 								<Sequence>
 									<HeadTiltAction angle="10" dwell_ms="1500" />
 									<SpeechToTextActionClient text="{said}" />

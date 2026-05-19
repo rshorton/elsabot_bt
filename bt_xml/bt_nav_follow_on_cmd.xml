@@ -20,7 +20,7 @@ To stop say:
                 <ReactiveSequence>
                     <ForceSuccess>
                         <Sequence>
-                            <WakeWordDetected since_sec="3.0" />
+                            <WakeWordDetectedAction since_sec="3.0" />
 							<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone1.wav"/>
                             <SpeechToTextActionClient text="{said}" />
 							<TextToSpeechActionClient msg1="" audio="https://elsabotdata.blob.core.windows.net/audio/tone2.wav"/>
@@ -57,7 +57,7 @@ To stop say:
                                                                 <PublishPositionAsGoalAction position="{tracked_position}"/>
                                                             </Sequence>                                                                
                                                         </ForceSuccess>                                                          
-								                    	<Nav2Client goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
+								                    	<Nav2NavigateAction goal="0.0, 0.0, 0.0" behavior_tree="/home/elsabot/robot_ws/src/elsabot_4wd/nav_bt/follow_point.xml" />
                                                         <TextToSpeechActionClient msg1="I'll stay here for now." />    
                                                         <SetBlackboard output_key="go" value="0" />
                                                         <SetBlackboard output_key="moving" value="0" />

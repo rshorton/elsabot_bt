@@ -30,7 +30,7 @@
 
 							<ForceSuccess>
 								<Sequence>
-									<WakeWordDetected since_sec="1.0" />
+									<WakeWordDetectedAction since_sec="1.0" />
 									<Sequence>
 										<SpeechToTextActionClient text="{said}" />
 										<Fallback>
@@ -205,7 +205,7 @@
 																		</ForceFailure>
 																	</Fallback>
 																	<Sequence>
-																		<Nav2Client goal="{next_goal}" />
+																		<Nav2NavigateAction goal="{next_goal}" />
 																		<TextToSpeechActionClient msg1="I'm here. I'm looking for you!" />
 																		<BlackboardCheckInt value_A="{spin_at_goal}" value_B="1"
 																			return_on_mismatch="SUCCESS">
@@ -229,7 +229,7 @@
 												</ForceSuccess>
 												<TextToSpeechActionClient msg1="Heading back now!" />
 												<TrackAction mode="Track" rate="4" detect_voice="0" turn_base="0" />
-												<Nav2Client goal="-5.3,-6.7,200.9" />
+												<Nav2NavigateAction goal="-5.3,-6.7,200.9" />
 												<TrackAction mode="Track" rate="4" detect_voice="0" turn_base="1" />
 												<TextToSpeechActionClient
 													msg1="Well, those are my robot seek game skills.  You know, it's a lot more fun playing that game with my friend Caroline!" />

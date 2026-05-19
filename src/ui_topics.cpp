@@ -62,8 +62,6 @@ void UITopics::GenericCallback(robot_ui_interfaces::msg::Generic::SharedPtr msg)
 
 bool UITopics::GetGeneric(const std::string &name, std::string &type, std::string &value, bool &updated)
 {
-	rclcpp::spin_some(node_);
-	
 	auto it = generic_msgs_.find(name);
 	if (it != generic_msgs_.end()) {
 		type = it->second.msg.type;

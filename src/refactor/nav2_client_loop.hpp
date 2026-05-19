@@ -1,9 +1,20 @@
+// Action node that uses nav2 to drive a looping path.  It requires the
+// custom nav2_fixed_path planner to plan a route based on predefined
+// waypoints.  The first point is the nearest waypoint in front of the robot.
+// The path then follows the predefined waypoints until the specified
+// end position is reached.  The Regulated Pure Pursuit Nav controller
+// was used.
+//
+// See the test tree bt_nav_loop.xml.
+
 #pragma once
 
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <thread>
+
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -14,15 +25,20 @@
 #include "nav2_util/geometry_utils.hpp"
 
 #include "bt_custom_type_helpers.hpp"
+#include "robot_status.hpp"
 
 using nav2_util::geometry_utils::orientationAroundZAxis;
+using namespace std::chrono_literals;
 
 #undef FUTURE_WAIT_BLOCK
 
-class Nav2Client : public BT::ThreadedAction
+class Nav2NavigateActionLoop : public BT::ThreadedAction
 {
+private:
+    enum class PositionState { MOVE_AWAY_FROM_GOAL, MOVE_TOWARD_GOAL};    
+
 public:
-    Nav2Client(const std::string& name, const BT::NodeConfig& config)
+    Nav2NavigateActionLoop(const std::string& name, const BT::NodeConfig& config)
         : BT::ThreadedAction(name, config),
 		 _aborted(false)
     {
@@ -30,16 +46,29 @@ public:
 
     static BT::PortsList providedPorts()
     {
-        return{ BT::InputPort<std::string>("goal"), BT::InputPort<std::string>("behavior_tree")};
+        return{ BT::InputPort<std::string>("loop_end_pos"),
+                BT::InputPort<std::string>("loop_intermediate_pos"),
+                BT::InputPort<std::string>("behavior_tree"),
+        };
     }
 
     virtual BT::NodeStatus tick() override
     {
-        node_ = rclcpp::Node::make_shared("nav2_client");
+        PositionState position_state = PositionState::MOVE_AWAY_FROM_GOAL;
+
+        node_ = rclcpp::Node::make_shared("nav2_client_loop");
+        auto goal_update_publisher = node_->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_update", 1);
+
+    	RobotStatus* robot_status = RobotStatus::GetInstance();
+    	if (!robot_status) {
+	    	RCLCPP_ERROR(node_->get_logger(), "Cannot get robot status for obtaining pose");
+    		return BT::NodeStatus::FAILURE;
+    	}
+
         auto action_client = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(node_, "navigate_to_pose");
         // if no server is present, fail after 5 seconds
         if (!action_client->wait_for_action_server(std::chrono::seconds(20))) {
-            // RCLCPP_ERROR(node_->get_logger(), "Action server not available after waiting");
+            RCLCPP_ERROR(node_->get_logger(), "Action server not available after waiting");
             return BT::NodeStatus::FAILURE;
         }
 
@@ -47,14 +76,52 @@ public:
         std::string behavior_tree;
         getInput<std::string>("behavior_tree", behavior_tree);
 
-        std::string goal_in;
-        if (!getInput<std::string>("goal", goal_in)) {
-            throw BT::RuntimeError("missing required input [goal]");
+        std::string loop_end_pos_str;
+        if (!getInput<std::string>("loop_end_pos", loop_end_pos_str)) {
+            throw BT::RuntimeError("missing required input [loop_end_pos]");
         }
 
-        Pose2D goal = BT::convertFromString<Pose2D>(goal_in);
+        std::string loop_intermediate_pos_str;
+        if (!getInput<std::string>("loop_intermediate_pos", loop_intermediate_pos_str)) {
+            throw BT::RuntimeError("missing required input [loop_intermediate_pos]");
+        }
 
-        RCLCPP_INFO(node_->get_logger(), "Sending goal %f %f %f", goal.x, goal.y, goal.yaw);
+        Pose2D loop_end_pos = BT::convertFromString<Pose2D>(loop_end_pos_str);
+        Pose2D loop_intermediate_pos = BT::convertFromString<Pose2D>(loop_intermediate_pos_str);
+        Pose2D goal;
+
+        // Get the current state and determine whether the robot is currently at the loop end position.
+        // If so, then set the initial goal to be at an intermeditate point along the loop.  Otherwise
+        // make the initial goal the loop end point.
+        {
+            double x, y, z, yaw;
+
+            bool got_pose = false;
+        	for (int t = 0; t < 20; t++) {
+                got_pose = robot_status->GetPose(x, y, z, yaw);
+                if (got_pose) {
+                    break;
+                }
+                RCLCPP_INFO(node_->get_logger(), "Robot pose not available.  Waiting...");
+        		std::this_thread::sleep_for(100ms);
+               	rclcpp::spin_some(node_);
+        	}
+
+            if (!got_pose) {
+                RCLCPP_INFO(node_->get_logger(), "Robot pose not available.  Failing, cannot determine initial navigation goal.");
+                return BT::NodeStatus::FAILURE;
+            }
+
+            if (calc_distance(x, y, loop_end_pos.x, loop_end_pos.y) > 2.0) {
+                position_state = PositionState::MOVE_TOWARD_GOAL;
+                goal = loop_end_pos;
+            } else {
+                position_state = PositionState::MOVE_AWAY_FROM_GOAL;
+                goal = loop_intermediate_pos;
+            }
+        }
+
+        RCLCPP_INFO(node_->get_logger(), "Goal %f %f %f", goal.x, goal.y, goal.yaw);
 
         nav2_msgs::action::NavigateToPose::Goal goal_msg;
         goal_msg.pose.header.frame_id = "map";
@@ -95,6 +162,8 @@ public:
         bool bSuccess = false;
 		auto timeout = std::chrono::duration<float, std::milli>(250);
 
+        auto temp_cnt = 0;
+
 		RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...");
 
 		while(true) {
@@ -104,6 +173,37 @@ public:
                 	RCLCPP_INFO(node_->get_logger(), "waiting for nav to complete...aborted");
         			break;
         		}
+
+                if (++temp_cnt > 20) {
+                    temp_cnt = 0;
+
+                    double x, y, z, yaw;
+                    if (!robot_status->GetPose(x, y, z, yaw)) {
+                        RCLCPP_ERROR(node_->get_logger(), "Robot pose not available");
+                        continue;
+                    }
+
+                    RCLCPP_INFO(node_->get_logger(), "current position: %f, %f", x, y);
+
+                    if (position_state == PositionState::MOVE_AWAY_FROM_GOAL) {
+                        auto dist_from_loop_end = calc_distance(x, y, loop_end_pos.x, loop_end_pos.y);
+                        if (dist_from_loop_end > 2.0) {
+                            position_state = PositionState::MOVE_TOWARD_GOAL;
+
+                            geometry_msgs::msg::PoseStamped msg;
+                            msg.header.frame_id = "map";
+                            msg.header.stamp = node_->get_clock()->now();
+                            msg.pose.position.x = loop_end_pos.x;
+                            msg.pose.position.y = loop_end_pos.y;
+                            msg.pose.position.z = 0.0;
+                            goal_update_publisher->publish(msg);
+                            RCLCPP_INFO(node_->get_logger(), "Published new goal for the loop end");
+                        } else {
+                            RCLCPP_INFO(node_->get_logger(), "Waiting to publish loop end goal (%f)", dist_from_loop_end);
+                        }
+                    }
+                }                    
+
         	} else {
         		if (result != rclcpp::FutureReturnCode::SUCCESS) {
         			RCLCPP_ERROR(node_->get_logger(), "get result call failed " );
@@ -153,9 +253,6 @@ public:
                 RCLCPP_ERROR(node_->get_logger(), "Unknown result code");
                 return BT::NodeStatus::FAILURE;
         }
-
-
-        RCLCPP_INFO(node_->get_logger(), "result received");
         return BT::NodeStatus::SUCCESS;
     }
 
@@ -163,6 +260,12 @@ public:
     	RCLCPP_INFO(node_->get_logger(), "requesting nav abort");
         _aborted = true;
     }
+
+private:
+    double calc_distance(double x1, double y1, double x2, double y2) {
+        return sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+    }
+
 private:
     bool _aborted;
     // auto node_ = std::make_shared<rclcpp::Node>("nav2_client");

@@ -27,6 +27,8 @@ limitations under the License.
 #include "robot_head_interfaces/msg/track_status.hpp"
 #include "sensor_msgs/msg/battery_state.hpp"
 
+#include "bt_custom_type_helpers.hpp"
+
 class RobotStatus
 {
 public:
@@ -44,6 +46,8 @@ public:
 	}
 
 	bool GetPose(double &x, double &y, double &z, double &yaw) const;
+	bool GetPose2D(Pose2D &pose) const;
+
 	bool GetTrackStatus(robot_head_interfaces::msg::TrackStatus &status) const;
 	bool GetBatteryStatus(sensor_msgs::msg::BatteryState &status) const;
 
