@@ -4,8 +4,9 @@
 #include <chrono>
 
 #include "behaviortree_cpp/bt_factory.h"
-#include "ai_session.hpp"
 #include "ros_common.hpp"
+
+class AISession;
 
 class AIAction : public BT::StatefulActionNode {
  public:
@@ -27,6 +28,7 @@ class AIAction : public BT::StatefulActionNode {
 
   rclcpp::Node::SharedPtr node_;
 
+  //std::string model_{"cyankiwi/gemma-4-31B-it-AWQ-4bit"};
   std::string model_{"cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit"};
   std::string resource_{"/v1/chat/completions"};
   int max_context_size_{64000};

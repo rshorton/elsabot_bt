@@ -59,8 +59,8 @@ BT::NodeStatus AIAction::onStart() {
   }
 
   // Optional
-  bool streaming_ = false;
-  getInput<bool>("streaming", streaming_);
+  stream_ = false;
+  getInput<bool>("streaming", stream_);
 
   finish_on_next_update_ = false;
   new_sentence_ = std::string();
