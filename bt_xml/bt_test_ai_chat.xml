@@ -44,8 +44,37 @@
 					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
         				"function": {
+            				"name": "move_to_relative",
+            				"description": "Use this tool to move the robot by specifying a distance and heading. Returns a resultproperty specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. Here are examples of how you can use this tool: to move the forward: distance = (positive distance amount), heading = 0. to move the backwards: distance = (negative distance amount), heading = 0. to turn left: distance = 0, heading = 90. to turn right: distance = 0, heading = -90. to rotate 360 degrees, you must split the operation into two steps: 1. distance=0, heading=180. 2. distance=0, heading=180.",
+							"parameters": {
+								"type": "object",
+								"properties": {
+									"movement_params": {
+										"type": "object",
+										"description": "The distance and change in heading.",
+										"properties": {
+											"distance": {
+												"description": "Distance to move in meters.",
+												"type": "number"
+											},
+											"heading": {
+												"description": "The change in heading in degrees. An increase turns left (counter-clockwise) and a decrease turns right (clockwise). ",
+												"type": "number"
+											}
+										},
+										"required": ["distance", "heading"]
+									}
+								},
+								"required": ["movement_params"]
+							}
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
             				"name": "move_to_absolute",
-            				"description": "Use this tool to move the robot to a specified absolute position and then turn to the specified yaw orientation.  Returns a result property specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. ",
+            				"description": "Use this tool to move the robot to a specified absolute position and then turn to the specified yaw orientation.  Returns a result property specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. Do not use this tool for relative movements, instead use the move_to_relative tool.",
 							"parameters": {
 								"type": "object",
 								"properties": {
@@ -74,40 +103,34 @@
 						}
 					\}' />
 
-					<ToolCallDeclareAction tc_definition='\{
-        				"type": "function",
-        				"function": {
-            				"name": "move_to_relative",
-            				"description": "Use this tool to move the robot by specifying a distance and heading change.  When asked to rotate to a specific heading, you should use the move_to_relative tool by first getting the current yaw, and then calculating the heading change needed to achieve the desired heading.  Returns a result property specifying one of:  success, failed.  On failure the overall tool call sequence must be aborted. ",
+					<!-- Simple movement tool with mock implementation to compare to previous standalone POC testing -->
+					<!--ToolCallDeclareAction tc_definition='\{
+						"function": {
+							"description": "move robot the specified distance at the specified heading",
+							"name": "move_robot",
 							"parameters": {
-								"type": "object",
 								"properties": {
-									"movement_params": {
-										"type": "object",
-										"description": "The distance and change in heading.",
-										"properties": {
-											"distance": {
-												"description": "Distance to move in meters",
-												"type": "number"
-											},
-											"heading": {
-												"description": "Change in current heading angle in the range [-180, 180] where an increase in yaw corresponds to turning left and vice versa. ",
-												"type": "number"
-											}
-										},
-										"required": ["distance", "heading"]
+									"distance": {
+										"description": "Distance to move in meters",
+										"type": "float"
+									},
+									"heading": {
+										"description": "Heading angle to move in degrees in the range [-180, 180] where an increase in yaw corresponds to turning left and vice versa",
+										"type": "float"
 									}
 								},
-								"required": ["movement_params"]
+								"required": ["distance", "heading"],
+								"type": "object"
 							}
-						}
-					\}' />
+						},
+						"type": "function"
+					\}' /-->
 
 					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
         				"function": {
             				"name": "spin_in_place",
-            				"description": "Use this tool to rotate the robot by relative angle.  Do not use for turning to a specific heading.    Returns a result property specifying one of:  successm failed.  On failure the overall tool call sequence must be aborted. ",
+            				"description": "Use this tool to rotate the robot by relative angle.  Do not use for turning to a specific heading. Use this tool when you are asked to rotate or when you need to turn to observe what is around you.   Returns a result property specifying one of:  success, failed.  On failure the overall tool call sequence must be aborted. ",
 							"parameters": {
 								"type": "object",
 								"properties": {
@@ -116,7 +139,7 @@
 										"description": "These control the amount and rate of spin.",
 										"properties": {
 											"angle": {
-												"description": "Amount to rotate in degrees.  Positive values turn left and vice versa. Range [-720, 720]",
+												"description": "Amount to rotate in degrees.  Positive values turn left and vice versa.",
 												"type": "number"
 											},
 											"rate": {
@@ -136,7 +159,7 @@
         				"type": "function",
         				"function": {
             				"name": "get_map_locations",
-            				"description": "Use this tool to get a list of specific x,y,yaw locations you can move to.  Use this tool when asked for the room map location for a place. ",
+            				"description": "Use this tool to get a list of specific x,y,yaw locations you can move to.  Use this tool when asked for the room map location for a place. The output of this tool can be used to lookup the  x,y,yaw values for passing to the move_to_absolute tool.",
 							"returns": "A JSON array of objects each specifying:  location_name,x,y,yaw"
 						}
 					\}' />
@@ -145,7 +168,7 @@
         				"type": "function",
         				"function": {
             				"name": "speak",
-            				"description": "Use this tool to speak using TTS prior to the final prompt result.  For example, use this during multi-step tool calls.  Dont use this for the final result since that result is always spoken",
+            				"description": "Use this tool to speak using TTS prior to the final prompt result.  For example, use this during multi-step tool calls.  Dont use this for the final response since that result is always spoken",
 							"parameters": {
                 				"type": "object",
 								"properties": {
@@ -162,7 +185,7 @@
         				"type": "function",
         				"function": {
             				"name": "ask_question",
-            				"description": "Use this tool to ask the user a question and get there response.",
+            				"description": "Use this tool to ask the user a question and get their response.",
 							"parameters": {
                 				"type": "object",
 								"properties": {
@@ -173,6 +196,23 @@
                 				"required": ["question"]
 							},
 							"returns": "Text string containing the user response"
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "delay",
+            				"description": "Use this tool to add a time delay between two tool calls.",
+							"parameters": {
+                				"type": "object",
+								"properties": {
+                					"delay": {
+                    					"type": "number",
+                    					"description": "Delay period in milliseconds" }
+								},
+                				"required": ["delay"]
+							}
 						}
 					\}' />
 										
@@ -368,7 +408,7 @@
 
 								<AIAction prompt="{prompt}" abort="{ai_abort}" result="{ai_text_to_speak}" tool_call_name="{tool_call_name}"
 												tool_call_args="{tool_call_args}" tool_call_result="{tool_call_result}"
-												tool_call_timeout_sec="180" system_prompt="{system_prompt}"/>
+												tool_call_timeout_sec="180" system_prompt="{system_prompt}" streaming="false"/>
 							</ReactiveSequence>
 
 							<!-- Buffer any new text generated by the final AIAction tick.  See comments
@@ -429,8 +469,8 @@
 											<SubTree ID="MoveToAbsolute" _autoremap="true" />
 											<SubTree ID="MoveToRelative" _autoremap="true" />
 
-											<Switch4 variable="{running_tool}" case_1="ask_question" case_2="get_camera_frame"
-													case_3="get_map_locations" case_4="spin_in_place" >
+											<Switch6 variable="{running_tool}" case_1="ask_question" case_2="get_camera_frame"
+													case_3="get_map_locations" case_4="spin_in_place" case_5="move_robot" case_6="delay" >
 												<SubTree ID="AskQuestionAndGetResponse" _autoremap="true" />
 												<SubTree ID="GetCameraFrame" _autoremap="true" />
 
@@ -439,11 +479,15 @@
 												<Sequence>
 													<SetBlackboard output_key="tool_call_result" value='[{"location": "office tv",
 																"x": -0.29, "y": 0.101, "yaw": 180.0},{"location": "playroom tv",
-																"x": -4.48, "y": 0.143, "yaw": 0.0},
+																"x": -4.48, "y": 0.143, "yaw": 0.0},{"location": "amys_door", "x": -8.3, "y": 1.23, "yaw": 180.0},
 													{"location": "robot home", "x": 0.55, "y": -0.22, "yaw": 74.0}]'/>
 												</Sequence>
 
 												<SubTree ID="SpinInPlace" _autoremap="true" />
+												
+												<SubTree ID="MoveRobotMockTest" _autoremap="true" />
+
+												<SubTree ID="DoDelay" _autoremap="true" />
 
 												<!-- Unrecognized tool -->
 												<ForceFailure>
@@ -452,7 +496,7 @@
 														<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed, unrecognized tool call&quot;}'" />
 													</Sequence>												
 												</ForceFailure>											
-											</Switch4>											
+											</Switch6>											
 										</Switch6>
 
 									</Sequence>					
@@ -575,6 +619,13 @@
 		</Sequence>
     </BehaviorTree>
 
+	<BehaviorTree ID="MoveRobotMockTest">
+        <Sequence>
+			<LogAction level="info" msg="MoveRobotMockTest Subtree" arg1="{tool_call_args}" />
+			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+		</Sequence>
+    </BehaviorTree>
+
 	<BehaviorTree ID="MoveToAbsolute">
         <Sequence>
 			<LogAction level="info" msg="MoveToAbsolute Subtree" arg1="{tool_call_args}" />
@@ -683,6 +734,28 @@
 			<CopyBBValueIntoJsonKeyValueAction json_in_out="{tool_call_result}" json_key_pointer="/result" value="{said}" />
 			<Script code=" said:='' " />
 			<Script code=" antenna_state_req:='model_active' " />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="DoDelay">
+        <Sequence>
+			<LogAction level="info" msg="Delay Subtree" arg1="{tool_call_args}" />
+
+			<!-- Parse json containing param and store in BB /-->
+			<Fallback>
+				<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/delay" output="{delay}" />
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="Delay Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+
+			<Delay delay_msec="{delay}">
+				<LogAction level="info" msg="Delay Subtree finished" arg1="{tool_call_args}" />
+			</Delay>
+			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
 		</Sequence>
     </BehaviorTree>
 
