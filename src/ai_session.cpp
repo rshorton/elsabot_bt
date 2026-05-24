@@ -467,3 +467,45 @@ void AISession::prune_message_history_as_needed() {
       token_cnt_before, current_tokens_);
   }
 }
+
+
+void AISession::SessionMessage::get_description(std::stringstream &ss) const {
+  ss << "type: " << session_message_to_str(msg_type_) << ", role: " << role_ << ", tokens: " << token_count_;
+}
+
+
+std::string AISession::SessionMessage_UserPrompt::get_description() const {
+  std::stringstream ss;
+  SessionMessage::get_description(ss);
+  ss << ", prompt: " << prompt_ << ", has_image: " << (b64_image_.empty()? "N": "Y");
+  return ss.str();
+}
+
+std::string AISession::SessionMessage_Response::get_description() const {
+  std::stringstream ss;
+  SessionMessage::get_description(ss);
+  ss << ", response: " << response_;
+  return ss.str();
+}
+
+
+std::string AISession::SessionMessage_ToolRequest::get_description() const {
+  std::stringstream ss;
+  SessionMessage::get_description(ss);
+  ss <<  ", tool_call_json: " << tool_call_json_;
+  return ss.str();
+}
+
+
+std::string AISession::SessionMessage_ToolResult::get_description() const {
+  std::stringstream ss;
+  SessionMessage::get_description(ss);
+
+  ss << ", tool: " << name_  << ", using_image: " << (has_image() && use_image());
+  if (!tool_result_json_.empty()) {
+    auto j = nlohmann::json::parse(tool_result_json_);
+    remove_images(j, " [omitted image]");
+    ss << ", tool_result_json: " << j.dump();
+  }
+  return ss.str();
+}

@@ -13,6 +13,10 @@
 #include <future>
 #include <memory>
 
+namespace {
+const bool OMIT_OLD_TOOL_IMAGES_IN_HISTORY = false;
+};
+
 class AISession {
  public:
   using CallbackData = std::function<void(const std::string &data)>;
@@ -79,18 +83,15 @@ class AISession {
       token_count_ = count;
     }
 
-    virtual std::string get_description() {
-      std::stringstream ss;
-      ss << "type: " << session_message_to_str(msg_type_) << ", role: " << role_ << ", tokens: " << token_count_;
-      return ss.str();
-    }
+    void get_description(std::stringstream &ss) const;
+    virtual std::string get_description() const = 0;
 
     SessionMessageType get_type() const {
       return msg_type_;
     }
 
     bool has_image() const {
-      return has_image_ && use_image_;
+      return has_image_;
     }
 
     bool use_image() const {
@@ -144,11 +145,7 @@ class AISession {
       return m;
     }
 
-    std::string get_description() override {
-      auto desc = SessionMessage::get_description();
-      desc += ", prompt: " + prompt_ + ", has_image: " + (b64_image_.empty()? "N": "Y");
-      return desc;
-    }
+    std::string get_description() const override;
 
     std::string prompt_;
     std::string b64_image_;
@@ -167,11 +164,7 @@ class AISession {
       return m;
     }
 
-    std::string get_description() override {
-      auto desc = SessionMessage::get_description();
-      desc += ", response: " + response_;
-      return desc;
-    }
+    std::string get_description() const override;
 
     std::string response_;
   };
@@ -189,11 +182,7 @@ class AISession {
       return m;
     }
 
-    std::string get_description() override {
-      auto desc = SessionMessage::get_description();
-      desc += ", tool_call_json: " + tool_call_json_;
-      return desc;
-    }
+    std::string get_description() const override;
 
     std::string tool_call_json_;
   };
@@ -220,22 +209,13 @@ class AISession {
         // If the image should be purged, then remove the url and update the text field to indicate
         // the image was removed
         if (!use_image()) {
-          if (m["content"].is_array()) {
-            // The following handles multiple images in the result
-            for (auto it = m["content"].begin(); it != m["content"].end(); ) {
-              if (it->is_object() && it->value("type", "") == "image_url") {
-                it = m["content"].erase(it);
-              } else {
-                ++it;
-              }
-            }
+          remove_images(m["content"], " [image removed to reduce context size]");
+        }
 
-            for (auto &item: m["content"]) {
-              if (item.contains("text")) {
-                item["text"] += " [image removed to reduce context size]";
-              }
-            }
-          }
+        // Test purging image after return
+        if (is_last && OMIT_OLD_TOOL_IMAGES_IN_HISTORY) {
+          set_use_image(false);
+          std::cout << "Purging image after sending" << std::endl;
         }
       } else {
         // Otherwise content contains json
@@ -244,10 +224,25 @@ class AISession {
       return m;
     }
 
-    std::string get_description() override {
-      auto desc = SessionMessage::get_description();
-      desc += ", tool: " + name_ + ", tool_result_json: " + tool_result_json_;
-      return desc;
+    std::string get_description() const override;
+
+    void remove_images(nlohmann::json &j, const std::string &replacement_text) const {
+      if (j.is_array()) {
+        // The following handles multiple images in the result
+        for (auto it = j.begin(); it != j.end(); ) {
+          if (it->is_object() && it->value("type", "") == "image_url") {
+            it = j.erase(it);
+          } else {
+            ++it;
+          }
+        }
+
+        for (auto &item: j) {
+          if (item.contains("text")) {
+            item["text"] = item["text"].get<std::string>() + replacement_text;
+          }
+        }
+      }
     }
 
     std::string name_;
