@@ -31,12 +31,13 @@
 
 					<ToolCallTimeAction command="init" />
 
-					<!-- Probably not needed now that ToolCallAnalyzeCameraFrameAction works -->
-					<!--ToolCallAnalyzeCameraFrameAction command="init" /-->
+					<!-- Performs VLM using a separate model context.  It seems the Gemma4 tool calling if more accurate
+						 if the image data is kept out of the main context where thinking and tool calls are made.  -->
+					<ToolCallAnalyzeCameraFrameAction command="init" />
 
 					<!-- Requires fix from https://github.com/vllm-project/vllm/pull/41459
 						 to allow images to be returned in tool call results -->
-					<ToolCallGetCameraFrameAction command="init" />
+					<!--ToolCallGetCameraFrameAction command="init" /-->
 
 					<ToolCallGetPositionAction command="init" />
 
