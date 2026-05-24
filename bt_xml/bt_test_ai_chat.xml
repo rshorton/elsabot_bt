@@ -277,22 +277,26 @@
 								<Sequence>
 									<Fallback>
 										<Sequence>
+											<WakeWordDetectedAction since_sec="2.0" />
+											<Script code=" speech_to_text_delay:=0.5 " />
+											<LogAction level="info" msg="Wake word triggering STT" />
+										</Sequence>							
+										<Sequence>
 											<Precondition if="use_vad == true" else="FAILURE">
 												<Sequence>
 													<LogAction level="debug" msg="VAD enabled" />
 													<VoiceDetectedAction />
 													<Script code=" speech_to_text_delay:=-2.0 " />
+													<LogAction level="info" msg="VAD triggering STT" />
+
 												</Sequence>
 											</Precondition>
-										</Sequence>							
-										<Sequence>
-											<WakeWordDetectedAction since_sec="1.0" />
-											<Script code=" speech_to_text_delay:=0.5 " />
 										</Sequence>							
 									</Fallback>
 									<PauseAudioAction stream_type="fg" />
 
 									<Script code=" antenna_state_req:='listening' " />
+									<LogAction level="info" msg="speech_to_text_delay" arg1="{speech_to_text_delay}" />
 									<SpeechToTextAction text="{prompt}" max_speech_duration="25"
 														start_delay="{speech_to_text_delay}"
 														pre_speech_timeout="5" post_speech_timeout="2" />
@@ -321,7 +325,8 @@
 								 the pause done above. -->
 							<CancelAudioAction req_id="all" />
 							<ResumeAudioAction stream_type="fg" />
-
+							
+							<Script code=" use_vad:=false " />
 							<Script code=" antenna_state_req:='model_active' " />
 
 							<!-- Call AIAction node until it is finished -->
@@ -350,10 +355,11 @@
 											</Sequence>												
 										</Fallback>
 
-										<Script code=" prompt:='cancel' " />
-										<Script code=" ai_abort:=true; run_tools:=false " />
+										<Script code=" prompt:='' " />
+										<Script code=" run_tools:=false " />
+										<Script code=" ai_abort:=true; " />
 										<Script code=" tts_buffer:=''; ai_text_to_speak:='' " />
-										<CancelAudioAction req_id="all" />
+										<Script code=" cancel_audio:=true " />
 										<LogAction level="info" msg="Wake word detected during AIAction, cancelling AIAction" />
 									</Sequence>
 								</ForceSuccess>
@@ -519,6 +525,13 @@
 				<KeepRunningUntilFailure>
 					<ForceSuccess>
 						<Sequence>
+							<Precondition if="cancel_audio == true" else="SUCCESS">
+								<Sequence>
+									<Script code=" cancel_audio:=false " />
+									<CancelAudioAction req_id="all" />
+								</Sequence>									
+							</Precondition>
+
 							<LogAction level="debug" msg="TTS loop, tts_buffer: " arg1="{tts_buffer}" />
 							<LogAction level="debug" msg="TTS loop, next_tts:" arg1="{tts_buffer}" />
 							<Script code=" next_tts=tts_buffer; tts_buffer='' " />
