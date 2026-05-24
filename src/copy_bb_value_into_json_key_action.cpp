@@ -64,9 +64,9 @@ BT::NodeStatus CopyBBValueIntoJsonKeyValueAction::onStart() {
         RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), json_out.c_str());
         setOutput("json_in_out", json_out);
 
-    } catch (json::parse_error& ex) {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to set specified json pointer into json %s, at: %ld",
-            json_key_pointer.c_str(), ex.byte);
+    } catch (const json::exception& ex) {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to set specified json pointer into json %s, at: %s",
+            json_key_pointer.c_str(), ex.what());
         return BT::NodeStatus::FAILURE;
     }
     return BT::NodeStatus::SUCCESS;

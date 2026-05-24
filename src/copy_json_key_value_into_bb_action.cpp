@@ -69,9 +69,9 @@ BT::NodeStatus CopyJsonKeyValueIntoBBAction::onStart() {
 
         setOutput("output", val_str);
 
-    } catch (json::parse_error& ex) {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to get specified json pointer from json %s, at: %ld",
-            json_key_pointer.c_str(), ex.byte);
+    } catch (const json::exception& ex) {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to get specified json pointer from json %s, at: %s",
+            json_key_pointer.c_str(), ex.what());
         return BT::NodeStatus::FAILURE;
     }
     return BT::NodeStatus::SUCCESS;
