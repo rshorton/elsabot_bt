@@ -100,6 +100,11 @@ void AISession::perform() {
   auto completion_callback = [&](std::string data, CURLcode curl_result) {
     RCLCPP_DEBUG(logger_, "Completion_callback: length: %ld", data.length());
 
+    if (complete_.load()) {
+      RCLCPP_DEBUG(logger_, "Error, completion_callback after complete");
+      return;
+    }
+
     AISession::Result result;
 
     if (response_parse_error_tool_call_) {
@@ -123,6 +128,7 @@ void AISession::perform() {
         result = Result::failed;
       }
     }
+    complete_.store(true);
     promise_.set_value(result);
   };
 
@@ -176,6 +182,7 @@ void AISession::perform() {
     }      
   };
 
+  complete_.store(false);
   promise_ = std::move(std::promise<AISession::Result>());
   future_ = std::move(promise_.get_future());
 

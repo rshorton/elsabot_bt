@@ -280,6 +280,7 @@ class AISession {
 
   std::promise<AISession::Result> promise_;
   std::future<AISession::Result> future_;
+  std::atomic<bool> complete_;
 
   std::unique_ptr<HttpRequest> request_;
 
