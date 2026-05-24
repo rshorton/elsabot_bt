@@ -15,6 +15,7 @@
 
 					<Script code=" use_vad:=false " />
 
+					<Script code=" cancel_audio:=false " />
 					<Script code=" next_tts:='' " />
 					<Script code=" tts_buffer:='' " />
 					<Script code=" ai_text_to_speak:='' " />
