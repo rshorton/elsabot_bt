@@ -81,7 +81,8 @@ class WakeWordDetectedAction : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return {BT::InputPort<float>("since_sec")};
+        	return {BT::InputPort<float>("since_sec"),
+                    BT::InputPort<bool>("clear")};
         }
 
         virtual BT::NodeStatus tick() override
@@ -94,7 +95,13 @@ class WakeWordDetectedAction : public BT::SyncActionNode
 				double diff = (node_if_->node_->now() - node_if_->ww_time_).seconds();
 
 				auto ww_temp = node_if_->ww_;
-				node_if_->ww_ = "";
+
+                auto clear = true;
+                getInput("clear", clear);
+
+                if (clear) {
+				    node_if_->ww_ = "";
+                }                    
 				std::cout << "Wakeword: since last: " << diff << ", since_sec: " << since_sec << std::endl;
 				if (ww_temp.length() > 0 && diff < since_sec) {
 					RCLCPP_INFO(node_if_->node_->get_logger(), "Wakeword Detected");

@@ -388,7 +388,7 @@
 									<Sequence>
 										<Fallback>
 											<!--VoiceDetectedAction /-->
-											<WakeWordDetectedAction since_sec="1.0" />
+											<WakeWordDetectedAction since_sec="1.0" clear="false"/>
 											<!-- Also look for prompt input via the UI input topic (you can use the input_text.sh script for this)	-->
 											<Sequence>
 												<!-- SUCCESS if changed (always returns most recent value)-->
