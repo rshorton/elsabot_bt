@@ -59,6 +59,8 @@ BT::NodeStatus CopyJsonKeyValueIntoBBAction::onStart() {
         // If an object or array, return json
         if (val.is_object() || val.is_array()) {
             val_str = val.dump();
+        } else if (val.is_string()) {
+            val_str = val.get<std::string>();
         } else {
             std::stringstream ss;
             ss << val;
