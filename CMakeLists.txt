@@ -95,8 +95,10 @@ set(elsabot_bt_sources
   src/cancel_audio_action.cpp
   src/copy_bb_value_into_json_key_action.cpp
   src/copy_json_key_value_into_bb_action.cpp
+  src/detection_get_objects_action.cpp
   src/detection_processor_container.cpp
   src/detection_processor.cpp
+  src/detection_wait_for_object_detected_action.cpp
   src/http_request.cpp
   src/image_utils.cpp
   src/imu_topic.cpp

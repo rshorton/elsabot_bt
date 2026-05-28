@@ -30,6 +30,10 @@
 #include "detection_command_action.hpp"
 #include "detection_select_action.hpp"
 #include "detection_get_position_action.hpp"
+#include "detection_get_objects_action.hpp"
+#include "detection_wait_for_object_detected_action.hpp"
+
+
 #include "get_movement_status_action.hpp"
 #include "numeric_comparison_action.hpp"
 
@@ -206,6 +210,8 @@ int main(int argc, char **argv)
     factory.registerNodeType<DetectionCommandAction>("DetectionCommandAction");
     factory.registerNodeType<DetectionGetPositionAction>("DetectionGetPositionAction");
     factory.registerNodeType<DetectionSelectAction>("DetectionSelectAction");
+    factory.registerNodeType<DetectionGetObjectsAction>("DetectionGetObjectsAction");
+    factory.registerNodeType<DetectionWaitForObjectDetectedAction>("DetectionWaitForObjectDetectedAction");
 
     factory.registerNodeType<AIAction>("AIAction");
     factory.registerNodeType<ToolCallTimeAction>("ToolCallTimeAction");

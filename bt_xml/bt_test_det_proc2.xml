@@ -1,0 +1,31 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+    <Sequence>
+      <Sequence>          
+        <DetectionProcessorCreateAction det="detector1" topic="/head/detected_objects" />
+        <DetectionConfigureAction det="detector1" class_conf_mapping="person 0.75" 
+          min_det_count="5" drop_det_count="5" det_timeout="5000"
+          pub_topic="/object_list_world" />
+      </Sequence>          
+
+      <Sequence>          
+        <Repeat num_cycles="5">
+          <Sequence>
+              <ForceSuccess>
+                <Sequence>
+                  <Delay delay_msec="3000">
+                    <Sequence>
+                      <DetectionGetObjectsAction det="detector1" coord_frame="base_footprint" objects="{obj_json}"/>
+                      <LogAction level="info" msg="objects" arg1="{obj_json}" />
+                    </Sequence>
+                  </Delay>                    
+                </Sequence>
+              </ForceSuccess>
+          </Sequence>
+        </Repeat>
+  		</Sequence>
+
+		</Sequence>
+    
+	</BehaviorTree>
+</root>

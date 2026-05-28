@@ -32,17 +32,33 @@ limitations under the License.
 class ObjDetProc
 {
 public:
-	struct Position {
-		double x;
-		double y;
-		double z;
+	struct Position { 
+		Position() {};
+		Position(double x, double y, double z):
+			x(x),
+			y(y),
+			z(z)
+		{}
+		double x{0.0};
+		double y{0.0};
+		double z{0.0};
 	};
 
 	struct Detection {
-		size_t id;
+		Detection() {};
+		Detection(size_t id, std::string obj_class, Position pos, double yaw, double dist, std::string token):
+			id(id),
+			obj_class(obj_class),
+			pos(pos),
+			yaw(yaw),
+			dist(dist),
+			token(token)
+		{};
+		size_t id{0};
+		std::string obj_class;
 		Position pos;
-		double yaw;
-		double dist;
+		double yaw{0.0};
+		double dist{0.0};
 		std::string token;
 	};
 
@@ -100,6 +116,12 @@ public:
 	// Return the position of the specified object relative to the specified frame
 	bool GetObjectPos(size_t id, double &x, double &y, double &z, const std::string &coord_frame);
 
+	// Return a list of all objects with position/yaw relative to specified frame
+	bool GetObjects(const std::string &coord_frame,	std::vector<ObjDetProc::Detection> &detections) const;
+
+	// Returns true if an object of specified class is detected
+	bool IsDetected(const std::string &obj_class) const;
+
 private:
 	void DetectionCallback(object_detection_msgs::msg::ObjectDescArray::SharedPtr msg);
 
@@ -108,7 +130,7 @@ private:
 	void Publish();
 	bool Retire();
 
-	inline double CalcSqrDist(double x1, double y1, double z1, double x2, double y2, double z2);
+	inline double CalcSqrDist(double x1, double y1, double z1, double x2, double y2, double z2) const;
 	bool Closest(const std::string &obj_class, double x, double y, double z, bool use_z, DetObj &closest, double &dist);
 
 	bool LocalObjToDetection(const DetObj &obj, double dist, const std::string &token, Detection &det);

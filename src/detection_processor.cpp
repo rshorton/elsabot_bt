@@ -154,7 +154,7 @@ void ObjDetProc::DetectionCallback(object_detection_msgs::msg::ObjectDescArray::
 	for (auto &d: active_detections_) {
 		oss << d.id << ", ";
 	}
-	RCLCPP_INFO(node_->get_logger(), "DetectionCallback [%s] finished, Obj: [%lu], %s",
+	RCLCPP_DEBUG(node_->get_logger(), "DetectionCallback [%s] finished, Obj: [%lu], %s",
 		name_.c_str(), active_detections_.size(),oss.str().c_str());
 }
 
@@ -308,6 +308,7 @@ bool ObjDetProc::GetSelected(ObjDetProc::Detection &detection)
 bool ObjDetProc::LocalObjToDetection(const DetObj &obj, double dist, const std::string &token, Detection &det)
 {
 	det.id = obj.id;
+	det.obj_class = obj.desc.name;
 	det.token = token;
 	det.dist = sqrt(dist);
 	det.pos = {obj.x, obj.y, obj.z};
@@ -336,6 +337,33 @@ bool ObjDetProc::GetObjectPos(size_t id, double &x, double &y, double &z, const 
 			}
 			RCLCPP_ERROR(node_->get_logger(), "GetObjectPos: id: [%lu], xyz(%s) %f, %f, %f, xyz(%s) %f, %f, %f",
 				id, o.desc.position.header.frame_id.c_str(), o.desc.position.point.x, o.desc.position.point.y, o.desc.position.point.z, coord_frame.c_str(), x, y, z);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ObjDetProc::GetObjects(const std::string &coord_frame, std::vector<ObjDetProc::Detection> &detections) const
+{
+	for (auto &o: active_detections_) {
+		double x = o.desc.position.point.x;
+		double y = o.desc.position.point.y;
+		double z = o.desc.position.point.z;
+		if (!TransformHelper::GetInstance()->Transform(o.desc.position.header.frame_id, coord_frame, x, y, z)) {
+			return false;
+		}
+
+		auto yaw = std::atan2(y, x)*180.0/acos(-1.0);
+		auto dist = sqrt(CalcSqrDist(x, y, z, 0.0, 0.0, 0.0));
+		detections.emplace_back(o.id, o.desc.name, Position(x, y, z), yaw, dist, std::string());
+	}
+	return true;
+}
+
+bool ObjDetProc::IsDetected(const std::string &obj_class) const
+{
+	for (auto &o: active_detections_) {
+		if (o.desc.name == obj_class) {
 			return true;
 		}
 	}
@@ -374,7 +402,7 @@ void ObjDetProc::Resume()
 	process_ = true;
 }
 
-inline double ObjDetProc::CalcSqrDist(double x1, double y1, double z1, double x2, double y2, double z2)
+inline double ObjDetProc::CalcSqrDist(double x1, double y1, double z1, double x2, double y2, double z2) const
 {
 	return (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) + (z1 - z2)*(z1 - z2);
 }
