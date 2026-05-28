@@ -45,7 +45,7 @@
         				"type": "function",
         				"function": {
             				"name": "move_to_relative",
-            				"description": "Use this tool to move the robot by specifying a distance and heading. Returns a resultproperty specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. Here are examples of how you can use this tool: to move the forward: distance = (positive distance amount), heading = 0. to move the backwards: distance = (negative distance amount), heading = 0. to turn left: distance = 0, heading = 90. to turn right: distance = 0, heading = -90. to rotate 360 degrees, you must split the operation into two steps: 1. distance=0, heading=180. 2. distance=0, heading=180.",
+            				"description": "Use this tool to move the robot by specifying a distance and heading. Returns a result property specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. Here are examples of how you can use this tool: to move the forward: distance = (positive distance amount), heading = 0. to move the backwards: distance = (negative distance amount), heading = 0. to turn left: distance = 0, heading = 90. to turn right: distance = 0, heading = -90. to rotate 360 degrees, you must split the operation into two steps: 1. distance=0, heading=180. 2. distance=0, heading=180.",
 							"parameters": {
 								"type": "object",
 								"properties": {
@@ -215,7 +215,52 @@
 							}
 						}
 					\}' />
-										
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "get_detected_objects",
+            				"description": "Get a JSON list of the currently detected objects.",
+							"returns": "A JSON array of objects each specifying:  id, object_class, x, y, z, relative_yaw, distance,  where x,y,z,distance are in meters and relative_yaw is angular offset from the current heading of the robot.  To turn and face the object you would use the move_to_relative tool with the yaw parameter equal to the object relative_yaw."
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "set_parallel_tool_mode",
+            				"description": "Use this tool to select how to process parallel tool calls.",
+							"parameters": {
+								"type": "object",
+								"properties": {
+									"mode": {
+										"type": "string",
+										"description": "One of these parallel modes: wait_all - wait for all parallel tools to finish, wait_one - wait until at least one tool finishes.  Example usage, if you want the success/failure of one tool to stop another one, use wait_one.  If you both tools to run to completion, use wait_all"
+									}
+								},
+								"required": ["mode"]
+							}
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "wait_for_object_detected",
+            				"description": "Use this tool to wait for an object of the specified class to become detected.  This tool can be used in parallel with another tool to stop the other tool when a detection occurs such as when moving/rotating to find something.",
+							"parameters": {
+								"type": "object",
+								"properties": {
+									"obj_class": {
+										"type": "string",
+										"description": "Class type of object to be detected, supported types: person,cat."
+									}
+								},
+								"required": ["obj_class"]
+							}
+						}
+					\}' />
+
 					<!-- Allow the system prompt to be replace or appended-to by command line args -->
 					<IfThenElse>
 						<TextCompareAction text="{def_value_1}" ck_for="" />
@@ -223,8 +268,8 @@
 							should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4,
 							with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword
 							for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
-							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis as a secondary way to express
-							emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, and amusing. Use the 'speak' tool to announce your intentions before taking a major action. For example, if you are about to move to a new location, say: 'I'm heading to...'   Don't over-explain your actions."/>
+							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis (using unicode) as a secondary way to express
+							emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, and amusing. Use the 'speak' tool to announce your intentions before taking a major action. For example, if you are about to move to a new location, say: 'I'm heading to...'   Don't over-explain your actions.   Here are some tool-call tips.  1. If asked to perform multiple actions at the same time, use a parallel tool call.  In that case you should first call set_parallel_tool_mode to specify the execution policy. The tells the executor whether it should wait for both tools to finish, or whether the first one to complete terminates the other tool."/>
 						<SetBlackboard output_key="system_prompt" value="{def_value_1}" />
 					</IfThenElse>
 					<IfThenElse>
@@ -234,6 +279,11 @@
 					</IfThenElse>
 
 					<LogAction level="info" msg="Using system prompt: " arg1="{system_prompt}" />
+
+        			<DetectionProcessorCreateAction det="detector1" topic="/head/detected_objects" />
+        			<DetectionConfigureAction det="detector1" class_conf_mapping="person 0.75" min_det_count="5"
+						drop_det_count="5" det_timeout="5000" pub_topic="/object_list_world" />
+
 				</Sequence>
 			</RunOnce>
 
@@ -469,8 +519,8 @@
 											<SubTree ID="MoveToAbsolute" _autoremap="true" />
 											<SubTree ID="MoveToRelative" _autoremap="true" />
 
-											<Switch6 variable="{running_tool}" case_1="ask_question" case_2="get_camera_frame"
-													case_3="get_map_locations" case_4="spin_in_place" case_5="move_robot" case_6="delay" >
+											<Switch5 variable="{running_tool}" case_1="ask_question" case_2="get_camera_frame"
+													case_3="get_map_locations" case_4="spin_in_place" case_5="move_robot">
 												<SubTree ID="AskQuestionAndGetResponse" _autoremap="true" />
 												<SubTree ID="GetCameraFrame" _autoremap="true" />
 
@@ -487,16 +537,25 @@
 												
 												<SubTree ID="MoveRobotMockTest" _autoremap="true" />
 
-												<SubTree ID="DoDelay" _autoremap="true" />
+												<Switch4 variable="{running_tool}" case_1="delay" case_2="get_detected_objects"
+														case_3="set_parallel_tool_mode" case_4="wait_for_object_detected" >
+													<SubTree ID="DoDelay" _autoremap="true" />
 
-												<!-- Unrecognized tool -->
-												<ForceFailure>
-													<Sequence>
-														<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
-														<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed, unrecognized tool call&quot;}'" />
-													</Sequence>												
-												</ForceFailure>											
-											</Switch6>											
+													<SubTree ID="GetDetectedObjects" _autoremap="true" />
+
+													<SubTree ID="SetParallelToolMode" _autoremap="true" />
+
+													<SubTree ID="WaitForObjectDetected" _autoremap="true" />
+
+													<!-- Unrecognized tool -->
+													<ForceFailure>
+														<Sequence>
+															<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
+															<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed, unrecognized tool call&quot;}'" />
+														</Sequence>												
+													</ForceFailure>											
+												</Switch4>
+											</Switch5>											
 										</Switch6>
 
 									</Sequence>					
@@ -755,6 +814,63 @@
 			<Delay delay_msec="{delay}">
 				<LogAction level="info" msg="Delay Subtree finished" arg1="{tool_call_args}" />
 			</Delay>
+			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="GetDetectedObjects">
+        <Sequence>
+			<LogAction level="info" msg="GetDetectedObjects Subtree" arg1="{tool_call_args}" />
+			<IfThenElse>
+				<DetectionGetObjectsAction det="detector1" coord_frame="base_footprint" objects="{obj_json}"/>
+				<Script code=" tool_call_result:=obj_json" />
+				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+			</IfThenElse>
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="WaitForObjectDetected">
+        <Sequence>
+			<LogAction level="info" msg="WaitForObjectDetected Subtree" arg1="{tool_call_args}" />
+
+			<!-- Parse json containing param and store in BB /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/obj_class" output="{obj_class}" />
+					<LogAction level="info" msg="Using obj_class" arg1="{obj_class}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="WaitForObjectDetected Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+			<IfThenElse>
+				<DetectionWaitForObjectDetectedAction det="detector1" obj_class="{obj_class}" timeout_sec="180.0"/>
+				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+			</IfThenElse>
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="SetParallelToolMode">
+        <Sequence>
+			<LogAction level="info" msg="SetParallelToolMode Subtree" arg1="{tool_call_args}" />
+
+			<!-- Parse json containing param and store in BB /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/mode" output="{parallel_tool_mode}" />
+					<LogAction level="info" msg="Using parallel tool mode" arg1="{parallel_tool_mode}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="SetParallelToolMode Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
 			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
 		</Sequence>
     </BehaviorTree>
