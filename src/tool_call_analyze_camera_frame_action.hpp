@@ -37,6 +37,7 @@ public:
 
     static BT::PortsList providedPorts() {
         return {BT::InputPort<std::string>("command"),
+                BT::InputPort<bool>("enable_reasoning"),
                 BT::InputPort<std::string>("args_json"),
                 BT::InputPort<std::string>("base64_image"),
                 BT::OutputPort<std::string>("result_json")};
@@ -52,6 +53,9 @@ public:
             tc_data.declare_tool(tool_desc_);
             return BT::NodeStatus::SUCCESS;
         }
+
+        bool enable_reasoning = false;
+        getInput<bool>("enable_reasoning", enable_reasoning);
 
         std::string args_json;
         if (!getInput<std::string>("args_json", args_json)) {
@@ -86,7 +90,7 @@ public:
         
         std::string prompt = args["prompt"];
         RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, prompt: %s", prompt.c_str());
-        ai_session_->user_prompt(prompt, false, "", base64_image);
+        ai_session_->user_prompt(prompt, base64_image, enable_reasoning, false, "");
         return BT::NodeStatus::RUNNING;
     }
 
@@ -130,6 +134,7 @@ private:
         "type": "function",
         "function": {
             "name": "analyze_camera_frame",
+			"supports_parallel": false,
             "description": "Gets a frame from the camera and runs VLM processing. Returns an object with 'analysis' set to the VLM result, and 'filename' set to the pathname of the saved image.  Use this when asked 'what do you see' or when you need to know what the camera is viewing",
             "parameters": {
                 "type": "object",
@@ -140,6 +145,19 @@ private:
                     }
                 },
                 "required": ["prompt"]                
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "analysis": {
+                        "type": "string",
+                        "description": "The analysis of the image"
+                    },
+                    "filename": {
+                        "type": "string",
+                        "description": "File path where the image was saved"
+                    }
+                }
             }
         }
     })";
@@ -148,7 +166,7 @@ private:
 
     std::string model_{"cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit"};
     std::string resource_{"/v1/chat/completions"};
-    int max_context_size_{64000};
+    size_t max_context_size_{64000};
     std::string auth_token_{"none"};
 
     std::string host_address_and_port_{"http://localhost:8000"};

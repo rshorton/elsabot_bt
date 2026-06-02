@@ -30,3 +30,17 @@ std::string ToolCallData::get_available_tools_json()
 	return tool_descriptions_.dump();
 }
 
+void ToolCallData::set_subtree_runner(const std::string &tool_name, const std::string &subtree_name)
+{
+	sub_tree_to_tool_map_[tool_name] = subtree_name;
+}
+
+bool ToolCallData::get_subtree_runner(const std::string &tool_name, std::string &subtree_name) const
+{
+	auto it = sub_tree_to_tool_map_.find(tool_name);
+	if (it != sub_tree_to_tool_map_.end()) {
+		subtree_name = it->second;
+		return true;
+	}
+	return false;
+}

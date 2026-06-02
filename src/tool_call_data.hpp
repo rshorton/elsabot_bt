@@ -10,23 +10,27 @@
 
 class ToolCallData
 {
-    public:
-        static ToolCallData& getInstance()
-        {
-            static ToolCallData instance;
-            return instance;
-        }
-    private:
-        ToolCallData();
-    public:
-        ToolCallData(ToolCallData const&) = delete;
-        void operator=(ToolCallData const&) = delete;
+public:
+    static ToolCallData& getInstance()
+    {
+        static ToolCallData instance;
+        return instance;
+    }
+private:
+    ToolCallData();
+public:
+    ToolCallData(ToolCallData const&) = delete;
+    void operator=(ToolCallData const&) = delete;
 
-        void declare_tool(const std::string &tool_desc_json);
-        std::string get_available_tools_json();
+    void declare_tool(const std::string &tool_desc_json);
+    std::string get_available_tools_json();
 
-    private:
-        nlohmann::json tool_descriptions_;
+    void set_subtree_runner(const std::string &tool_name, const std::string &subtree_name);
+    bool get_subtree_runner(const std::string &tool_name, std::string &subtree_name) const;
+    
+private:
+    nlohmann::json tool_descriptions_;
+    std::map<std::string, std::string> sub_tree_to_tool_map_;
 };
 
 #endif // _TOOL_CALL_DATA_HPP_

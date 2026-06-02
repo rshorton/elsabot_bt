@@ -115,7 +115,7 @@ void HttpRequest::requestLoop() {
 
   // Timeout if transfer rate below low speed limit for low speed duration
   curl_easy_setopt(easy_handle_, CURLOPT_LOW_SPEED_LIMIT, 1);
-  curl_easy_setopt(easy_handle_, CURLOPT_LOW_SPEED_TIME, 60);
+  curl_easy_setopt(easy_handle_, CURLOPT_LOW_SPEED_TIME, 180);
 
   // Add easy handle to the multi stack
   curl_multi_add_handle(multi_handle_, easy_handle_);

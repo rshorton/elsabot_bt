@@ -26,10 +26,27 @@ limitations under the License.
 
 using json = nlohmann::json;
 
+// FIX - consider supporting value validation also.
+
+namespace
+{
+    const std::string AS_TYPE_STRING = "string";
+    const std::string AS_TYPE_BOOL = "bool";
+    const std::string AS_TYPE_INT = "int";
+    const std::string AS_TYPE_UINT = "uint";
+    const std::string AS_TYPE_DOUBLE = "double";
+}
+
 BT::PortsList CopyJsonKeyValueIntoBBAction::providedPorts() {
     return {BT::InputPort<std::string>("json_in"),              // Json to read
             BT::InputPort<std::string>("json_key_pointer"),     // Json pointer for key value to be copied
-            BT::OutputPort<std::string>("output")};             // BB variable to receive json value
+            BT::InputPort<std::string>("as_type"),              // The expected type
+            BT::OutputPort<std::string>("str_output"),          // BB variable to receive json value
+            BT::OutputPort<bool>("bool_output"),
+            BT::OutputPort<int>("int_output"),
+            BT::OutputPort<unsigned int>("uint_output"),
+            BT::OutputPort<double>("double_output")
+           };
 }
 
 BT::NodeStatus CopyJsonKeyValueIntoBBAction::onStart() {
@@ -42,6 +59,9 @@ BT::NodeStatus CopyJsonKeyValueIntoBBAction::onStart() {
     if (!getInput<std::string>("json_key_pointer", json_key_pointer)) {
         throw BT::RuntimeError("missing json_key_pointer");
     }
+
+    std::string as_type = "string";
+    getInput<std::string>("as_type", as_type);
 
     json j;
     try {
@@ -56,20 +76,60 @@ BT::NodeStatus CopyJsonKeyValueIntoBBAction::onStart() {
         auto val = j.at(p);
         std::string val_str;
 
-        // If an object or array, return json
-        if (val.is_object() || val.is_array()) {
-            val_str = val.dump();
-        } else if (val.is_string()) {
-            val_str = val.get<std::string>();
+        // Anything can be represented as a string
+        if (as_type == AS_TYPE_STRING) {
+            if (val.is_object() || val.is_array()) {
+                val_str = val.dump();
+            } else if (val.is_string()) {
+                val_str = val.get<std::string>();
+            } else {
+                std::stringstream ss;
+                ss << val;
+                val_str = ss.str();
+            }                 
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: %s returning as string", name().c_str(), json_key_pointer.c_str());
+            setOutput("str_output", val_str);
+
+        } else if (as_type == AS_TYPE_BOOL) {
+            if (!val.is_boolean()) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s: %s is not a bool but was requested as a bool",
+                            name().c_str(), json_key_pointer.c_str());
+                return BT::NodeStatus::FAILURE;
+            }
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: %s returning as bool", name().c_str(), json_key_pointer.c_str());
+            setOutput("bool_output", (bool)val);
+
+        } else if (as_type == AS_TYPE_DOUBLE) {
+            if (!val.is_number()) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s: %s is not a number but was requested as a double",
+                            name().c_str(), json_key_pointer.c_str());
+                return BT::NodeStatus::FAILURE;
+            }
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: %s returning as double", name().c_str(), json_key_pointer.c_str());
+            setOutput("double_output", (double)val);
+
+        } else if (as_type == AS_TYPE_INT) {
+            if (!val.is_number()) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s: %s is not a number but was requested as an int",
+                            name().c_str(), json_key_pointer.c_str());
+                return BT::NodeStatus::FAILURE;
+            }
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: %s returning as int", name().c_str(), json_key_pointer.c_str());
+            setOutput("int_output", (int)val);
+
+        } else if (as_type == AS_TYPE_UINT) {
+            if (!val.is_number()) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s: %s is not a number but was requested as an Uint",
+                            name().c_str(), json_key_pointer.c_str());
+                return BT::NodeStatus::FAILURE;
+            }
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: %s returning as Uint", name().c_str(), json_key_pointer.c_str());
+            setOutput("uint_output", (unsigned int)val);
+
         } else {
-            std::stringstream ss;
-            ss << val;
-            val_str = ss.str();
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: the requested type %s is invalid", name().c_str(), as_type.c_str());
+            return BT::NodeStatus::FAILURE;
         }
-
-        RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), val_str.c_str());
-
-        setOutput("output", val_str);
 
     } catch (const json::exception& ex) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to get specified json pointer from json %s, at: %s",

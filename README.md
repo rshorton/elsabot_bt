@@ -8,7 +8,7 @@ https://youtu.be/WZ-JJvT5fn8
  
 The report provides an overview of the ElsaBot project which can help in understanding how the various ElsaBot-related repositories of this site fit together.  A block diagram is included which shows how the various ROS2 nodes that make up Elsabot fit together.
   
-This ROS 2 package implements multiple nodes that implement the ElsaBot behavior tree engine and game behavior trees.  The engine and trees control the overall behavior of the robot.  Create new trees to implement new games or functionality for the robot.
+This ROS 2 package implements multiple nodes that implement the ElsaBot behavior tree engine and game behavior trees.  The engine and trees control the overall behavior of the robot.  You can create new trees to implement new games or functionality for the robot.
 
 The trees are stored in the **bt_xml** directory. The provided trees include the main game tree called **bt_game_top.xml**.  This tree implements all of the trees developed for the OpenCV AI competition.  Other trees are for exercising various action nodes.  
 
@@ -33,42 +33,36 @@ Use the elsabot_docker repo for building a suitable run-time environment for thi
 
 ### (WIP) Integration of LLM for high-level control
 
-A new behavior tree node called **AIAction** supports using an LLM for chat and control of the robot.  See the **bt_test_ai_chat.xml** tree for an example of using.  That tree implements chat functionality and also support a few tool-calls from the model including:
+A new behavior tree node called **AIAction** supports using an LLM for chat and control of the robot.  See the **bt_test_ai_chat.xml** tree for an example of using it.  That tree implements chat functionality and also supports a few tool calls from the model including:
 * Get time and date
 * Get camera frame and perform VLM analysis
 * Get the current position on the Nav2 map
 * Move the robot to a specified position using the Nav2 stack
-* Get Nav2 map locations (WIP)
+* Get known Nav2 map locations
+* Move the robot a specified distance using a relative heading
+* Spin in place
+* Speak (for speaking prior to the final response which is always spoken)
+* Ask a user a question and get the reply
+* Delay
+* Set parallel tool behavior
+* Get the list of currently detected objects
+* Wait for a specify object type is detected
+* Set reasoning mode (enables/disable LLM reasoning/thinking mode)
 
-Some of the tool calls are implemented using specific BT action nodes, while others are implemented by composing together existing nodes.
+Each tool call is implemented using a subtree.  The ToolCallRunnerAction node processes the tool calls requested by the model.  The runner node can handle both single tool calls and parallel tool calls where more than one tool is specified to be run at the same time. It runs each tool by creating a subtree on the fly and then spinning each tree when the runner node is ticked.  The model can specify whether parallel calls should run to completion, or whether unfinished calls should be pre-empted after the first tool finishes.  (Such as move until a specified object type is detected.)
 
-The Gemma 4 26B model is currently being used.  So far, it has been found to work extremely well.
+The Gemma 4 26B model is currently being used.  So far, it has been found to work extremely well.  When reasoning mode is enabled, it is more accurate but quite a bit slower when the prompt is complex.  As such, that mode can be enabled/disabled via a tool call (ie. asking the model to enable or disable it).  It is generally better to disable reasoning mode while casual chatting to reduce latency.  Also, streaming output from the model can be enabled to reduce chat-mode latency.  Currently it is disabled since there have been a few cases where the tool calls where not segmented correctly when streaming (seems to mis-handle negative numbers in the 'arguments' of the call).
+
+Currenly, VLM processing is done using a tool call that grabs a camera frame and then uses a different session with Gemma 4 to analyze the frame.  That is done since it seems that including the images in the context reduces the accuracy of the tool calls.
 
 See example videos:
 
   * https://youtube.com/shorts/LRyp4u0X1vA
   * https://youtube.com/shorts/3bK86ZycUxE
 
-As an example of the capabilities of the Gemma 4 model, I asked Elsabot which of the known map locations she was closest.  She used a tool call to request the current position and then said she was near the robot home location.  I was curious if she guessed so I asked...
-
-```
-Me: Can you explain how you came up with that?
-
-AI: I compared my current coordinates to the coordinates of the locations in my map. Since my current position is very close to the coordinates for "robot home," I determined that is my closest location. 🙂
-
-Me: Could you give me the specifics of that comparison?
-
-AI: My current position is: x: 0.36, y: -0.29
-
-1. Robot Home (x: 0.55, y: -0.22): The distance is approximately 0.20 meters.
-2. Office TV (x: -0.29, y: 0.10): The distance is approximately 0.74 meters.
-3. Playroom TV (x: -4.48, y: 0.14): The distance is approximately 4.85 meters.
-
-Since 0.20 meters is the smallest distance, I concluded I am closest to my robot home. 🙂
-```
 
 
 ## Credits
 
-The bt_ros2 package from Adlink-ROS (https://github.com/Adlink-ROS/BT_ros2.git) was used as the starting point.
+The bt_ros2 package from Adlink-ROS (https://github.com/Adlink-ROS/BT_ros2.git) was used as the starting point a long time ago.
 

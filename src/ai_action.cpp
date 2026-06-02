@@ -16,16 +16,22 @@ AIAction::AIAction(const std::string& name, const BT::NodeConfiguration& config)
 }
 
 BT::PortsList AIAction::providedPorts() {
-  return {BT::InputPort<std::string>("system_prompt"),
+  return {BT::InputPort<std::string>("model"),
+          BT::InputPort<size_t>("context_size_limit"),
+          BT::InputPort<std::string>("system_prompt"),
           BT::InputPort<bool>("abort"),
           BT::InputPort<bool>("new_session"),
           BT::InputPort<std::string>("prompt"),
           BT::InputPort<bool>("streaming"),
+          BT::InputPort<bool>("enable_reasoning"),
           BT::InputPort<float>("tool_call_timeout_sec"),
           BT::BidirectionalPort<std::string>("tool_call_result"),
+          BT::BidirectionalPort<std::string>("tool_call_results"),
           BT::OutputPort<std::string>("result"),
           BT::OutputPort<std::string>("tool_call_name"),
-          BT::OutputPort<std::string>("tool_call_args")};
+          BT::OutputPort<std::string>("tool_call_args"),
+          BT::OutputPort<std::string>("tool_calls")
+        };
 }
 
 BT::NodeStatus AIAction::onStart() {
@@ -35,6 +41,10 @@ BT::NodeStatus AIAction::onStart() {
 
   bool new_session = false;
   getInput<bool>("new_session", new_session);
+
+  // Optional
+  getInput<std::string>("model", model_);
+  getInput<size_t>("context_size_limit", max_context_size_);
 
   if (new_session || !ai_session_) {
     std::string system_prompt = "You are a helpful assistant.";
@@ -57,10 +67,14 @@ BT::NodeStatus AIAction::onStart() {
   if (!getInput<std::string>("prompt", prompt)) {
     throw BT::RuntimeError("missing prompt");
   }
-
+  
   // Optional
   stream_ = false;
   getInput<bool>("streaming", stream_);
+
+  // Optional
+  bool enable_reasoning = false;
+  getInput<bool>("enable_reasoning", enable_reasoning);
 
   finish_on_next_update_ = false;
   new_sentence_ = std::string();
@@ -70,6 +84,7 @@ BT::NodeStatus AIAction::onStart() {
 
   setOutput("tool_call_name", "");
   setOutput("tool_call_result", "");
+  setOutput("tool_call_results", "");
 
   RCLCPP_INFO(node_->get_logger(), "AIAction prompt: %s", prompt.c_str());
 
@@ -77,12 +92,17 @@ BT::NodeStatus AIAction::onStart() {
   tools_json_ = tc_data.get_available_tools_json();
   RCLCPP_DEBUG(node_->get_logger(), "tools_json_: %s", tools_json_.c_str());
 
-  ai_session_->user_prompt(prompt, stream_, tools_json_);
+  ai_session_->user_prompt(prompt, std::string(), enable_reasoning, stream_, tools_json_);
   return BT::NodeStatus::RUNNING;
 }
 
+
 BT::NodeStatus AIAction::onRunning() {
   RCLCPP_DEBUG(node_->get_logger(), "%s: OnRunning", name().c_str());
+
+  if (finish_on_next_update_) {
+    return BT::NodeStatus::SUCCESS;
+  }
 
   bool abort = false;
   getInput<bool>("abort", abort);
@@ -90,16 +110,144 @@ BT::NodeStatus AIAction::onRunning() {
     RCLCPP_INFO(node_->get_logger(), "%s: Aborting", name().c_str());
   }
 
+  // If waiting on a tool call to finish
+  if (tool_call_wait_) {
+    return update_waiting_on_tool_call(abort);
 
-  if (finish_on_next_update_) {
+  // Otherwise waiting on the final response for the current prompt
+  } else {
+    return update_waiting_on_response(abort);
+  }
+}
+
+void AIAction::onHalted() {
+  RCLCPP_INFO(node_->get_logger(), "AIAction halted");
+  if (ai_session_) {
+    ai_session_->cancel();
+  }
+}
+
+BT::NodeStatus AIAction::update_waiting_on_response(bool abort) {
+  if (abort) {
+    ai_session_->cancel();
     return BT::NodeStatus::SUCCESS;
   }
 
-  // Send tool cal result if waiting and the result is ready
-  if (tool_call_wait_) {
-    std::string tool_call_result;
+  // Output the latest sentence(s).
+  {
+    std::lock_guard<std::mutex> guard(new_sentence_mutex_);
+    if (!new_sentence_.empty()) {
+      RCLCPP_INFO(node_->get_logger(), "%s: new sentence result: %s", name().c_str(), new_sentence_.c_str());
+      setOutput("result", new_sentence_);
+      new_sentence_ = std::string();
+      return BT::NodeStatus::RUNNING;
+    }
+  }
 
+  // Check for the completed response
+  std::string full_response;
+  bool is_tool_call = false;
+  AISession::Result result;
+  auto finished = ai_session_->is_finished(full_response, is_tool_call, result);
 
+  if (finished) {
+    RCLCPP_DEBUG(node_->get_logger(), "AI request finished, result: %s", AISession::result_to_str(result).c_str());
+
+    if (result == AISession::Result::cancelled ||
+        result == AISession::Result::timeout ||
+        result == AISession::Result::failed ||
+        result == AISession::Result::failed_resp_parse_error_general) {
+      return BT::NodeStatus::FAILURE;
+
+    } else if (result == AISession::Result::failed_resp_parse_error_tc) {
+      ai_session_->report_tool_result("", "", "Failed to parse tool call");
+      return BT::NodeStatus::FAILURE;
+
+    } else if (is_tool_call) {
+      tool_calls_ = nlohmann::json::parse(full_response);
+      tool_call_index_ = 0;
+
+      // Set the full tool call list
+      if (parallel_tool_call_support_) {
+        setOutput("tool_calls", full_response);
+        tool_call_wait_ = true;
+        tool_start_time_ = std::chrono::steady_clock::now();
+        last_tool_wait_report_ = 0.0f;
+
+      } else {          
+        return next_tool_call();
+      }          
+
+    } else {
+      RCLCPP_INFO(node_->get_logger(), "%s: final result: %s", name().c_str(), streaming_data_buffer_.c_str());
+
+      // Run one more tick to allow the last part of the response to be processed by other BT node(s) (ie TTS)
+      setOutput("result", streaming_data_buffer_);
+      streaming_data_buffer_.clear();
+      finish_on_next_update_ = true;
+    }          
+  }
+  return BT::NodeStatus::RUNNING;
+}  
+
+BT::NodeStatus AIAction::update_waiting_on_tool_call(bool abort) {
+  std::string tool_call_result;
+
+  if (parallel_tool_call_support_) {
+    if (abort) {
+      // Report all tool calls as aborted.  This bookends the call for the session context.
+      tool_call_result = R"({"result": "Aborted"})";
+
+      for (const auto &tc: tool_calls_) {
+        ai_session_->report_tool_result(tc["id"].get<std::string>(), tc["function"]["name"].get<std::string>(),
+                                        tool_call_result);
+      }
+
+      ai_session_->cancel();
+
+      setOutput("tool_call_name", "");
+      setOutput("tool_call_result", "");
+      tool_call_wait_ = false;
+
+      return BT::NodeStatus::SUCCESS;
+    }
+
+    if (getInput<std::string>("tool_call_results", tool_call_result) &&
+        !tool_call_result.empty()) {
+
+      setOutput("tool_call_name", "");
+      setOutput("tool_call_result", "");
+      setOutput("tool_call_results", "");
+      tool_call_wait_ = false;
+
+      nlohmann::json results;
+      try {
+        results = nlohmann::json::parse(tool_call_result);
+        for (const auto &r: results) {
+          ai_session_->report_tool_result(r["tool_call_id"], r["tool_call_name"], r["result"]);
+        }
+      } catch (nlohmann::json::parse_error& ex) {
+        RCLCPP_ERROR(node_->get_logger(), "%s, failed parsing tool results, msg: %s, at: %ld", name().c_str(),
+                     tool_call_result.c_str(), ex.byte);
+        return BT::NodeStatus::FAILURE;
+      }
+
+      RCLCPP_INFO(node_->get_logger(), "Tool calls completed");
+
+      // Get since it could have changed via a tool call
+      bool enable_reasoning = false;
+      getInput<bool>("enable_reasoning", enable_reasoning);
+
+      // Don't request streaming in case there are subsequent tool calls for the current
+      // prompt. It was found that after a few back-to-back calls a new call would not be
+      // converted to json format, but rather passed in the native model tool call format.
+      // This assumes that at least the first call is correctly output as json.  Re-test
+      // after the next vllm update since the tool call parser may change and resolve this.
+      ai_session_->tool_calls_finished(enable_reasoning, false, tools_json_);
+      return BT::NodeStatus::RUNNING;
+    }
+
+  } else {
     if (abort) {
       // Report the call as aborted.  This bookends the tool call for the session context.be
       tool_call_result = R"({"result": "tool call was aborted in progress"})";
@@ -122,82 +270,22 @@ BT::NodeStatus AIAction::onRunning() {
 
       ai_session_->report_tool_result(tool_call_id_, tool_call_name_, tool_call_result);
       return next_tool_call();
-
-    } else {
-      auto now = std::chrono::steady_clock::now();
-		  auto elapsed_sec = std::chrono::duration_cast<std::chrono::duration<float>>(now - tool_start_time_).count();
-      if (elapsed_sec > tool_call_timeout_sec_) {
-        RCLCPP_ERROR(node_->get_logger(), "Tool call timed-out");
-        return BT::NodeStatus::FAILURE;    
-      }
-      if (elapsed_sec - last_tool_wait_report_ > 2.0f) {
-        last_tool_wait_report_ = elapsed_sec;
-        RCLCPP_INFO(node_->get_logger(), "Waiting for tool result");
-      }        
-    }       
-    return BT::NodeStatus::RUNNING;
-  }
-
-  if (abort) {
-    ai_session_->cancel();
-    return BT::NodeStatus::SUCCESS;
-  }
-
-  // Output the latest sentence(s)
-  {
-    std::lock_guard<std::mutex> guard(new_sentence_mutex_);
-    if (!new_sentence_.empty()) {
-      RCLCPP_INFO(node_->get_logger(), "%s: new sentence result: %s", name().c_str(), new_sentence_.c_str());
-      setOutput("result", new_sentence_);
-      new_sentence_ = std::string();
-      return BT::NodeStatus::RUNNING;
     }
   }
 
-  std::string full_response;
-  bool is_tool_call;
-  AISession::Result result;
-  auto finished = ai_session_->is_finished(full_response, is_tool_call, result);
-
-  if (finished) {
-    RCLCPP_DEBUG(node_->get_logger(), "AI request finished, result: %s", AISession::result_to_str(result).c_str());
-
-    if (result == AISession::Result::cancelled ||
-        result == AISession::Result::timeout ||
-        result == AISession::Result::failed ||
-        result == AISession::Result::failed_resp_parse_error_general) {
-      return BT::NodeStatus::FAILURE;
-
-    } else if (result == AISession::Result::failed_resp_parse_error_tc) {
-      ai_session_->report_tool_result("", "", "Failed to parse tool call");
-      return BT::NodeStatus::FAILURE;
-
-    } else {
-      if (is_tool_call) {
-        tool_calls_ = nlohmann::json::parse(full_response);
-        tool_call_index_ = 0;
-        return next_tool_call();
-      } else {
-        RCLCPP_INFO(node_->get_logger(), "%s: final result: %s", name().c_str(), streaming_data_buffer_.c_str());
-
-        // Run one more tick to allow the last of the response to be processed by other BT node(s)
-        setOutput("result", streaming_data_buffer_);
-        streaming_data_buffer_.clear();
-        finish_on_next_update_ = true;
-
-      }          
-      return BT::NodeStatus::RUNNING;
-    }
+  auto now = std::chrono::steady_clock::now();
+  auto elapsed_sec = std::chrono::duration_cast<std::chrono::duration<float>>(now - tool_start_time_).count();
+  if (elapsed_sec > tool_call_timeout_sec_) {
+    RCLCPP_ERROR(node_->get_logger(), "Tool call timed-out");
+    return BT::NodeStatus::FAILURE;    
   }
+  if (elapsed_sec - last_tool_wait_report_ > 2.0f) {
+    last_tool_wait_report_ = elapsed_sec;
+    RCLCPP_INFO(node_->get_logger(), "Waiting for tool result");
+  }        
   return BT::NodeStatus::RUNNING;
 }
 
-void AIAction::onHalted() {
-  RCLCPP_INFO(node_->get_logger(), "AIAction halted");
-  if (ai_session_) {
-    ai_session_->cancel();
-  }
-}
 
 BT::NodeStatus AIAction::next_tool_call() {
   auto num_tools = tool_calls_.size();
@@ -223,12 +311,16 @@ BT::NodeStatus AIAction::next_tool_call() {
   } else {
     RCLCPP_INFO(node_->get_logger(), "Tool calls completed");
 
+    // Get since it could have changed via a tool call
+    bool enable_reasoning = false;
+    getInput<bool>("enable_reasoning", enable_reasoning);
+
     // Don't request streaming in case there are subsequent tool calls for the current
     // prompt. It was found that after a few back-to-back calls a new call would not be
     // converted to json format, but rather passed in the native model tool call format.
     // This assumes that at least the first call is correctly output as json.  Re-test
     // after the next vllm update since the tool call parser may change and resolve this.
-    ai_session_->tool_calls_finished(false, tools_json_);
+    ai_session_->tool_calls_finished(enable_reasoning, false, tools_json_);
   }
   return BT::NodeStatus::RUNNING;
 }

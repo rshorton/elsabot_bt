@@ -9,7 +9,12 @@
 class AISession;
 
 class AIAction : public BT::StatefulActionNode {
- public:
+private:
+  const std::string DEFAULT_MODEL =  "cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit";
+  const size_t DEFAULT_CONTEXT_SIZE_LIMIT = 64000;
+  const std::string DEFAULT_IP_ADDR_AND_PORT = "http://localhost:8000";
+
+public:
   AIAction(const std::string& name, const BT::NodeConfiguration& config);
 
   static BT::PortsList providedPorts();
@@ -18,24 +23,27 @@ class AIAction : public BT::StatefulActionNode {
   BT::NodeStatus onRunning();
   void onHalted();
 
- private:
+private:
   BT::NodeStatus next_tool_call();
   void remove_silent_chars(std::string &str);
   void add_new_streaming_data(const std::string& delta);
   void process_full_response(const std::string& response);
+  BT::NodeStatus update_waiting_on_response(bool abort);
+  BT::NodeStatus update_waiting_on_tool_call(bool abort);
 
   const std::size_t MIN_SENTENCE_LEN = 30;
 
   rclcpp::Node::SharedPtr node_;
 
   //std::string model_{"cyankiwi/gemma-4-31B-it-AWQ-4bit"};
-  std::string model_{"cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit"};
+  std::string model_{DEFAULT_MODEL};
   std::string resource_{"/v1/chat/completions"};
-  int max_context_size_{64000};
+  size_t max_context_size_{DEFAULT_CONTEXT_SIZE_LIMIT};
   std::string auth_token_{"none"};
-
-  std::string host_address_and_port_{"http://localhost:8000"};
+  std::string host_address_and_port_{DEFAULT_IP_ADDR_AND_PORT};
   int timeout_ms_ = 8000;
+
+  bool parallel_tool_call_support_{true};
 
   std::unique_ptr<AISession> ai_session_;
   bool stream_{false};                    // True to have LLM output streamed vs receive one full response

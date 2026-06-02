@@ -79,6 +79,7 @@ private:
         "type": "function",
         "function": {
             "name": "get_camera_frame",
+			"supports_parallel": false,
             "description": "Gets a frame from the camera.  Returns a base64 encoded jpeg image.  Always use this tool to get a new frame when you need to analyze/see things around you.  Dont use old frames."
         }
     })";

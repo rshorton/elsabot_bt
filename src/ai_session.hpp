@@ -30,10 +30,10 @@ class AISession {
          CallbackData callback_data);
   ~AISession();
 
-  void user_prompt(const std::string &prompt, bool stream, const std::string &tools_json, const std::string &b64_image = std::string());
+  void user_prompt(const std::string &prompt, const std::string &b64_image, bool enable_reasoning, bool stream, const std::string &tools_json);
   
   void report_tool_result(const std::string &id, const std::string &name, const std::string &result_json);
-  void tool_calls_finished(bool stream, const std::string &tools_json);
+  void tool_calls_finished(bool enable_reasoning, bool stream, const std::string &tools_json);
 
   void cancel();
 
@@ -59,7 +59,8 @@ class AISession {
     size_t total_tokens_{0};        // Sum of prompt + completion tokens
   };
 
-  void perform();
+  void build_request(bool stream, const std::string &tools_json, bool enable_reasoning);
+  void perform(bool stream, const std::string &tools_json, bool enable_reasoning);
   void process_message(const std::string& msg_json, TokenUsage &usage);
   int fetch_token_count(const std::string& text) const;
   void update_tokens_for_last_prompt(size_t tokens);
@@ -69,22 +70,23 @@ class AISession {
   
   class SessionMessage {
   public:
-    SessionMessage(SessionMessageType msg_type, const std::string &role, const int token_count, bool has_image):
+    SessionMessage(size_t cur_request_id, SessionMessageType msg_type, const std::string &role, const int token_count, bool has_image):
+      request_id_(cur_request_id),
       msg_type_(msg_type),
       role_(role),
       token_count_(token_count),
       has_image_(has_image)
     {}
 
-    virtual nlohmann::json get_json(bool) {
+    virtual nlohmann::json get_json(size_t) {
         return {{"role", role_}};
     }
     void set_token_count(size_t count) {
       token_count_ = count;
     }
 
-    void get_description(std::stringstream &ss) const;
-    virtual std::string get_description() const = 0;
+    void get_description(size_t cur_request_id, std::stringstream &ss) const;
+    virtual std::string get_description(size_t cur_request_id) const = 0;
 
     SessionMessageType get_type() const {
       return msg_type_;
@@ -112,6 +114,7 @@ class AISession {
       }
     }
 
+    size_t request_id_;
     SessionMessageType msg_type_;
     std::string role_;
     int token_count_;
@@ -121,15 +124,15 @@ class AISession {
 
   class SessionMessage_UserPrompt: public SessionMessage {
   public:
-    SessionMessage_UserPrompt(const std::string role, const int token_count, const std::string &prompt,
+    SessionMessage_UserPrompt(size_t cur_request_id, const std::string role, const int token_count, const std::string &prompt,
                               const std::string &b64_image):
-      SessionMessage(SessionMessageType::prompt, role, token_count, !b64_image.empty()),
+      SessionMessage(cur_request_id, SessionMessageType::prompt, role, token_count, !b64_image.empty()),
       prompt_(prompt),
       b64_image_(b64_image)
     {}
 
-    nlohmann::json get_json(bool is_last) override {
-      nlohmann::json m = SessionMessage::get_json(is_last);
+    nlohmann::json get_json(size_t cur_request_id) override {
+      nlohmann::json m = SessionMessage::get_json(cur_request_id);
       if (b64_image_.empty()) {
         m["content"] = prompt_;
       } else {
@@ -145,7 +148,7 @@ class AISession {
       return m;
     }
 
-    std::string get_description() const override;
+    std::string get_description(size_t cur_request_id) const override;
 
     std::string prompt_;
     std::string b64_image_;
@@ -153,52 +156,72 @@ class AISession {
 
   class SessionMessage_Response: public SessionMessage {
   public:
-    SessionMessage_Response(const std::string role, const int token_count, const std::string &response):
-      SessionMessage(SessionMessageType::response, role, token_count, false),
-      response_(response)
+    SessionMessage_Response(size_t cur_request_id, const std::string role, const int token_count, double proc_duration_sec,
+                            const std::string &response, const std::string &reasoning):
+      SessionMessage(cur_request_id, SessionMessageType::response, role, token_count, false),
+      proc_duration_sec_(proc_duration_sec),      
+      response_(response),
+      reasoning_(reasoning)
     {}
 
-    nlohmann::json get_json(bool is_last) override {
-      nlohmann::json m = SessionMessage::get_json(is_last);
+    nlohmann::json get_json(size_t cur_request_id) override {
+      nlohmann::json m = SessionMessage::get_json(cur_request_id);
       m["content"] = response_;
+      // Per recommendations (https://ai.google.dev/gemma/docs/capabilities/thinking) only include
+      // reasoning for the current user turn.
+      if (cur_request_id == request_id_) {
+        m["reasoning"] = reasoning_;
+      }        
       return m;
     }
 
-    std::string get_description() const override;
+    std::string get_description(size_t cur_request_id) const override;
 
+    double proc_duration_sec_{0.0};
     std::string response_;
+    std::string reasoning_;   
   };
 
   class SessionMessage_ToolRequest: public SessionMessage {
   public:
-    SessionMessage_ToolRequest(const std::string role, const int token_count, const std::string &tool_call_json):
-      SessionMessage(SessionMessageType::tool_request, role, token_count, false),
-      tool_call_json_(tool_call_json)
+    SessionMessage_ToolRequest(size_t cur_request_id, const std::string role, const int token_count, double proc_duration_sec,
+                               const std::string &tool_call_json, const std::string &reasoning):
+      SessionMessage(cur_request_id, SessionMessageType::tool_request, role, token_count, false),
+      proc_duration_sec_(proc_duration_sec),
+      tool_call_json_(tool_call_json),
+      reasoning_(reasoning)
     {}
 
-    nlohmann::json get_json(bool is_last) override {
-      nlohmann::json m = SessionMessage::get_json(is_last);
+    nlohmann::json get_json(size_t cur_request_id) override {
+      nlohmann::json m = SessionMessage::get_json(cur_request_id);
       m["tool_calls"] = nlohmann::json::parse(tool_call_json_);
+      // Per recommendations (https://ai.google.dev/gemma/docs/capabilities/thinking) only include
+      // reasoning for the current user turn.
+      if (cur_request_id == request_id_) {
+        m["reasoning"] = reasoning_;
+      }        
       return m;
     }
 
-    std::string get_description() const override;
+    std::string get_description(size_t cur_request_id) const override;
 
+    double proc_duration_sec_{0.0};
     std::string tool_call_json_;
+    std::string reasoning_;
   };
 
   class SessionMessage_ToolResult: public SessionMessage {
   public:
-    SessionMessage_ToolResult(const std::string role, const int token_count, const std::string &name,
+    SessionMessage_ToolResult(size_t cur_request_id, const std::string role, const int token_count, const std::string &name,
       const std::string &id, const std::string &tool_result_json, bool has_image):
-      SessionMessage(SessionMessageType::tool_result, role, token_count, has_image),
+      SessionMessage(cur_request_id, SessionMessageType::tool_result, role, token_count, has_image),
       name_(name),
       id_(id),
       tool_result_json_(tool_result_json)
     {}
 
-    nlohmann::json get_json(bool is_last) override {
-      nlohmann::json m = SessionMessage::get_json(is_last);
+    nlohmann::json get_json(size_t cur_request_id) override {
+      nlohmann::json m = SessionMessage::get_json(cur_request_id);
       m["tool_call_id"] = id_;
       m["name"] = name_;
 
@@ -213,7 +236,7 @@ class AISession {
         }
 
         // Test purging image after return
-        if (is_last && OMIT_OLD_TOOL_IMAGES_IN_HISTORY) {
+        if (cur_request_id == request_id_ && OMIT_OLD_TOOL_IMAGES_IN_HISTORY) {
           set_use_image(false);
           std::cout << "Purging image after sending" << std::endl;
         }
@@ -224,7 +247,7 @@ class AISession {
       return m;
     }
 
-    std::string get_description() const override;
+    std::string get_description(size_t cur_request_id) const override;
 
     void remove_images(nlohmann::json &j, const std::string &replacement_text) const {
       if (j.is_array()) {
@@ -251,7 +274,7 @@ class AISession {
   };
 
   const std::string model_;
-  int max_context_size_;
+  size_t max_context_size_;
   std::string auth_token_;
   const std::string host_and_port_;
   const std::string resource_;
@@ -261,12 +284,15 @@ class AISession {
   rclcpp::Logger logger_;
 
   CallbackData callback_data_;
-  
+
+  size_t user_request_cnt_{0};
   std::deque<std::unique_ptr<SessionMessage>> history_;
   int current_tokens_{0};
 
   nlohmann::json request_data_;
   AISession::Result result_{AISession::Result::failed};
+
+  std::chrono::time_point<std::chrono::steady_clock> req_start_time_;
 
   bool response_parse_error_{false};
   bool response_parse_error_tool_call_{false};
@@ -276,6 +302,7 @@ class AISession {
 
   std::string full_response_;
   std::string tool_call_;
+  std::string reasoning_;
   bool is_tool_call_{false};
 
   std::promise<AISession::Result> promise_;

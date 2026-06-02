@@ -72,6 +72,8 @@
 #include "tool_call_analyze_camera_frame_action.hpp"
 #include "tool_call_declare_action.hpp"
 #include "tool_call_get_position_action.hpp"
+#include "tool_call_set_runner_subtree_action.hpp"
+#include "tool_call_runner_action.hpp"
 
 #include "get_camera_frame_action.hpp"
 #include "get_power_status_action.hpp"
@@ -111,10 +113,10 @@ const std::string GAME_SETTINGS_FILENAME = "game_settings.json";
 using namespace BT;
 
 #define REGISTER_BUILDER_WITH_ROS_NODE(node_type, ros_node_handle) \
-    factory.registerBuilder<node_type>(#node_type, \
+    factory->registerBuilder<node_type>(#node_type, \
                            [ros_node_handle](const std::string& name, const NodeConfig& config) { \
                                return std::make_unique<node_type>(name, config, ros_node_handle); \
-                           }) \
+                           })
 
 
 int main(int argc, char **argv)
@@ -160,69 +162,76 @@ int main(int argc, char **argv)
     ROSCommon::Create(nh);
 
     // We use the BehaviorTreeFactory to register our custom nodes
-    BehaviorTreeFactory factory;
+    auto factory = std::make_shared<BehaviorTreeFactory>();
+    auto global_bb = BT::Blackboard::create();
 
 #if defined(USE_GAME_FEATURES)
-    factory.registerNodeType<RobotSaysInitAction>("RobotSaysInitAction");
-    factory.registerNodeType<RobotSaysNextPassAction>("RobotSaysNextPassAction");
-    factory.registerNodeType<RobotSaysNextStepAction>("RobotSaysNextStepAction");
+    factory->registerNodeType<RobotSaysInitAction>("RobotSaysInitAction");
+    factory->registerNodeType<RobotSaysNextPassAction>("RobotSaysNextPassAction");
+    factory->registerNodeType<RobotSaysNextStepAction>("RobotSaysNextStepAction");
 
-    factory.registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
-    factory.registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
-    factory.registerNodeType<RobotSeekInBoundsCheckAction>("RobotSeekInBoundsCheckAction");
+    factory->registerNodeType<RobotSeekInitAction>("RobotSeekInitAction");
+    factory->registerNodeType<RobotSeekNextSearchPose>("RobotSeekNextSearchPose");
+    factory->registerNodeType<RobotSeekInBoundsCheckAction>("RobotSeekInBoundsCheckAction");
 
-    factory.registerNodeType<RobotFindInitAction>("RobotFindInitAction");
-    factory.registerNodeType<RobotFindNextStepAction>("RobotFindNextStepAction");
-    factory.registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
-    factory.registerNodeType<RobotFindSetPositionAction>("RobotFindSetPositionAction");
+    factory->registerNodeType<RobotFindInitAction>("RobotFindInitAction");
+    factory->registerNodeType<RobotFindNextStepAction>("RobotFindNextStepAction");
+    factory->registerNodeType<RobotFindCheckStepAction>("RobotFindCheckStepAction");
+    factory->registerNodeType<RobotFindSetPositionAction>("RobotFindSetPositionAction");
 
-    factory.registerNodeType<RobotCatGameNextPoseAction>("RobotCatGameNextPoseAction");
-    factory.registerNodeType<RobotCatGameInitAction>("RobotCatGameInitAction");
+    factory->registerNodeType<RobotCatGameNextPoseAction>("RobotCatGameNextPoseAction");
+    factory->registerNodeType<RobotCatGameInitAction>("RobotCatGameInitAction");
 #endif
 
 #if defined(ROBOT_ARM_SUPPORT)
-    factory.registerNodeType<PickObjectAction>("PickObjectAction");
-    factory.registerNodeType<PickObjectTest1Action>("PickObjectTest1Action");
-    factory.registerNodeType<ArmGotoNamedPositionAction>("ArmGotoNamedPositionAction");
-    factory.registerNodeType<SetArmPositionAction>("SetArmPositionAction");
-    factory.registerNodeType<SetGripperPositionAction>("SetGripperPositionAction");
-    factory.registerNodeType<GetMovementStatusAction>("GetMovementStatusAction");
-    factory.registerNodeType<NumericComparisonAction>("NumericComparisonAction");
+    factory->registerNodeType<PickObjectAction>("PickObjectAction");
+    factory->registerNodeType<PickObjectTest1Action>("PickObjectTest1Action");
+    factory->registerNodeType<ArmGotoNamedPositionAction>("ArmGotoNamedPositionAction");
+    factory->registerNodeType<SetArmPositionAction>("SetArmPositionAction");
+    factory->registerNodeType<SetGripperPositionAction>("SetGripperPositionAction");
+    factory->registerNodeType<GetMovementStatusAction>("GetMovementStatusAction");
+    factory->registerNodeType<NumericComparisonAction>("NumericComparisonAction");
 #endif    
 
-    factory.registerNodeType<GetRobotPoseAction>("GetRobotPoseAction");
-    factory.registerNodeType<RobotSpin>("RobotSpin");
+    factory->registerNodeType<GetRobotPoseAction>("GetRobotPoseAction");
+    factory->registerNodeType<RobotSpin>("RobotSpin");
 
-    factory.registerNodeType<TextCompareAction>("TextCompareAction");
-    factory.registerNodeType<TextExtractAction>("TextExtractAction");
+    factory->registerNodeType<TextCompareAction>("TextCompareAction");
+    factory->registerNodeType<TextExtractAction>("TextExtractAction");
 
-    factory.registerNodeType<GetRandomSelectionAction>("GetRandomSelectionAction");
-    factory.registerNodeType<UIInputAction>("UIInputAction");
-    factory.registerNodeType<LogAction>("LogAction");
-    factory.registerNodeType<GetTimeNowAction>("GetTimeNowAction");
-    factory.registerNodeType<TimeSinceAction>("TimeSinceAction");
+    factory->registerNodeType<GetRandomSelectionAction>("GetRandomSelectionAction");
+    factory->registerNodeType<UIInputAction>("UIInputAction");
+    factory->registerNodeType<LogAction>("LogAction");
+    factory->registerNodeType<GetTimeNowAction>("GetTimeNowAction");
+    factory->registerNodeType<TimeSinceAction>("TimeSinceAction");
 
-    factory.registerNodeType<ScanWaitAction>("ScanWaitAction");
+    factory->registerNodeType<ScanWaitAction>("ScanWaitAction");
 
-    factory.registerNodeType<ObjectTrackerStatusAction>("ObjectTrackerStatusAction");
-    factory.registerNodeType<DetectionProcessorCreateAction>("DetectionProcessorCreateAction");
-    factory.registerNodeType<DetectionConfigureAction>("DetectionConfigureAction");
-    factory.registerNodeType<DetectionCommandAction>("DetectionCommandAction");
-    factory.registerNodeType<DetectionGetPositionAction>("DetectionGetPositionAction");
-    factory.registerNodeType<DetectionSelectAction>("DetectionSelectAction");
-    factory.registerNodeType<DetectionGetObjectsAction>("DetectionGetObjectsAction");
-    factory.registerNodeType<DetectionWaitForObjectDetectedAction>("DetectionWaitForObjectDetectedAction");
+    factory->registerNodeType<ObjectTrackerStatusAction>("ObjectTrackerStatusAction");
+    factory->registerNodeType<DetectionProcessorCreateAction>("DetectionProcessorCreateAction");
+    factory->registerNodeType<DetectionConfigureAction>("DetectionConfigureAction");
+    factory->registerNodeType<DetectionCommandAction>("DetectionCommandAction");
+    factory->registerNodeType<DetectionGetPositionAction>("DetectionGetPositionAction");
+    factory->registerNodeType<DetectionSelectAction>("DetectionSelectAction");
+    factory->registerNodeType<DetectionGetObjectsAction>("DetectionGetObjectsAction");
+    factory->registerNodeType<DetectionWaitForObjectDetectedAction>("DetectionWaitForObjectDetectedAction");
 
-    factory.registerNodeType<AIAction>("AIAction");
-    factory.registerNodeType<ToolCallTimeAction>("ToolCallTimeAction");
-    factory.registerNodeType<ToolCallGetCameraFrameAction>("ToolCallGetCameraFrameAction");
-    factory.registerNodeType<ToolCallAnalyzeCameraFrameAction>("ToolCallAnalyzeCameraFrameAction");
-    factory.registerNodeType<ToolCallDeclareAction>("ToolCallDeclareAction");
-    factory.registerNodeType<ToolCallGetPositionAction>("ToolCallGetPositionAction");
+    factory->registerNodeType<AIAction>("AIAction");
+    factory->registerNodeType<ToolCallTimeAction>("ToolCallTimeAction");
+    factory->registerNodeType<ToolCallGetCameraFrameAction>("ToolCallGetCameraFrameAction");
+    factory->registerNodeType<ToolCallAnalyzeCameraFrameAction>("ToolCallAnalyzeCameraFrameAction");
+    factory->registerNodeType<ToolCallDeclareAction>("ToolCallDeclareAction");
+    factory->registerNodeType<ToolCallGetPositionAction>("ToolCallGetPositionAction");
+    factory->registerNodeType<ToolCallSetRunnerSubtreeAction>("ToolCallSetRunnerSubtreeAction");
 
-    factory.registerNodeType<GetPowerStatusAction>("GetPowerStatusAction");
-    factory.registerNodeType<CopyJsonKeyValueIntoBBAction>("CopyJsonKeyValueIntoBBAction");
-    factory.registerNodeType<CopyBBValueIntoJsonKeyValueAction>("CopyBBValueIntoJsonKeyValueAction");
+    factory->registerNodeType<GetPowerStatusAction>("GetPowerStatusAction");
+    factory->registerNodeType<CopyJsonKeyValueIntoBBAction>("CopyJsonKeyValueIntoBBAction");
+    factory->registerNodeType<CopyBBValueIntoJsonKeyValueAction>("CopyBBValueIntoJsonKeyValueAction");
+
+    factory->registerBuilder<ToolCallRunnerAction>("ToolCallRunnerAction",
+        [factory, global_bb](const std::string& name, const NodeConfig& config) {
+            return std::make_unique<ToolCallRunnerAction>(name, config, factory, global_bb);
+        });
 
     // These tree nodes use a builder that needs the ROS node
     REGISTER_BUILDER_WITH_ROS_NODE(AntennaAction, nh);
@@ -251,42 +260,38 @@ int main(int argc, char **argv)
     params.nh = nh;
     params.default_port_value = "navigate_to_pose";
     params.wait_for_server_timeout = std::chrono::seconds(10);
-    factory.registerNodeType<Nav2NavigateAction>("Nav2NavigateAction", params);
+    factory->registerNodeType<Nav2NavigateAction>("Nav2NavigateAction", params);
 
     params.default_port_value = "cancel_audio";
-    factory.registerNodeType<CancelAudioAction>("CancelAudioAction", params);
+    factory->registerNodeType<CancelAudioAction>("CancelAudioAction", params);
 
     params.default_port_value = "pause_audio";
-    factory.registerNodeType<PauseAudioAction>("PauseAudioAction", params);
+    factory->registerNodeType<PauseAudioAction>("PauseAudioAction", params);
 
     params.default_port_value = "resume_audio";
-    factory.registerNodeType<ResumeAudioAction>("ResumeAudioAction", params);
+    factory->registerNodeType<ResumeAudioAction>("ResumeAudioAction", params);
 
     params.default_port_value = "play_audio";
-    factory.registerNodeType<PlayAudioFileAction>("PlayAudioFileAction", params);
+    factory->registerNodeType<PlayAudioFileAction>("PlayAudioFileAction", params);
 
     params.default_port_value = "play_tts";
-    factory.registerNodeType<TextToSpeechAction>("TextToSpeechAction", params);
+    factory->registerNodeType<TextToSpeechAction>("TextToSpeechAction", params);
 
     params.default_port_value = "recognize";
-    factory.registerNodeType<SpeechToTextAction>("SpeechToTextAction", params);
+    factory->registerNodeType<SpeechToTextAction>("SpeechToTextAction", params);
 
     ///////////////////////////////////////////
 
     RegisterCustomTypeHelpersJson();
 
-    // Trees are created at deployment-time (i.e. at run-time, but only once at
-    // the beginning). The currently supported format is XML. IMPORTANT: when the
-    // object "tree" goes out of scope, all the TreeNodes are destroyed
-    auto tree = factory.createTreeFromFile(bt_xml);
+    auto maintree_bb = BT::Blackboard::create(global_bb);
+    auto tree = factory->createTreeFromFile(bt_xml, maintree_bb);
 
-    // Get the root blackboard and set initial values
-    auto blackboard = tree.rootBlackboard();
-
-    blackboard->set<std::string>("def_value_1", bt_tree_value_1);
-    blackboard->set<std::string>("def_value_2", bt_tree_value_2);
-    blackboard->set<std::string>("def_value_3", bt_tree_value_3);
-    blackboard->set<std::string>("def_value_4", bt_tree_value_4);
+    // Set initial values
+    maintree_bb->set<std::string>("def_value_1", bt_tree_value_1);
+    maintree_bb->set<std::string>("def_value_2", bt_tree_value_2);
+    maintree_bb->set<std::string>("def_value_3", bt_tree_value_3);
+    maintree_bb->set<std::string>("def_value_4", bt_tree_value_4);
     
     // Create loggers
     std::shared_ptr<StdCoutLogger> logger;

@@ -4,9 +4,14 @@
 		<Sequence>
 			<RunOnce>
 				<Sequence>
+					<!-- Various one-time initialization -->
+
 					<!-- Initialize any BB vars needing initial values -->
 					<Script code=" run_tools:=false " />
 					<Script code=" tool_running:=false " />
+
+					<Script code=" tool_calls:='' " />
+					<Script code=" tool_call_results:='' " />
 
 					<Script code=" antenna_state_cur:='none' " />
 					<Script code=" antenna_state_req:='none' " />
@@ -16,12 +21,16 @@
 					<Script code=" use_vad:=false " />
 
 					<Script code=" cancel_audio:=false " />
-					<Script code=" next_tts:='' " />
-					<Script code=" tts_buffer:='' " />
+					<Script code=" @next_tts:='' " />
+					<Script code=" @tts_buffer:='' " />
 					<Script code=" ai_text_to_speak:='' " />
+					<Script code=" text_to_speak:='' " />
 
 					<Script code=" ai_abort:=false " />
 					<Script code=" prompt:='' " />
+
+					<Script code=" @parallel_tool_mode:='wait_all' " />
+					<Script code=" @enable_reasoning:=false " />
 
 					<GetTimeNowAction now="{end_response_time}" />
 
@@ -29,14 +38,17 @@
 					<!-- Declare the tool calls to be exposed to the model -->
 					<!-- ================================================= -->
 
+					<!-- TODO - Consider implementing without a specialized tool call node -->
 					<ToolCallTimeAction command="init" />
 
 					<!-- Performs VLM using a separate model context.  It seems the Gemma4 tool calling if more accurate
-						 if the image data is kept out of the main context where thinking and tool calls are made.  -->
+						 if the image data is kept out of the main context where reasoning and tool calls are made.  -->
+					<!-- TODO - Consider implementing without a specialized tool call node -->
 					<ToolCallAnalyzeCameraFrameAction command="init" />
 
 					<!-- Requires fix from https://github.com/vllm-project/vllm/pull/41459
 						 to allow images to be returned in tool call results -->
+					<!-- TODO - Consider implementing without a specialized tool call node -->
 					<!--ToolCallGetCameraFrameAction command="init" /-->
 
 					<ToolCallGetPositionAction command="init" />
@@ -45,6 +57,7 @@
         				"type": "function",
         				"function": {
             				"name": "move_to_relative",
+							"supports_parallel": true,
             				"description": "Use this tool to move the robot by specifying a distance and heading. Returns a result property specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. Here are examples of how you can use this tool: to move the forward: distance = (positive distance amount), heading = 0. to move the backwards: distance = (negative distance amount), heading = 0. to turn left: distance = 0, heading = 90. to turn right: distance = 0, heading = -90. to rotate 360 degrees, you must split the operation into two steps: 1. distance=0, heading=180. 2. distance=0, heading=180.",
 							"parameters": {
 								"type": "object",
@@ -54,19 +67,28 @@
 										"description": "The distance and change in heading.",
 										"properties": {
 											"distance": {
-												"description": "Distance to move in meters.",
-												"type": "number"
+												"type": "number",
+												"description": "Distance to move in meters."
 											},
 											"heading": {
-												"description": "The change in heading in degrees. An increase turns left (counter-clockwise) and a decrease turns right (clockwise). ",
-												"type": "number"
+												"type": "number",
+												"description": "The change in heading in degrees. An increase turns left (counter-clockwise) and a decrease turns right (clockwise). "
 											}
 										},
 										"required": ["distance", "heading"]
 									}
 								},
 								"required": ["movement_params"]
-							}
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
+							}								
 						}
 					\}' />
 
@@ -74,6 +96,7 @@
         				"type": "function",
         				"function": {
             				"name": "move_to_absolute",
+							"supports_parallel": true,
             				"description": "Use this tool to move the robot to a specified absolute position and then turn to the specified yaw orientation.  Returns a result property specifying one of: success, failed.  On failure the overall tool call sequence must be aborted. Do not use this tool for relative movements, instead use the move_to_relative tool.",
 							"parameters": {
 								"type": "object",
@@ -99,6 +122,15 @@
 									}
 								},
 								"required": ["position_and_orientation"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
 							}
 						}
 					\}' />
@@ -108,19 +140,29 @@
 						"function": {
 							"description": "move robot the specified distance at the specified heading",
 							"name": "move_robot",
+							"supports_parallel": true,
 							"parameters": {
 								"properties": {
 									"distance": {
-										"description": "Distance to move in meters",
-										"type": "float"
+										"type": "float",
+										"description": "Distance to move in meters"
 									},
 									"heading": {
-										"description": "Heading angle to move in degrees in the range [-180, 180] where an increase in yaw corresponds to turning left and vice versa",
-										"type": "float"
+										"type": "float",
+										"description": "Heading angle to move in degrees in the range [-180, 180] where an increase in yaw corresponds to turning left and vice versa"
 									}
 								},
 								"required": ["distance", "heading"],
 								"type": "object"
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
 							}
 						},
 						"type": "function"
@@ -130,6 +172,7 @@
         				"type": "function",
         				"function": {
             				"name": "spin_in_place",
+							"supports_parallel": true,
             				"description": "Use this tool to rotate the robot by relative angle.  Do not use for turning to a specific heading. Use this tool when you are asked to rotate or when you need to turn to observe what is around you.   Returns a result property specifying one of:  success, failed.  On failure the overall tool call sequence must be aborted. ",
 							"parameters": {
 								"type": "object",
@@ -139,18 +182,27 @@
 										"description": "These control the amount and rate of spin.",
 										"properties": {
 											"angle": {
-												"description": "Amount to rotate in degrees.  Positive values turn left and vice versa.",
-												"type": "number"
+												"type": "number",
+												"description": "Amount to rotate in degrees.  Positive values turn left and vice versa."
 											},
 											"rate": {
-												"description": "Rate of turn in radians/second, range [0.2, 0.7].  If not instructed otherwise, use 0.5 for the rate.",
-												"type": "number"
+												"type": "number",
+												"description": "Rate of turn in radians/sec, range [0.2, 0.7].  Use 0.0 if not specified and a default will be used."
 											}
 										},
 										"required": ["angle", "rate"]
 									}
 								},
 								"required": ["spin_params"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
 							}
 						}
 					\}' />
@@ -159,8 +211,33 @@
         				"type": "function",
         				"function": {
             				"name": "get_map_locations",
-            				"description": "Use this tool to get a list of specific x,y,yaw locations you can move to.  Use this tool when asked for the room map location for a place. The output of this tool can be used to lookup the  x,y,yaw values for passing to the move_to_absolute tool.",
-							"returns": "A JSON array of objects each specifying:  location_name,x,y,yaw"
+							"supports_parallel": false,
+            				"description": "Use this tool to get a list of specific locations you can move to.  Use this tool when you need the map location for a place. The output of this tool can be used to lookup the x,y,yaw parameters for passing to the move_to_absolute tool.",
+							"returns": {
+								"type": "array",
+								"description": "An array of locations.",
+								"items": {
+									"type": "object",
+									"properties": {
+										"location_name": {
+											"type": "string",
+											"description": "Name of location"
+										},
+										"x": {
+											"type": "number",
+											"description": "X coordinate in meters."
+										},
+										"y": {
+											"type": "number",
+											"description": "Y coordinate in meters"
+										},
+										"yaw": {
+											"type": "number",
+											"description": "Absolute heading to face"
+										}
+									}
+								}
+							}
 						}
 					\}' />
 
@@ -168,6 +245,7 @@
         				"type": "function",
         				"function": {
             				"name": "speak",
+							"supports_parallel": false,
             				"description": "Use this tool to speak using TTS prior to the final prompt result.  For example, use this during multi-step tool calls.  Dont use this for the final response since that result is always spoken",
 							"parameters": {
                 				"type": "object",
@@ -177,6 +255,15 @@
                     					"description": "The text to be spoken" }
 								},
                 				"required": ["text_to_say"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
 							}
 						}
 					\}' />
@@ -185,6 +272,7 @@
         				"type": "function",
         				"function": {
             				"name": "ask_question",
+							"supports_parallel": false,
             				"description": "Use this tool to ask the user a question and get their response.",
 							"parameters": {
                 				"type": "object",
@@ -195,7 +283,15 @@
 								},
                 				"required": ["question"]
 							},
-							"returns": "Text string containing the user response"
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"description": "response text"
+									}
+								}
+							}
 						}
 					\}' />
 
@@ -203,6 +299,7 @@
         				"type": "function",
         				"function": {
             				"name": "delay",
+							"supports_parallel": false,
             				"description": "Use this tool to add a time delay between two tool calls.",
 							"parameters": {
                 				"type": "object",
@@ -212,6 +309,15 @@
                     					"description": "Delay period in milliseconds" }
 								},
                 				"required": ["delay"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
 							}
 						}
 					\}' />
@@ -220,8 +326,45 @@
         				"type": "function",
         				"function": {
             				"name": "get_detected_objects",
-            				"description": "Get a JSON list of the currently detected objects.",
-							"returns": "A JSON array of objects each specifying:  id, object_class, x, y, z, relative_yaw, distance,  where x,y,z,distance are in meters and relative_yaw is angular offset from the current heading of the robot.  To turn and face the object you would use the move_to_relative tool with the yaw parameter equal to the object relative_yaw."
+							"supports_parallel": false,
+            				"description": "Get a JSON list of the currently detected objects.  This tool is useful for finding the relative position of objects.",
+							"returns": {
+								"type": "array",
+								"description": "An array of detected objects.",
+								"items": {
+									"type": "object",
+									"properties": {
+										"x": {
+											"type": "number",
+											"description": "X coordinate in meters (+ is forward)."
+										},
+										"y": {
+											"type": "number",
+											"description": "Y coordinate in meters (+ is to the left)"
+										},
+										"z": {
+											"type": "number",
+											"description": "Z coordinate in meters (+ is up)"
+										},
+										"object_class": {
+											"type": "string",
+											"description": "type of object"
+										},
+										"id": {
+											"type": "number",
+											"description": "tracking ID of the object"
+										},
+										"relative_yaw": {
+											"type": "number",
+											"description": "yaw of the object relative to the robot. If positive, then the object is to the left, and vice versa."
+										},
+										"distance": {
+											"type": "number",
+											"description": "Distance to the object in meters"
+										}
+									}
+								}
+							}
 						}
 					\}' />
 
@@ -229,16 +372,27 @@
         				"type": "function",
         				"function": {
             				"name": "set_parallel_tool_mode",
+							"supports_parallel": false,
             				"description": "Use this tool to select how to process parallel tool calls.",
 							"parameters": {
 								"type": "object",
 								"properties": {
 									"mode": {
 										"type": "string",
-										"description": "One of these parallel modes: wait_all - wait for all parallel tools to finish, wait_one - wait until at least one tool finishes.  Example usage, if you want the success/failure of one tool to stop another one, use wait_one.  If you both tools to run to completion, use wait_all"
+										"enum": ["wait_all", "wait_one"],
+										"description": "wait_all will wait for all parallel tools to finish. wait_one will wait until at least one tool finishes.  Example usage, if you want the success/failure of one tool to stop another one, use wait_one.  If you want all parallel tools to run to completion, use wait_all"
 									}
 								},
 								"required": ["mode"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
 							}
 						}
 					\}' />
@@ -247,6 +401,7 @@
         				"type": "function",
         				"function": {
             				"name": "wait_for_object_detected",
+							"supports_parallel": true,
             				"description": "Use this tool to wait for an object of the specified class to become detected.  This tool can be used in parallel with another tool to stop the other tool when a detection occurs such as when moving/rotating to find something.",
 							"parameters": {
 								"type": "object",
@@ -257,21 +412,76 @@
 									}
 								},
 								"required": ["obj_class"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed", "preempted"],
+										"description": "Success indicates an object was detected.  All other results - not detected"
+									}
+								}
 							}
 						}
 					\}' />
 
-					<!-- Allow the system prompt to be replace or appended-to by command line args -->
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "set_reasoning_mode",
+							"supports_parallel": false,
+            				"description": "Use this tool to enable or disable your reasoning (aka thinking) mode when instructed by the user.",
+							"parameters": {
+                				"type": "object",
+								"properties": {
+                					"enable_reasoning": {
+                    					"type": "boolean",
+                    					"description": "The reasoning mode:  true - enabled, false - disabled" }
+								},
+                				"required": ["enable_reasoning"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
+							}
+						}
+					\}' />
+
+					<!-- Map each tool to the subtree used to implement it.  All tools are implemented using a subtree. -->
+					<ToolCallSetRunnerSubtreeAction tool_name="get_local_date_and_time" subtree_name="GetDateAndTime" />
+					<ToolCallSetRunnerSubtreeAction tool_name="analyze_camera_frame" subtree_name="AnalyzeCameraFrame" />
+					<ToolCallSetRunnerSubtreeAction tool_name="get_robot_position" subtree_name="GetPosition" />
+					<ToolCallSetRunnerSubtreeAction tool_name="move_to_relative" subtree_name="MoveToRelative" />
+					<ToolCallSetRunnerSubtreeAction tool_name="move_to_absolute" subtree_name="MoveToAbsolute" />
+					<ToolCallSetRunnerSubtreeAction tool_name="spin_in_place" subtree_name="SpinInPlace" />
+					<ToolCallSetRunnerSubtreeAction tool_name="get_map_locations" subtree_name="GetMapLocations" />
+					<ToolCallSetRunnerSubtreeAction tool_name="speak" subtree_name="SayText" />
+					<ToolCallSetRunnerSubtreeAction tool_name="ask_question" subtree_name="AskQuestionAndGetResponse" />
+					<ToolCallSetRunnerSubtreeAction tool_name="delay" subtree_name="DoDelay" />
+					<ToolCallSetRunnerSubtreeAction tool_name="get_detected_objects" subtree_name="GetDetectedObjects" />
+					<ToolCallSetRunnerSubtreeAction tool_name="set_parallel_tool_mode" subtree_name="SetParallelToolMode" />
+					<ToolCallSetRunnerSubtreeAction tool_name="wait_for_object_detected" subtree_name="WaitForObjectDetected" />
+					<ToolCallSetRunnerSubtreeAction tool_name="set_reasoning_mode" subtree_name="SetReasoningMode" />
+
+					<!-- Allow the system prompt to be replaced or appended-to by command line args -->
+					<!-- Replacement case -->
 					<IfThenElse>
 						<TextCompareAction text="{def_value_1}" ck_for="" />
 						<SetBlackboard output_key="system_prompt" value="You are a robot called elsabot (pronounced as elsuh-bot) but you
 							should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4,
 							with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword
 							for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
-							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis (using unicode) as a secondary way to express
-							emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, and amusing. Use the 'speak' tool to announce your intentions before taking a major action. For example, if you are about to move to a new location, say: 'I'm heading to...'   Don't over-explain your actions.   Here are some tool-call tips.  1. If asked to perform multiple actions at the same time, use a parallel tool call.  In that case you should first call set_parallel_tool_mode to specify the execution policy. The tells the executor whether it should wait for both tools to finish, or whether the first one to complete terminates the other tool."/>
+							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis (using unicode) as a secondary way to express emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, and amusing. Use the 'speak' tool to announce your intentions before taking a major action. For example, if you are about to move to a new location, say: 'I'm heading to...' Don't over-explain your actions.  Here are some tool-call guidelines.  1. If prompted to perform multiple actions at the same time (ie. do X while also doing Y), use parallel tool calling.  For that case you must first call set_parallel_tool_mode to specify the execution policy. The policy controls whether to wait for both tools to finish, or whether the first one to complete terminates the other tool. Important - only include a tool in a parallel call if the tool definition property has supports_parallel=true.  2. The camera is mounted on a pan-tilt base
+							that tracks objects.  Do not try to assess relative object position by VLM analysis. The get_detected_objects tool should be used instead."/>
 						<SetBlackboard output_key="system_prompt" value="{def_value_1}" />
 					</IfThenElse>
+					<!-- Appending case -->
 					<IfThenElse>
 						<TextCompareAction text="{def_value_2}" ck_for="" />
 						<LogAction level="info" msg="No prompt modifier specified" />
@@ -280,6 +490,7 @@
 
 					<LogAction level="info" msg="Using system prompt: " arg1="{system_prompt}" />
 
+					<!-- Create on object detection processor for collecting and localizing the currently detected objects.-->
         			<DetectionProcessorCreateAction det="detector1" topic="/head/detected_objects" />
         			<DetectionConfigureAction det="detector1" class_conf_mapping="person 0.75" min_det_count="5"
 						drop_det_count="5" det_timeout="5000" pub_topic="/object_list_world" />
@@ -297,8 +508,9 @@
 				<!-- =======================================================================================-->
 				<!-- =======================================================================================-->
 
-				<!-- Use a parallel node to get user input from speech and pass to the LLM.  Also receives
-					 tool calls from the mode and passed to a separate parallel node for execution. -->
+				<!-- Use a parallel node to get user input from speech and pass to the LLM as a prompt.
+					 Model output to be spoken is passed to another parallel node which handles TTS.
+					 Tool calls from the model are passed to a another parallel node for execution. -->
 				<KeepRunningUntilFailure>
 					<ForceSuccess>
 						<Sequence>
@@ -313,17 +525,19 @@
 									<Sequence>
 										<Script code=" run_tools:=false " />
 										<Script code=" tool_call_result:='' " />
+										<Script code=" tool_call_results:='' " />
 										<Script code=" prompt:='' " />
 									</Sequence>										
 								</ForceFailure>								
 
-								<!-- Wait for TTS to finish playing out.  After finishing, enable VAD for a specified duration -->
+								<!-- Wait for TTS from the last model outputto finish playing out.
+								 	 After finishing, enable VAD for a specified duration -->
 								<ForceFailure>
 									<Sequence>
 										<IfThenElse>
 											<Fallback>
 												<!-- TTS is active if text buffered or TTS being processed/played -->
-												<Precondition if="tts_buffer=='' && next_tts==''" else="SUCCESS">
+												<Precondition if="@tts_buffer=='' && @next_tts==''" else="SUCCESS">
 													<TTSActiveAction inactive_wait_timeout_sec="0.0" result="{tts_is_active}" return_on_active="SUCCESS" />
 												</Precondition>													
 											</Fallback>
@@ -404,8 +618,8 @@
 							<Script code=" ai_text_to_speak:='' " />
 							<Script code=" antenna_state_req:='waiting_for_user' " />
 
-							<!-- Resume current audio playback (if any) if TTS is empty.  In that case processing
-							     stops at this point -->
+							<!-- Resume current audio playback (if any) if TTS is empty.  If empty, processing
+							     stops at this point, and waiting will resume for user input. -->
 							<Inverter>
 								<Sequence>
 									<TextCompareAction text="{prompt}" ck_for="" />
@@ -421,17 +635,18 @@
 							<Script code=" use_vad:=false " />
 							<Script code=" antenna_state_req:='model_active' " />
 
-							<!-- Call AIAction node until it is finished -->
+							<!-- Call AIAction node until it is finished.  Finished means the final response has been received
+								 after any tool calls that were made by the model  -->
 							<ReactiveSequence>
 								<!-- Buffer any new text generated by the last AIAction tick.  See comments
 								     below where TextToSpeechAction is used. -->
-								<Script code=" tts_buffer+=ai_text_to_speak; ai_text_to_speak='' " />
+								<Script code=" @tts_buffer+=ai_text_to_speak; ai_text_to_speak='' " />
 
-								<!-- Enable the tool call execution sequence in case any generated by the mode. -->
+								<!-- Enable the tool call execution sequence in case any are generated by the model. -->
 								<Script code=" run_tools:=true " />
 								<Script code=" ai_abort:=false " />
 
-								<!-- If wake word spoken while processing the AI request, then cancel the request
+								<!-- If the wake word is spoken while processing the AI request, then cancel the request
 									 and any TTS triggered by the model -->
 
 								<ForceSuccess>
@@ -439,7 +654,8 @@
 										<Fallback>
 											<!--VoiceDetectedAction /-->
 											<WakeWordDetectedAction since_sec="1.0" clear="false"/>
-											<!-- Also look for prompt input via the UI input topic (you can use the input_text.sh script for this)	-->
+											<!-- Also look for prompt input via the UI input topic
+												 (you can use the input_text.sh script for this) -->
 											<Sequence>
 												<!-- SUCCESS if changed (always returns most recent value)-->
 												<UIInputAction action="ck_changed" property="text_input" value="{temp_ui_input}"/>
@@ -450,21 +666,25 @@
 										<Script code=" prompt:='' " />
 										<Script code=" run_tools:=false " />
 										<Script code=" ai_abort:=true; " />
-										<Script code=" tts_buffer:=''; ai_text_to_speak:='' " />
+										<Script code=" @tts_buffer:=''; ai_text_to_speak:='' " />
 										<Script code=" cancel_audio:=true " />
 										<LogAction level="info" msg="Wake word detected during AIAction, cancelling AIAction" />
 									</Sequence>
 								</ForceSuccess>
 
-								<AIAction prompt="{prompt}" abort="{ai_abort}" result="{ai_text_to_speak}" tool_call_name="{tool_call_name}"
+								<AIAction prompt="{prompt}" abort="{ai_abort}" enable_reasoning="{@enable_reasoning}"
+												result="{ai_text_to_speak}"	tool_call_name="{tool_call_name}"
 												tool_call_args="{tool_call_args}" tool_call_result="{tool_call_result}"
+												tool_calls="{tool_calls}" tool_call_results="{tool_call_results}"
 												tool_call_timeout_sec="180" system_prompt="{system_prompt}" streaming="false"/>
 							</ReactiveSequence>
 
 							<!-- Buffer any new text generated by the final AIAction tick.  See comments
 							     below where TextToSpeechAction is used. -->
-							<Script code=" tts_buffer+=ai_text_to_speak; ai_text_to_speak='' " />
+							<Script code=" @tts_buffer+=ai_text_to_speak; ai_text_to_speak='' " />
 
+							<!-- Get the finish time so we can time how long to enable VAD for a users response (so you the
+								 wakeword isn't required) -->
 							<GetTimeNowAction now="{end_response_time}" />
 						</Sequence>
 					</ForceSuccess>
@@ -475,98 +695,14 @@
 				<!-- =======================================================================================-->
 
 				<!-- Use a parallel node to execute tool calls from the model.
-					 The Keep running and force success are used to keep the sequence running forever. -->
+					 The Keep running and force success nodes are used to keep the sequence running forever.
+					 The ToolCallRunnerAction node takes the list of tools to call output by the AIAction node
+					 (more than one tool in the case of parallel tool calls), and runs each in parallel using
+					 a BT tree created on the fly for each tool call. -->
 				<KeepRunningUntilFailure>
 					<ForceSuccess>
-						<ReactiveSequence>
-							<!-- This will interrupt a running tool when run_tools is set to 'n'-->
-							<Precondition if="run_tools==false" else="SUCCESS">
-								<ForceFailure>
-									<Sequence>
-										<Precondition if="tool_running==true" else="SUCCESS">
-											<Sequence>
-												<LogAction level="info" msg="Stopping current tool" />
-												<Script code=" tool_running:=false " />
-											</Sequence>												
-										</Precondition>											
-									</Sequence>										
-								</ForceFailure>
-							</Precondition>
-
-							<!-- This runs a requested tool if any -->
-							<Fallback>
-								<Sequence>
-									<Sequence>
-										<Script code=" tool_running:=true " />
-										<Script code=" running_tool:=tool_call_name " />
-										<Script code=" tool_call_name:='' " />
-
-										<Inverter>
-											<TextCompareAction text="{running_tool}" ck_for="" />
-										</Inverter>
-
-										<LogAction level="info" msg="Running tool: " arg1="{running_tool}" />
-
-										<Switch6 variable="{running_tool}" case_1="get_local_date_and_time"
-												case_2="analyze_camera_frame" case_3="speak" case_4="get_robot_position"
-												case_5="move_to_absolute" case_6="move_to_relative" >
-											<ToolCallTimeAction command="run" args_json="{tool_call_args}" result_json="{tool_call_result}" />
-											<SubTree ID="AnalyzeCameraFrame" _autoremap="true"/>
-											<Sequence>
-												<SubTree ID="SayText" _autoremap="true" />
-											</Sequence>
-											<ToolCallGetPositionAction command="run" result_json="{tool_call_result}"/>
-											<SubTree ID="MoveToAbsolute" _autoremap="true" />
-											<SubTree ID="MoveToRelative" _autoremap="true" />
-
-											<Switch5 variable="{running_tool}" case_1="ask_question" case_2="get_camera_frame"
-													case_3="get_map_locations" case_4="spin_in_place" case_5="move_robot">
-												<SubTree ID="AskQuestionAndGetResponse" _autoremap="true" />
-												<SubTree ID="GetCameraFrame" _autoremap="true" />
-
-												<!-- get_locations -->
-												<!-- Fix - get from a file -->
-												<Sequence>
-													<SetBlackboard output_key="tool_call_result" value='[{"location": "office tv",
-																"x": -0.29, "y": 0.101, "yaw": 180.0},{"location": "playroom tv",
-																"x": -4.48, "y": 0.143, "yaw": 0.0},{"location": "amys_door", "x": -8.3, "y": 1.23, "yaw": 180.0},
-													{"location": "robot home", "x": 0.55, "y": -0.22, "yaw": 74.0}]'/>
-												</Sequence>
-
-												<SubTree ID="SpinInPlace" _autoremap="true" />
-												
-												<SubTree ID="MoveRobotMockTest" _autoremap="true" />
-
-												<Switch4 variable="{running_tool}" case_1="delay" case_2="get_detected_objects"
-														case_3="set_parallel_tool_mode" case_4="wait_for_object_detected" >
-													<SubTree ID="DoDelay" _autoremap="true" />
-
-													<SubTree ID="GetDetectedObjects" _autoremap="true" />
-
-													<SubTree ID="SetParallelToolMode" _autoremap="true" />
-
-													<SubTree ID="WaitForObjectDetected" _autoremap="true" />
-
-													<!-- Unrecognized tool -->
-													<ForceFailure>
-														<Sequence>
-															<LogAction level="error" msg="Unrecognized tool call" arg1="{running_tool}" />
-															<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed, unrecognized tool call&quot;}'" />
-														</Sequence>												
-													</ForceFailure>											
-												</Switch4>
-											</Switch5>											
-										</Switch6>
-
-									</Sequence>					
-									<Script code=" tool_running:=false " />
-									<LogAction level="info" msg="Finished run sequence" />
-								</Sequence>						
-
-								<!-- Clear running flag on failure -->
-								<Script code=" tool_running:=false " />
-							</Fallback>								
-						</ReactiveSequence>
+						<ToolCallRunnerAction run_tools="{run_tools}" parallel_tool_mode="{@parallel_tool_mode}" tool_calls="{tool_calls}"
+							tool_call_results="{tool_call_results}" />
 					</ForceSuccess>
 				</KeepRunningUntilFailure>
 
@@ -622,10 +758,10 @@
 					 tick.  If the text isn't buffered, then the first fragment might be lost (blackboard variable
 					 overwritten). 
 					 
-					 Previously, the TextToSpeechAction node was place in the ReactiveSequence where the AIAction node
+					 (Previously, the TextToSpeechAction node was place in the ReactiveSequence where the AIAction node
 					 runs.  That actually worked until TextToSpeechAction was refactored to use Behavortree.ROS
 					 as a base layer for the tree.  The previous implementation blocked until the current text was
-					 sent.  As such, it wasn't possible for the AIAction node to overrun the outputting of the text.
+					 sent.  As such, it wasn't possible for the AIAction node to overrun the outputting of the text.)
 				-->
 				<KeepRunningUntilFailure>
 					<ForceSuccess>
@@ -637,11 +773,11 @@
 								</Sequence>									
 							</Precondition>
 
-							<LogAction level="debug" msg="TTS loop, tts_buffer: " arg1="{tts_buffer}" />
-							<LogAction level="debug" msg="TTS loop, next_tts:" arg1="{tts_buffer}" />
-							<Script code=" next_tts=tts_buffer; tts_buffer='' " />
-							<Precondition if="next_tts != ''" else="SUCCESS">
-								<TextToSpeechAction text="{next_tts}" />
+							<LogAction level="debug" msg="TTS loop, tts_buffer: " arg1="{@tts_buffer}" />
+							<LogAction level="debug" msg="TTS loop, next_tts:" arg1="{@tts_buffer}" />
+							<Script code=" @next_tts=@tts_buffer; @tts_buffer='' " />
+							<Precondition if="@next_tts != ''" else="SUCCESS">
+								<TextToSpeechAction text="{@next_tts}" />
 							</Precondition>								
 						</Sequence>										
 					</ForceSuccess>										
@@ -649,6 +785,30 @@
 			</Parallel>
 		</Sequence>			
 	</BehaviorTree>
+
+
+	<!-- =======================================================================================-->
+	<!-- =======================================================================================-->
+	<!-- =======================================================================================-->
+
+	<!-- The following are subtrees that implement the LLM tool calls.
+		 These subtrees are instantiated on the fly by the ToolCallRunnerAction node when a call is
+		 made.  The blackboard used for these trees are not connected to the BB used for the main
+		 tree.  In cases where one of these subtrees needs to read/write to a BB variable in the main tree,
+		 that variable should be stored in the global BB which is common to both trees.  In that case the
+		 BB variable should be referenced with a '@' before the name. -->
+
+	<BehaviorTree ID="GetDateAndTime">
+        <Sequence>
+			<ToolCallTimeAction command="run" args_json="{tool_call_args}" result_json="{tool_call_result}" />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="GetPosition">
+        <Sequence>
+			<ToolCallGetPositionAction command="run" result_json="{tool_call_result}"/>
+		</Sequence>
+    </BehaviorTree>
 
 	<BehaviorTree ID="GetCameraFrame">
         <Sequence>
@@ -658,13 +818,12 @@
 		</Sequence>
     </BehaviorTree>
 
-	<!-- May not be needed now that images can be returned in tool calls-->
 	<BehaviorTree ID="AnalyzeCameraFrame">
         <Sequence>
 			<GetCameraFrameAction base64_image="{b64_image}" />
 			<PlayAudioFileAction file_path="/robot_ws/audio_files/camera_shutter.mp3" stream_type="bg" req_id="3" />
-			<ToolCallAnalyzeCameraFrameAction command="run" args_json="{tool_call_args}" base64_image="{b64_image}"
-			 result_json="{tool_call_result}" />
+			<ToolCallAnalyzeCameraFrameAction command="run" enable_reasoning="{@enable_reasoning}" args_json="{tool_call_args}"
+			 base64_image="{b64_image}" result_json="{tool_call_result}" />
 		</Sequence>
     </BehaviorTree>
 
@@ -672,8 +831,8 @@
         <Sequence>
 			<LogAction level="info" msg="SayText Subtree" arg1="{tool_call_args}" />
 			<!-- Parse json containing text to say and store text in BB /-->
-			<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/text_to_say" output="{text_to_speak}" />
-			<Script code=" tts_buffer+=text_to_speak; text_to_speak='' " />
+			<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/text_to_say" as_type="string" str_output="{text_to_speak}" />
+			<Script code=" @tts_buffer+=text_to_speak; text_to_speak='' " />
 			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
 		</Sequence>
     </BehaviorTree>
@@ -689,7 +848,8 @@
         <Sequence>
 			<LogAction level="info" msg="MoveToAbsolute Subtree" arg1="{tool_call_args}" />
 			<!-- Parse json containing position and store text in BB /-->
-			<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/position_and_orientation" output="{move_to_goal}" />
+			<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/position_and_orientation" as_type="string"
+				str_output="{move_to_goal}" />
 			<IfThenElse>
 				<Nav2NavigateAction goal="{move_to_goal}" />
 				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
@@ -704,13 +864,16 @@
 			<!-- Parse json containing position and store text in BB /-->
 			<Fallback>
 				<Sequence>
-					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/movement_params" output="{movement_params}" />
-					<CopyJsonKeyValueIntoBBAction json_in="{movement_params}" json_key_pointer="/distance" output="{distance}" />
-					<CopyJsonKeyValueIntoBBAction json_in="{movement_params}" json_key_pointer="/heading" output="{heading}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/movement_params" as_type="string"
+						str_output="{movement_params}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{movement_params}" json_key_pointer="/distance" as_type="double"
+						double_output="{distance}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{movement_params}" json_key_pointer="/heading" as_type="double"
+						int_output="{heading}" />
 				</Sequence>
 				<ForceFailure>
 					<Sequence>
-						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
 						<LogAction level="info" msg="MoveToRelative Subtree - failed, invalid params" />
 					</Sequence>						
 				</ForceFailure>
@@ -734,18 +897,27 @@
 			<!-- Parse json containing param and store in BB /-->
 			<Fallback>
 				<Sequence>
-					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/spin_params" output="{spin_params}" />
-					<CopyJsonKeyValueIntoBBAction json_in="{spin_params}" json_key_pointer="/angle" output="{angle}" />
-					<CopyJsonKeyValueIntoBBAction json_in="{spin_params}" json_key_pointer="/rate" output="{rate}" />
-					<Precondition if="rate>0.5" else="SUCCESS">
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/spin_params" as_type="string"
+						str_output="{spin_params}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{spin_params}" json_key_pointer="/angle" as_type="double"
+						double_output="{angle}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{spin_params}" json_key_pointer="/rate" as_type="double"
+						double_output="{rate}" />
+					<Precondition if="rate>0.7 || rate<-0.7" else="SUCCESS">
 						<ForceFailure>
 							<LogAction level="info" msg="Invalid rate for spin tool call" />
 						</ForceFailure>
 					</Precondition>
+					<Precondition if="rate<0.2 && rate>=0.0" else="SUCCESS">
+						<Script code="rate=0.5" />
+					</Precondition>
+					<Precondition if="rate<0.0 && rate>=-0.2" else="SUCCESS">
+						<Script code="rate=-0.5" />
+					</Precondition>
 				</Sequence>
 				<ForceFailure>
 					<Sequence>
-						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
 						<LogAction level="info" msg="SpinInPlace Subtree - failed, invalid params" />
 					</Sequence>						
 				</ForceFailure>
@@ -759,20 +931,31 @@
 		</Sequence>
     </BehaviorTree>
 
+	<BehaviorTree ID="GetMapLocations">
+		<!-- Fix - get from a file or other source -->
+		<Sequence>
+			<SetBlackboard output_key="tool_call_result" value='[{"location": "office tv",
+						"x": -0.29, "y": 0.101, "yaw": 180.0},{"location": "playroom tv",
+						"x": -4.48, "y": 0.143, "yaw": 0.0},{"location": "amys_door", "x": -8.3, "y": 1.23, "yaw": 180.0},
+			{"location": "robot home", "x": 0.55, "y": -0.22, "yaw": 74.0}]'/>
+		</Sequence>
+    </BehaviorTree>
+
 	<BehaviorTree ID="AskQuestionAndGetResponse">
         <Sequence>
 			<LogAction level="info" msg="AskQuestionAndGetResponse Subtree" arg1="{tool_call_args}" />
 			<!-- Parse json containing question to ask and store text in BB /-->
-			<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/question" output="{text_to_speak}" />
+			<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/question" as_type="string"
+				str_output="{text_to_speak}" />
 
-			<Script code=" tts_buffer+=text_to_speak; text_to_speak='' " />
+			<Script code=" @tts_buffer+=text_to_speak; text_to_speak='' " />
 
 			<!-- Give some time for TTS to become active before waiting for it to finish -->
 			<Delay delay_msec="500">
 				<!-- Wait for TTS to finish, best effort -->
 				<ForceSuccess>
 					<!-- TTS is active if text buffered or TTS being processed/played -->
-					<Precondition if="tts_buffer=='' && next_tts==''" else="SUCCESS">
+					<Precondition if="@tts_buffer=='' && @next_tts==''" else="SUCCESS">
 						<TTSActiveAction inactive_wait_timeout_sec="30.0" result="{tts_is_active}" return_on_active="SUCCESS" />
 					</Precondition>						
 				</ForceSuccess>		
@@ -802,10 +985,11 @@
 
 			<!-- Parse json containing param and store in BB /-->
 			<Fallback>
-				<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/delay" output="{delay}" />
+				<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/delay" as_type="uint"
+					uint_output="{delay}" />
 				<ForceFailure>
 					<Sequence>
-						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
 						<LogAction level="info" msg="Delay Subtree - failed, invalid params" />
 					</Sequence>						
 				</ForceFailure>
@@ -836,12 +1020,13 @@
 			<!-- Parse json containing param and store in BB /-->
 			<Fallback>
 				<Sequence>
-					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/obj_class" output="{obj_class}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/obj_class" as_type="string"
+						str_output="{obj_class}" />
 					<LogAction level="info" msg="Using obj_class" arg1="{obj_class}" />
 				</Sequence>
 				<ForceFailure>
 					<Sequence>
-						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
 						<LogAction level="info" msg="WaitForObjectDetected Subtree - failed, invalid params" />
 					</Sequence>						
 				</ForceFailure>
@@ -861,13 +1046,35 @@
 			<!-- Parse json containing param and store in BB /-->
 			<Fallback>
 				<Sequence>
-					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/mode" output="{parallel_tool_mode}" />
-					<LogAction level="info" msg="Using parallel tool mode" arg1="{parallel_tool_mode}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/mode" as_type="string"
+						str_output="{@parallel_tool_mode}" />
+					<LogAction level="info" msg="Using parallel tool mode" arg1="{@parallel_tool_mode}" />
 				</Sequence>
 				<ForceFailure>
 					<Sequence>
-						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;invalid_parameters&quot;}'" />
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
 						<LogAction level="info" msg="SetParallelToolMode Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+		</Sequence>
+    </BehaviorTree>
+
+	<BehaviorTree ID="SetReasoningMode">
+        <Sequence>
+			<LogAction level="info" msg="SetReasoningMode Subtree" arg1="{tool_call_args}" />
+
+			<!-- Parse json containing param and store in BB /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/enable_reasoning"
+						as_type="bool" bool_output="{@enable_reasoning}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="SetReasoningMode Subtree - failed, invalid params" />
 					</Sequence>						
 				</ForceFailure>
 			</Fallback>

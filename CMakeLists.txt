@@ -113,6 +113,7 @@ set(elsabot_bt_sources
   src/speech_to_text_action.cpp
   src/text_to_speech_action.cpp
   src/tool_call_data.cpp
+  src/tool_call_runner_action.cpp
   src/transform_helper.cpp
   src/ui_topics.cpp
 )

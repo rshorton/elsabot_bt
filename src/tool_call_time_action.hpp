@@ -71,7 +71,7 @@ class ToolCallTimeAction : public BT::StatefulActionNode {
     nlohmann::json result_obj = {{"result", get_local_date_and_time()}};
     auto result = result_obj.dump();
 
-    RCLCPP_INFO(node_->get_logger(), "Tool call, time, result: %s", result.c_str());
+    RCLCPP_INFO(node_->get_logger(), "%s: result: %s", name().c_str(), result.c_str());
 
     setOutput("result_json", result);
   }
@@ -99,7 +99,17 @@ class ToolCallTimeAction : public BT::StatefulActionNode {
       "type": "function",
       "function": {
         "name": "get_local_date_and_time",
-        "description": "Gets the local date and time time in the form:  Y-M-D H:M:S.  Always re-run this tool when the date or time is needed."
+				"supports_parallel": false,
+        "description": "Gets the local date and time time.  Always re-run this tool when the date or time is needed.",
+        "returns": {
+          "type": "object",
+          "properties": {
+            "result": {
+              "type": "string",
+              "description": "The date and time in format Y-M-D H:M:S"
+            }
+          }
+        } 
       }
     })";
 

@@ -5,28 +5,30 @@
       <Script code=" test_json:='{&quot;key1&quot;: &quot;k1_value&quot;, &quot;key2&quot;: {&quot;key3&quot;: 42}, &quot;position_and_orientation&quot;: {&quot;x&quot;: 123, &quot;y&quot;: 456, &quot;yaw&quot;: 23}, &quot;movement_params&quot;: {&quot;distance&quot;: 0.4, &quot;heading&quot;: 45}}'" />
 
       <!-- Get a string -->
-      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/key1" output="{key1}" />
+      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/key1" as_type="string" str_output="{key1}" />
       <LogAction level="info" msg="key1" arg1="{key1}" />
 
       <!-- Get an object -->
-      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/key2" output="{key2}" />
+      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/key2" as_type="string" str_output="{key2}" />
       <LogAction level="info" msg="key2" arg1="{key2}" />
 
       <!-- Get a number -->
-      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/key2/key3" output="{key3}" />
+      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/key2/key3" as_type="string" int_output="{key3}" />
       <LogAction level="info" msg="key3" arg1="{key3}" />
 
       <ForceSuccess>
         <Sequence>
           <!-- Get an object (Pose2D) used for nav -->
-          <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/position_and_orientation" output="{location}" />
+          <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/position_and_orientation" as_type="string"
+            str_output="{location}" />
           <LogAction level="info" msg="location" arg1="{location}" />
           <Nav2NavigateAction goal="{location}" />
         </Sequence>        
       </ForceSuccess>
 
       <!-- Get an object (Pose2D) used for nav -->
-      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/movement_params" output="{mvmt_params}" />
+      <CopyJsonKeyValueIntoBBAction json_in="{test_json}" json_key_pointer="/movement_params" as_type="string"
+        output="{mvmt_params}" />
       <LogAction level="info" msg="mvmt_params" arg1="{mvmt_params}" />
       <Nav2NavigateAction goal_relative="{mvmt_params}" />
 

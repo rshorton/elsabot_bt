@@ -30,35 +30,21 @@ void AISession::report_tool_result(const std::string &id, const std::string &nam
   // Limit length since b64 images can be large
   RCLCPP_INFO(logger_, "Tool call result: %s", result_json.substr(0, 5000).c_str());
   auto has_image = result_json.find("image_url") != std::string::npos;
-  history_.push_back(std::make_unique<SessionMessage_ToolResult>("tool", 0, name, id, result_json, has_image));
+  history_.push_back(std::make_unique<SessionMessage_ToolResult>(user_request_cnt_, "tool", 0, name, id, result_json, has_image));
 }
 
-void AISession::tool_calls_finished(bool stream, const std::string &tools_json) {
-  json tools;
-  if (tools_json.empty()) {
-    tools = json::array();
-  } else {
-    tools = json::parse(tools_json);
-  }
-
-  request_data_ = {{"model", model_},
-                   {"tools", tools},
-                   {"tool_choice", "auto"},
-                   {"messages", format_prompt()},
-                   {"stream", stream},
-                   {"extra_body", {{"chat_template_kwargs", {{"enable_thinking", true}}}}}
-                  };
-  // Need to request usage streaming used
-  if (stream) {
-    request_data_["stream_options"] = {{"include_usage", true}};
-  }                  
-
-  perform();
+void AISession::tool_calls_finished(bool enable_reasoning, bool stream, const std::string &tools_json) {
+  perform(stream, tools_json, enable_reasoning);
 }
 
-void AISession::user_prompt(const std::string &prompt, bool stream, const std::string &tools_json, const std::string &b64_image) {
-  history_.push_back(std::make_unique<SessionMessage_UserPrompt>("user", 0, prompt, b64_image));
+void AISession::user_prompt(const std::string &prompt, const std::string &b64_image, bool enable_reasoning, 
+                            bool stream, const std::string &tools_json) {
+  ++user_request_cnt_;                              
+  history_.push_back(std::make_unique<SessionMessage_UserPrompt>(user_request_cnt_, "user", 0, prompt, b64_image));
+  perform(stream, tools_json, enable_reasoning);
+}                   
 
+void AISession::build_request(bool stream, const std::string &tools_json, bool enable_thinking) {
   json tools;
   if (tools_json.empty()) {
     tools = json::array();
@@ -69,20 +55,23 @@ void AISession::user_prompt(const std::string &prompt, bool stream, const std::s
   request_data_ = {{"model", model_},
                    {"tools", tools},
                    {"tool_choice", "auto"},
+                   {"parallel_tool_calls", "true"},
                    {"messages", format_prompt()},
                    {"stream", stream},
-                   {"extra_body", {{"chat_template_kwargs", {{"enable_thinking", true}}}}}
+                   {"chat_template_kwargs", {{"enable_thinking", enable_thinking}}}
                   };
-  // Need to request usage streaming used
+  // Need to request usage if stream is true
   if (stream) {
     request_data_["stream_options"] = {{"include_usage", true}};
   }                  
-  perform();
-}                                                            
+}
 
-void AISession::perform() {
+void AISession::perform(bool stream, const std::string &tools_json, bool enable_reasoning) {
+  build_request(stream, tools_json, enable_reasoning);
+
   is_tool_call_ = false;
   full_response_ = std::string();
+  reasoning_ = std::string();
 
   response_parse_error_ = false;
   response_parse_error_tool_call_ = false;
@@ -182,6 +171,8 @@ void AISession::perform() {
     }      
   };
 
+  req_start_time_ = std::chrono::steady_clock::now();
+
   complete_.store(false);
   promise_ = std::move(std::promise<AISession::Result>());
   future_ = std::move(promise_.get_future());
@@ -200,9 +191,12 @@ bool AISession::is_finished(std::string &response, bool &is_tool_call, AISession
   auto status = future_.wait_for(0ms);
 
   if (status == std::future_status::ready) {
+    auto now = std::chrono::steady_clock::now();
+    auto proc_duration = std::chrono::duration_cast<std::chrono::duration<float>>(now - req_start_time_).count();
+
     result = future_.get();
-    RCLCPP_INFO(logger_, "Future is ready, result: %s, full_response: %s",
-                result_to_str(result).c_str(), full_response_.c_str());
+    RCLCPP_INFO(logger_, "Future is ready, result: %s, full_response: %s\nreasoning: %s",
+                result_to_str(result).c_str(), full_response_.c_str(), reasoning_.c_str());
 
     if (result == AISession::Result::success) {
       is_tool_call = is_tool_call_;
@@ -218,9 +212,11 @@ bool AISession::is_finished(std::string &response, bool &is_tool_call, AISession
       token_usage_ = token_usage_cur_msg_;
 
       if (is_tool_call) {
-        history_.push_back(std::make_unique<SessionMessage_ToolRequest>("assistant", token_usage_cur_msg_.completion_tokens_, full_response_));
+        history_.push_back(std::make_unique<SessionMessage_ToolRequest>(user_request_cnt_, "assistant", proc_duration,
+                           token_usage_cur_msg_.completion_tokens_, full_response_, reasoning_));
       } else {
-        history_.push_back(std::make_unique<SessionMessage_Response>("assistant", token_usage_cur_msg_.completion_tokens_, full_response_));
+        history_.push_back(std::make_unique<SessionMessage_Response>(user_request_cnt_, "assistant", proc_duration,
+                           token_usage_cur_msg_.completion_tokens_, full_response_, reasoning_));
       }        
     }
     return true;
@@ -269,15 +265,14 @@ json AISession::format_prompt() const {
   json prompt = json::array();
   prompt.push_back({{"role", "system"}, {"content", system_prompt_}});
 
-  auto last_index = (long int)history_.size() - 1;
-
+  RCLCPP_INFO(logger_, "===================================================================");
   RCLCPP_INFO(logger_, "Context summary:");
   for (auto it = history_.begin(); it != history_.end(); ++it) {
-    auto index = std::distance(history_.begin(), it);
-    auto m = (*it)->get_json(last_index == index);
+    auto m = (*it)->get_json(user_request_cnt_);
     prompt.push_back(m);
-    RCLCPP_INFO(logger_, "%s", (*it)->get_description().c_str());
+    RCLCPP_INFO(logger_, "%s", (*it)->get_description(user_request_cnt_).c_str());
   }
+  RCLCPP_INFO(logger_, "===================================================================");
   return prompt;
 }
 
@@ -310,6 +305,11 @@ void AISession::process_message(const std::string& msg_json, TokenUsage &usage) 
 
     // Streaming case where deltas are received
     if (j["choices"][0].contains("delta")) {
+      if (j["choices"][0]["delta"].contains("reasoning")) {
+        const std::string &delta = j["choices"][0]["delta"]["reasoning"];
+        reasoning_ += delta;
+      }
+
       if (j["choices"][0]["delta"].contains("content")) {
         const std::string &delta = j["choices"][0]["delta"]["content"];
         full_response_ += delta;
@@ -379,46 +379,60 @@ void AISession::process_message(const std::string& msg_json, TokenUsage &usage) 
 
     // Non-streaming cases
     } else if (j["choices"][0]["finish_reason"] == "tool_calls") {
+      if (j["choices"][0].contains("message")) {
+        auto jm = j["choices"][0]["message"];
 
-      if (j["choices"][0].contains("message") && 
-          j["choices"][0]["message"].contains("tool_calls")) {
-
-        RCLCPP_DEBUG(logger_, "finish_reason tool_calls with a message");
-
-        // Full response needs to be as was received with args as json
-        full_response_ = j["choices"][0]["message"]["tool_calls"].dump();
-
-        // Parse the args of each tool call
-        auto tool_calls = json::array();
-
-        auto tc_array = j["choices"][0]["message"]["tool_calls"];
-        for (const auto &tc: tc_array) {
-          std::string args = tc["function"]["arguments"];
-          tool_calls.push_back(tc);
-
-          json arg_obj;
-          try {
-            arg_obj = json::parse(args);
-          } catch (json::parse_error& ex) {
-            RCLCPP_ERROR(logger_, "failed parsing tool call args: %s, at: %ld", args.c_str(), ex.byte);
-            return;
-          }
-          tool_calls.back()["function"]["arguments"] = arg_obj;
+        if (jm.contains("reasoning") &&
+          !j["choices"][0]["message"]["reasoning"].is_null()) {
+          reasoning_ = j["choices"][0]["message"]["reasoning"];
         }
 
-        tool_call_ = tool_calls.dump();
-        is_tool_call_ = true;
-        RCLCPP_DEBUG(logger_, "tc parse, tool_call_(from non-delta): %s", tool_call_.c_str());
+        if (jm.contains("tool_calls")) {
+          RCLCPP_DEBUG(logger_, "finish_reason tool_calls with a message");
+
+          // Full response needs to be as was received with args as json
+          full_response_ = jm["tool_calls"].dump();
+
+          // Parse the args of each tool call
+          auto tool_calls = json::array();
+
+          auto tc_array = jm["tool_calls"];
+          for (const auto &tc: tc_array) {
+            std::string args = tc["function"]["arguments"];
+            tool_calls.push_back(tc);
+
+            json arg_obj;
+            try {
+              arg_obj = json::parse(args);
+            } catch (json::parse_error& ex) {
+              RCLCPP_ERROR(logger_, "failed parsing tool call args: %s, at: %ld", args.c_str(), ex.byte);
+              return;
+            }
+            tool_calls.back()["function"]["arguments"] = arg_obj;
+          }
+
+          tool_call_ = tool_calls.dump();
+          is_tool_call_ = true;
+          RCLCPP_DEBUG(logger_, "tc parse, tool_call_(from non-delta): %s", tool_call_.c_str());
+        }
       }              
 
     } else if (j["choices"][0]["finish_reason"] == "stop") {
-      if (j["choices"][0].contains("message") && 
-          j["choices"][0]["message"].contains("content")) {
-          full_response_ =  j["choices"][0]["message"]["content"];
+      if (j["choices"][0].contains("message")) {
+        auto jm = j["choices"][0]["message"];
+          
+        if (jm.contains("reasoning") &&
+          !j["choices"][0]["message"]["reasoning"].is_null()) {
+          reasoning_ = jm["reasoning"];
+        }
+
+        if (jm.contains("content")) {
+          full_response_ =  jm["content"];
           RCLCPP_INFO(logger_, "chat content (from non-delta): %s", full_response_.c_str());
           if (callback_data_) {
             callback_data_(full_response_);
-          }          
+          } 
+        }         
       }
     }
   } catch (...) {
@@ -448,7 +462,7 @@ void AISession::prune_message_history_as_needed() {
 
   auto token_cnt_before = current_tokens_;
 
-  if (current_tokens_ > max_context_size_ && !history_.empty()) {
+  if (current_tokens_ > (int)max_context_size_ && !history_.empty()) {
     // Remove images from oldest to newest
     for (auto &item: history_) {
       if (item->has_image()) {
@@ -459,7 +473,7 @@ void AISession::prune_message_history_as_needed() {
   }
 
   // If history still too large, drop message pairs
-  while (current_tokens_ > max_context_size_ && !history_.empty()) {
+  while (current_tokens_ > (int)max_context_size_ && !history_.empty()) {
     current_tokens_ -= history_.front()->token_count_;
     history_.pop_front();
     // Pop by prompt/response pairs
@@ -475,38 +489,46 @@ void AISession::prune_message_history_as_needed() {
   }
 }
 
-
-void AISession::SessionMessage::get_description(std::stringstream &ss) const {
-  ss << "type: " << session_message_to_str(msg_type_) << ", role: " << role_ << ", tokens: " << token_count_;
+void AISession::SessionMessage::get_description(size_t, std::stringstream &ss) const {
+  ss << "req_id: " << request_id_
+     << ", type: " << session_message_to_str(msg_type_)
+     << ", role: " << role_
+     << ", tokens: " << token_count_;
 }
 
-
-std::string AISession::SessionMessage_UserPrompt::get_description() const {
+std::string AISession::SessionMessage_UserPrompt::get_description(size_t cur_request_id) const {
   std::stringstream ss;
-  SessionMessage::get_description(ss);
-  ss << ", prompt: " << prompt_ << ", has_image: " << (b64_image_.empty()? "N": "Y");
+  SessionMessage::get_description(cur_request_id, ss);
+  ss << ", prompt: " << prompt_
+     << ", has_image: " << (b64_image_.empty()? "N": "Y");
   return ss.str();
 }
 
-std::string AISession::SessionMessage_Response::get_description() const {
+std::string AISession::SessionMessage_Response::get_description(size_t cur_request_id) const {
   std::stringstream ss;
-  SessionMessage::get_description(ss);
-  ss << ", response: " << response_;
+  SessionMessage::get_description(cur_request_id, ss);
+  ss << ", proc_duration_sec: " << proc_duration_sec_
+     << ", response: " << response_;
+  if (cur_request_id == request_id_) {
+    ss << ", reasoning: " << reasoning_;
+  }    
   return ss.str();
 }
 
-
-std::string AISession::SessionMessage_ToolRequest::get_description() const {
+std::string AISession::SessionMessage_ToolRequest::get_description(size_t cur_request_id) const {
   std::stringstream ss;
-  SessionMessage::get_description(ss);
-  ss <<  ", tool_call_json: " << tool_call_json_;
+  SessionMessage::get_description(cur_request_id, ss);
+  ss << ", proc_duration_sec: " << proc_duration_sec_
+     << ", tool_call_json: " << tool_call_json_;
+  if (cur_request_id == request_id_) {
+    ss << ", reasoning: " << reasoning_;
+  }    
   return ss.str();
 }
 
-
-std::string AISession::SessionMessage_ToolResult::get_description() const {
+std::string AISession::SessionMessage_ToolResult::get_description(size_t cur_request_id) const {
   std::stringstream ss;
-  SessionMessage::get_description(ss);
+  SessionMessage::get_description(cur_request_id, ss);
 
   ss << ", tool: " << name_  << ", using_image: " << (has_image() && use_image());
   if (!tool_result_json_.empty()) {
