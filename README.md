@@ -55,6 +55,8 @@ The Gemma 4 26B model is currently being used.  So far, it has been found to wor
 
 Currenly, VLM processing is done using a tool call that grabs a camera frame and then uses a different session with Gemma 4 to analyze the frame.  That is done since it seems that including the images in the context reduces the accuracy of the tool calls.
 
+The AIAction BT node uses the AISession c++ class to interact with an LLM using the Openai API (via HTTP).  The LLM is hosted on the device using vLLM which runs in another Docker container.  That container uses an Nvidia-provided image for vLLM with Gemma4 support.   See the run_primary_llm.sh script of the jetson_support repo for the command to launch vllm with gemma 4.  You could just as easily use a cloud-hosted model or one running on another local computer.  You will need to revise AIAction to use the correct host IP and port for that case (as well as credentials if needed).
+
 See example videos:
 
   * https://youtube.com/shorts/LRyp4u0X1vA
