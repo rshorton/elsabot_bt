@@ -937,7 +937,7 @@
 			<SetBlackboard output_key="tool_call_result" value='[{"location": "office tv",
 						"x": -0.29, "y": 0.101, "yaw": 180.0},{"location": "playroom tv",
 						"x": -4.48, "y": 0.143, "yaw": 0.0},{"location": "amys_door", "x": -8.3, "y": 1.23, "yaw": 180.0},
-			{"location": "robot home", "x": 0.55, "y": -0.22, "yaw": 74.0}]'/>
+			{"location": "robot home", "x": 0.0, "y": 0.0, "yaw": 74.0}]'/>
 		</Sequence>
     </BehaviorTree>
 
