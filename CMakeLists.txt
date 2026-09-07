@@ -36,6 +36,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
 find_package(speech_action_interfaces REQUIRED)
 find_package(elsabot_audio_output_interfaces REQUIRED)
+find_package(dart_gun_interfaces REQUIRED)
 find_package(robot_head_interfaces REQUIRED)
 find_package(robot_ui_interfaces REQUIRED)
 find_package(object_detection_msgs REQUIRED)
@@ -81,6 +82,7 @@ set(dependencies
   robot_ui_interfaces
   sensor_msgs
   speech_action_interfaces
+  dart_gun_interfaces
   std_msgs
   visualization_msgs
   #moveit_ros_planning
@@ -108,6 +110,10 @@ set(elsabot_bt_sources
   src/pause_audio_action.cpp
   src/play_audio_file_action.cpp
   src/resume_audio_action.cpp
+  src/dart_gun_enable_tracking_action.cpp
+  src/dart_gun_disable_tracking_action.cpp
+  src/dart_gun_fire_at_aimed_target_action.cpp
+  src/dart_gun_fire_at_specified_target_action.cpp
   src/robot_status.cpp
   src/ros_common.cpp
   src/speech_to_text_action.cpp

@@ -1,0 +1,19 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+			<Delay delay_msec="10">
+        <DartGunFireAtSpecifiedTargetAction frame_id="base_link" target="1.0,1.0,1.0" count="1"/>
+			</Delay>
+      <Delay delay_msec="4000">
+        <DartGunEnableTrackingAction tracking_pose_topic_name="/head/tracked_pose" />
+      </Delay>
+      <Delay delay_msec="4000">
+        <DartGunFireAtAimedTargetAction count="1" />
+      </Delay>
+      <Delay delay_msec="4000">
+        <DartGunDisableTrackingAction />
+      </Delay>
+		</Sequence>
+
+	</BehaviorTree>
+</root>

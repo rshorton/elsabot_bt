@@ -7,6 +7,23 @@
 using json = nlohmann::json;
 
 // Custom types
+
+struct Pose3D
+{
+    Pose3D():
+        x(0.0), y(0.0), z(0.0) {}
+    Pose3D(double x, double y, double z):
+        x(x), y(y), z(z) {}        
+    double x, y, z;
+};
+
+BT_JSON_CONVERTER(Pose3D, pose3d)
+{
+  add_field("x", &pose3d.x);
+  add_field("y", &pose3d.y);
+  add_field("z", &pose3d.z);
+}
+
 struct Pose2D
 {
     Pose2D():
@@ -72,6 +89,51 @@ BT_JSON_CONVERTER(OrientationRPY, orientation_rpy)
 
 namespace BT
 {
+template <> inline
+Pose3D convertFromString(StringView key)
+{
+    if (key.size() > 0 && key[0] == '{') {
+        try {
+            json j = json::parse(key);
+            
+            Pose3D output;
+            output.x = j["x"];
+            output.y = j["y"];
+            output.z = j["z"];
+		    return output;
+
+        } catch (json::parse_error& ex) {
+            RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), "Pose3D, str not json, at: %ld", ex.byte);
+        }            
+    }
+
+    // three real numbers separated by commas
+    auto parts = BT::splitString(key, ',');
+    if (parts.size() != 3)
+    {
+        throw BT::RuntimeError("invalid input)");
+    }
+    else
+    {
+        Pose3D output;
+        output.x = convertFromString<double>(parts[0]);
+        output.y = convertFromString<double>(parts[1]);
+		output.z = convertFromString<double>(parts[2]);
+		return output;
+    }
+}
+
+inline
+std::string convertToString(const Pose3D &pose)
+{
+	std::stringstream str;
+	str << pose.x << ","
+		<< pose.y << ","
+        << pose.z
+		<< std::endl;
+    return str.str();
+}
+
 template <> inline
 Pose2D convertFromString(StringView key)
 {

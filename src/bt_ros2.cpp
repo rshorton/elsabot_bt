@@ -33,7 +33,6 @@
 #include "detection_get_objects_action.hpp"
 #include "detection_wait_for_object_detected_action.hpp"
 
-
 #include "get_movement_status_action.hpp"
 #include "numeric_comparison_action.hpp"
 
@@ -80,6 +79,11 @@
 
 #include "copy_json_key_value_into_bb_action.hpp"
 #include "copy_bb_value_into_json_key_action.hpp"
+
+#include "dart_gun_enable_tracking_action.hpp"
+#include "dart_gun_disable_tracking_action.hpp"
+#include "dart_gun_fire_at_aimed_target_action.hpp"
+#include "dart_gun_fire_at_specified_target_action.hpp"
 
 #if defined(USE_GAME_FEATURES)
 #include "game_support/game_settings.hpp"
@@ -279,6 +283,18 @@ int main(int argc, char **argv)
 
     params.default_port_value = "recognize";
     factory->registerNodeType<SpeechToTextAction>("SpeechToTextAction", params);
+
+    params.default_port_value = "dart_gun_controller/enable_tracking";
+    factory->registerNodeType<DartGunEnableTrackingAction>("DartGunEnableTrackingAction", params);
+
+    params.default_port_value = "dart_gun_controller/disable_tracking";
+    factory->registerNodeType<DartGunDisableTrackingAction>("DartGunDisableTrackingAction", params);
+
+    params.default_port_value = "dart_gun_controller/fire_at_aimed_target";
+    factory->registerNodeType<DartGunFireAtAimedTargetAction>("DartGunFireAtAimedTargetAction", params);
+
+    params.default_port_value = "dart_gun_controller/fire_at_specified_target";
+    factory->registerNodeType<DartGunFireAtSpecifiedTargetAction>("DartGunFireAtSpecifiedTargetAction", params);
 
     ///////////////////////////////////////////
 
