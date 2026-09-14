@@ -31,31 +31,33 @@ Use the elsabot_docker repo for building a suitable run-time environment for thi
 
 ## Recent Updates
 
-### (WIP) Integration of LLM for high-level control
+### Integration of LLM for high-level control
 
 A new behavior tree node called **AIAction** supports using an LLM for chat and control of the robot.  See the **bt_test_ai_chat.xml** tree for an example of using it.  That tree implements chat functionality and also supports a few tool calls from the model including:
 * Get time and date
 * Get camera frame and perform VLM analysis
-* Get the current position on the Nav2 map
+* Translate the bounding box of an object detected via VLM analysis into spatial coordinates
+* Get the current robot position on the Nav2 map
 * Move the robot to a specified position using the Nav2 stack
 * Get known Nav2 map locations
 * Move the robot a specified distance using a relative heading
 * Spin in place
 * Speak (for speaking prior to the final response which is always spoken)
-* Ask a user a question and get the reply
+* Ask the user a question and get the reply
 * Delay
 * Set parallel tool behavior
-* Get the list of currently detected objects
-* Wait for a specify object type is detected
+* Get the list of currently detected objects (as detected by the robot head node which uses the OakD camera for object detection)
+* Wait until a specified object type is detected
 * Set reasoning mode (enables/disable LLM reasoning/thinking mode)
+* Fire the Elsabot nerf dart gun
 
 Each tool call is implemented using a subtree.  The ToolCallRunnerAction node processes the tool calls requested by the model.  The runner node can handle both single tool calls and parallel tool calls where more than one tool is specified to be run at the same time. It runs each tool by creating a subtree on the fly and then spinning each tree when the runner node is ticked.  The model can specify whether parallel calls should run to completion, or whether unfinished calls should be pre-empted after the first tool finishes.  (Such as move until a specified object type is detected.)
 
-The Gemma 4 26B model is currently being used.  So far, it has been found to work extremely well.  When reasoning mode is enabled, it is more accurate but quite a bit slower when the prompt is complex.  As such, that mode can be enabled/disabled via a tool call (ie. asking the model to enable or disable it).  It is generally better to disable reasoning mode while casual chatting to reduce latency.  Also, streaming output from the model can be enabled to reduce chat-mode latency.  Currently it is disabled since there have been a few cases where the tool calls where not segmented correctly when streaming (seems to mis-handle negative numbers in the 'arguments' of the call).
+The Gemma 4 26B model is currently being used.  So far, it has been found to work extremely well.  When reasoning mode is enabled, it is more accurate but quite a bit slower when the prompt is complex.  As such, that mode can be enabled/disabled via a tool call (ie. asking the model to enable or disable it).  It is generally better to disable reasoning mode while casual chatting to reduce latency.  Also, streaming output from the model can be enabled to reduce chat-mode latency.
 
-Currenly, VLM processing is done using a tool call that grabs a camera frame and then uses a different session with Gemma 4 to analyze the frame.  That is done since it seems that including the images in the context reduces the accuracy of the tool calls.
+Currenly, VLM processing is done using a tool call that grabs a camera frame and then uses a different session with Gemma 4 to analyze the frame.  That is done since it seems that including the images in the main LLM context reduces the accuracy of the tool calls.  The Gemma 4 VLM capabilities are very good.  It can provide a bounding box which can then be converted to spatial coordinates for use with other tools (such as shooting the dart gun at the object 😀).
 
-The AIAction BT node uses the AISession c++ class to interact with an LLM using the Openai API (via HTTP).  The LLM is hosted on the device using vLLM which runs in another Docker container.  That container uses an Nvidia-provided image for vLLM with Gemma4 support.   See the run_primary_llm.sh script of the jetson_support repo for the command to launch vllm with gemma 4.  You could just as easily use a cloud-hosted model or one running on another local computer.  You will need to revise AIAction to use the correct host IP and port for that case (as well as credentials if needed).  If running on a Jetson with less memory, you can revise run_primary_llm.sh to launch a lighter-weight gemma 4 model.  (Also note that you will need to revise the bind mounts in that script that point to where the models are downloaded/cached.)
+The AIAction BT node uses the AISession C++ class to interact with an LLM using the Openai API (via HTTP).  The LLM is hosted on the device using vLLM which runs in another Docker container.  That container uses an Nvidia-provided image for vLLM with Gemma4 support.   See the run_primary_llm.sh script of the jetson_support repo for the command to launch vllm with gemma 4.  You could just as easily use a cloud-hosted model or one running on another local computer.  You will need to revise AIAction to use the correct host IP and port for that case (as well as credentials if needed).  If running on a Jetson with less memory, you can revise run_primary_llm.sh to launch a lighter-weight gemma 4 model.  (Also note that you will need to revise the bind mounts in that script that point to where the models are downloaded/cached.)
 
 See example videos:
 
