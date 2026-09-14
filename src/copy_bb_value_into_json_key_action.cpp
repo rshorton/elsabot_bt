@@ -26,10 +26,24 @@ limitations under the License.
 
 using json = nlohmann::json;
 
+namespace
+{
+    const std::string AS_TYPE_STRING = "string";
+    const std::string AS_TYPE_BOOL = "bool";
+    const std::string AS_TYPE_INT = "int";
+    const std::string AS_TYPE_UINT = "uint";
+    const std::string AS_TYPE_DOUBLE = "double";
+}
+
 BT::PortsList CopyBBValueIntoJsonKeyValueAction::providedPorts() {
     return {BT::BidirectionalPort<std::string>("json_in_out"),  // Json to read
             BT::InputPort<std::string>("json_key_pointer"),     // Json pointer for key value to be set
-            BT::InputPort<std::string>("value")};               // BB variable to read and set into json
+            BT::InputPort<std::string>("as_type"),              // The expected type
+            BT::InputPort<std::string>("str_value"),            // BB variable to read and set into json
+            BT::InputPort<bool>("bool_value"),                  
+            BT::InputPort<double>("double_value"),
+            BT::InputPort<int>("int_value"),
+            BT::InputPort<unsigned int>("uint_value")};
 }
 
 BT::NodeStatus CopyBBValueIntoJsonKeyValueAction::onStart() {
@@ -43,10 +57,8 @@ BT::NodeStatus CopyBBValueIntoJsonKeyValueAction::onStart() {
         throw BT::RuntimeError("missing json_key_pointer");
     }
 
-    std::string value;
-    if (!getInput<std::string>("value", value)) {
-        throw BT::RuntimeError("missing value");
-    }
+    std::string as_type = "string";
+    getInput<std::string>("as_type", as_type);
 
     json j;
     try {
@@ -58,7 +70,37 @@ BT::NodeStatus CopyBBValueIntoJsonKeyValueAction::onStart() {
 
     try {
         json::json_pointer p(json_key_pointer);
-        j[p] = value;
+
+        if (as_type == AS_TYPE_STRING) {
+            std::string value;
+            getInput<std::string>("str_value", value);
+            j[p] = value;
+
+        } else if (as_type == AS_TYPE_BOOL) {
+            bool value;
+            getInput<bool>("bool_value", value);
+            j[p] = value;
+
+        } else if (as_type == AS_TYPE_DOUBLE) {
+            double value;
+            getInput<double>("double_value", value);
+            j[p] = value;
+
+        } else if (as_type == AS_TYPE_INT) {
+            int value;
+            getInput<int>("int_value", value);
+            j[p] = value;
+
+        } else if (as_type == AS_TYPE_UINT) {
+            unsigned int value;
+            getInput<unsigned int>("uint_value", value);
+            j[p] = value;
+
+        } else {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s: the requested type %s is invalid", name().c_str(), as_type.c_str());
+            return BT::NodeStatus::FAILURE;
+        }
+
         std::string json_out = j.dump();
 
         RCLCPP_DEBUG(rclcpp::get_logger("rclcpp"), json_out.c_str());
