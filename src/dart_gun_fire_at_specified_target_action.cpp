@@ -33,7 +33,19 @@ bool DartGunFireAtSpecifiedTargetAction::setRequest(Request::SharedPtr& request)
   }
 
   Pose3D target;
-  getInput<Pose3D>("target", target);
+  double x;
+  double y;
+  double z;
+  if (!getInput<Pose3D>("target", target)) {
+    if (!(getInput<double>("target_x", x) && getInput<double>("target_y", y) && getInput<double>("target_z", z))) {
+      RCLCPP_ERROR(logger(), "%s, Error, a target or x,y,z coords must be specified", name().c_str());
+      throw BT::RuntimeError("missing json_in_out");
+    }
+  } else {
+    x = target.x;
+    y = target.y;
+    z = target.z;
+  }
 
   request->count = count;
 
@@ -43,9 +55,9 @@ bool DartGunFireAtSpecifiedTargetAction::setRequest(Request::SharedPtr& request)
   if (node) {
     request->target.header.stamp = node->get_clock()->now();
   }    
-  request->target.pose.position.x = target.x;
-  request->target.pose.position.y = target.y;
-  request->target.pose.position.z = target.z;
+  request->target.pose.position.x = x;
+  request->target.pose.position.y = y;
+  request->target.pose.position.z = z;
   request->target.pose.orientation.x = 0.0;
   request->target.pose.orientation.y = 0.0;
   request->target.pose.orientation.z = 0.0;

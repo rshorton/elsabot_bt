@@ -36,7 +36,10 @@ public:
     return providedBasicPorts(
         { BT::InputPort<int>("count"),
           BT::InputPort<std::string>("frame_id"),
-          BT::InputPort<Pose3D>("target") });
+          BT::InputPort<Pose3D>("target"),        // Specify a Pose3D or specific x,y,z values
+          BT::InputPort<double>("target_x"),
+          BT::InputPort<double>("target_y"),
+          BT::InputPort<double>("target_z") });
   }
 
   bool setRequest(Request::SharedPtr& request) override;
