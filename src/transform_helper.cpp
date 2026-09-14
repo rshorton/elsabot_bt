@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 #include <sstream>
+#include <chrono>
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 
@@ -26,7 +28,11 @@ limitations under the License.
 
 #include "transform_helper.hpp"
 
-const std::string DEFAULT_SOURCE_FRAME = "oakd";
+using namespace std::chrono_literals;
+
+const std::string DEFAULT_SOURCE_FRAME = "oakd_center_camera";
+
+constexpr std::chrono::milliseconds lookup_wait_time = 50ms;
 
 TransformHelper *TransformHelper::xform_helper_ = nullptr;
 
@@ -37,10 +43,11 @@ TransformHelper::TransformHelper(rclcpp::Node::SharedPtr node)
 	tfl_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer_);
 }
 
-bool TransformHelper::GetTransform(const std::string &frame_from, const std::string &frame_to, geometry_msgs::msg::TransformStamped &transform)
+bool TransformHelper::GetTransform(const std::string &frame_from, const std::string &frame_to,
+								   geometry_msgs::msg::TransformStamped &transform, const rclcpp::Time time)
 {
 	try{
-		transform = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0.1));
+		transform = tfBuffer_.lookupTransform(frame_to, frame_from, time);
 		return true;
 	} catch (tf2::TransformException &ex) {
 		RCLCPP_ERROR(node_->get_logger(), "TransformHelper: Failed to transform from %s to %s",
@@ -49,17 +56,18 @@ bool TransformHelper::GetTransform(const std::string &frame_from, const std::str
 	return false;
 }
 
-bool TransformHelper::Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z)
+bool TransformHelper::Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z,
+								const rclcpp::Time time)
 {
 	try{
 		geometry_msgs::msg::TransformStamped transformStamped;
-		transformStamped = tfBuffer_.lookupTransform(frame_to, frame_from, rclcpp::Time(0.1));
+		transformStamped = tfBuffer_.lookupTransform(frame_to, frame_from, time, lookup_wait_time);
 
 		geometry_msgs::msg::PointStamped pt;
 		pt.point.x = x;
 		pt.point.y = y;
 		pt.point.z = z;
-		pt.header.stamp = node_->now();
+		pt.header.stamp = time; //node_->now();
 		pt.header.frame_id = frame_from;
 
 		geometry_msgs::msg::PointStamped transformed_pt;
@@ -73,14 +81,14 @@ bool TransformHelper::Transform(const std::string &frame_from, const std::string
 		z = transformed_pt.point.z;
 
 	} catch (tf2::TransformException &ex) {
-		RCLCPP_ERROR(node_->get_logger(), "TransformHelper: Failed to transform from %s to %s",
-			frame_from.c_str(), frame_to.c_str());
+		RCLCPP_ERROR(node_->get_logger(), "TransformHelper: Failed to transform from %s to %s. Reason: %s",
+			frame_from.c_str(), frame_to.c_str(), ex.what());
 			return false;
 	}
 	return true;
 }
 
-bool TransformHelper::Transform(const std::string &frame_from, const std::string &frame_to, std::string &pos)
+bool TransformHelper::Transform(const std::string &frame_from, const std::string &frame_to, std::string &pos, const rclcpp::Time time)
 {
 	// Input position is comma separated xyz 
     auto parts = BT::splitString(pos, ',');
@@ -93,7 +101,7 @@ bool TransformHelper::Transform(const std::string &frame_from, const std::string
 	double z = BT::convertFromString<double>(parts[2]);
 
 	if (Transform(frame_from == "" || frame_from == "camera"? DEFAULT_SOURCE_FRAME: frame_from,
-		frame_to, x, y, z)) {
+		frame_to, x, y, z, time)) {
 		std::stringstream ss;
 		ss << x << "," << y << "," << z;
 		pos = ss.str();

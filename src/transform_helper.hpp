@@ -20,6 +20,7 @@ limitations under the License.
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
+#include <rclcpp/time.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
@@ -40,10 +41,10 @@ public:
 		return xform_helper_;
 	};
 
-	bool Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z);
-	bool Transform(const std::string &frame_from, const std::string &frame_to, std::string &pos);
+	bool Transform(const std::string &frame_from, const std::string &frame_to, double &x, double &y, double &z, const rclcpp::Time time = rclcpp::Time(0, 0, RCL_SYSTEM_TIME));
+	bool Transform(const std::string &frame_from, const std::string &frame_to, std::string &pos, const rclcpp::Time time = rclcpp::Time(0, 0, RCL_SYSTEM_TIME));
 
-	bool GetTransform(const std::string &frame_from, const std::string &frame_to, geometry_msgs::msg::TransformStamped &transform);
+	bool GetTransform(const std::string &frame_from, const std::string &frame_to, geometry_msgs::msg::TransformStamped &transform, const rclcpp::Time time = rclcpp::Time(0, 0, RCL_SYSTEM_TIME));
 
 private:
 	TransformHelper(rclcpp::Node::SharedPtr node);
