@@ -41,6 +41,7 @@ public:
                 BT::InputPort<bool>("enable_reasoning"),
                 BT::InputPort<std::string>("args_json"),
                 BT::InputPort<std::string>("base64_image"),
+                BT::InputPort<std::string>("image_id"),
                 BT::OutputPort<std::string>("result_json")};
     }
 
@@ -64,12 +65,16 @@ public:
 
         std::string args_json;
         if (!getInput<std::string>("args_json", args_json)) {
-      			throw BT::RuntimeError("missing args_json");
+      		throw BT::RuntimeError("missing args_json");
         }
 
         std::string base64_image;
         if (!getInput<std::string>("base64_image", base64_image)) {
-      			throw BT::RuntimeError("missing base64_image");
+      		throw BT::RuntimeError("missing base64_image");
+        }
+
+        if (!getInput<std::string>("image_id", image_id_)) {
+      		throw BT::RuntimeError("missing image_id");
         }
 
         image_utils::save_image(image_dir_, base64_image, image_file_);
@@ -119,6 +124,7 @@ public:
                 nlohmann::json result_obj;
                 result_obj["analysis"] = full_response;
                 result_obj["filename"] = image_file_;
+                result_obj["image_id"] = image_id_;
 
                 std::string result_json = result_obj.dump();
                 setOutput("result_json", result_json);
@@ -142,7 +148,7 @@ private:
         "function": {
             "name": "analyze_camera_frame",
 			"supports_parallel": false,
-            "description": "Gets a frame from the camera and runs VLM processing. Returns an object with 'analysis' set to the VLM result, and 'filename' set to the pathname of the saved image.  Use this when asked 'what do you see' or when you need to know what the camera is viewing",
+            "description": "Gets a frame from the camera and runs VLM processing. Returns an object with 'analysis' set to the VLM result, and 'filename' set to the pathname of the saved image.  Use this when asked 'what do you see' or when you need to know what the camera is viewing.  The tool can provide bounding boxes for objects.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -163,6 +169,10 @@ private:
                     "filename": {
                         "type": "string",
                         "description": "File path where the image was saved"
+                    },
+                    "image_id": {
+                        "type": "string",
+                        "description": "ID of the image.  Required when converting bounding boxes coords to world coords."
                     }
                 }
             }
@@ -183,5 +193,6 @@ private:
 
     std::unique_ptr<AISession> ai_session_;
 
+    std::string image_id_;
     std::string image_file_;
 };
