@@ -6,8 +6,8 @@
 				<Sequence>
 					<ForceSuccess>
 						<Sequence>
-							<TrackManualAction pose="0.0, -40.0, 0.0" />
-							<TextToSpeechActionClient msg1="pose 1" />
+							<TrackManualAction pose="0.0,-40.0,0.0" />
+							<TextToSpeechAction text="pose 1" />
 						</Sequence>
 					</ForceSuccess>
 
@@ -19,8 +19,8 @@
 
 					<ForceSuccess>
 						<Sequence>
-							<TrackManualAction pose="0.0, 0.0, 20.0" />
-							<TextToSpeechActionClient msg1="pose 2" />
+							<TrackManualAction pose="0.0,0.0,40.0" />
+							<TextToSpeechAction text="pose 2" />
 						</Sequence>
 					</ForceSuccess>
 
@@ -29,6 +29,46 @@
 							<SmileAction level="2" duration_ms="2000" />
 						</Delay>
 					</Sequence>
+
+					<ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0,0.0,-20.0" />
+							<TextToSpeechAction text="pose 3" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+
+					<ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0,0.0,-135.0" />
+							<TextToSpeechAction text="pose 4" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+
+					<ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0,0.0,135.0" />
+							<TextToSpeechAction text="pose 5" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+
 				</Sequence>
 			</Repeat>
 		</Sequence>			
