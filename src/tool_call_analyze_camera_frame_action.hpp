@@ -37,6 +37,7 @@ public:
 
     static BT::PortsList providedPorts() {
         return {BT::InputPort<std::string>("command"),
+                BT::InputPort<std::string>("model"),
                 BT::InputPort<bool>("enable_reasoning"),
                 BT::InputPort<std::string>("args_json"),
                 BT::InputPort<std::string>("base64_image"),
@@ -54,6 +55,10 @@ public:
             return BT::NodeStatus::SUCCESS;
         }
 
+        if (!getInput<std::string>("model", model_)) {
+  			throw BT::RuntimeError("missing model arg");
+        }
+
         bool enable_reasoning = false;
         getInput<bool>("enable_reasoning", enable_reasoning);
 
@@ -68,6 +73,8 @@ public:
         }
 
         image_utils::save_image(image_dir_, base64_image, image_file_);
+
+        RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction, using model: %s", model_.c_str());
 
         std::string system_prompt = "You analyze images.";
         ai_session_ = std::make_unique<AISession>(model_, max_context_size_, auth_token_,
