@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
+#include "rclcpp/rclcpp.hpp"
 
 #include <behaviortree_cpp/json_export.h>
 
@@ -281,6 +282,17 @@ std::string convertToString(const OrientationRPY &pose)
     return str.str();
 }
 
+template <> inline
+builtin_interfaces::msg::Time convertFromString(StringView key) {
+    auto parts = splitString(key, ';');
+    builtin_interfaces::msg::Time time_msg;
+    if (parts.size() == 2) {
+        time_msg.sec = convertFromString<int32_t>(parts[0]);
+        time_msg.nanosec = convertFromString<uint32_t>(parts[1]);
+    }
+    return time_msg;
+}
+
 } // end namespace BT
 
 inline
@@ -313,4 +325,14 @@ void RegisterCustomTypeHelpersJson()
     BT::RegisterJsonDefinition<Position>();
     BT::RegisterJsonDefinition<Pose2D>();
     BT::RegisterJsonDefinition<OrientationRPY>();
+}
+
+inline
+std::string convertToString(const builtin_interfaces::msg::Time& t)
+{
+	std::stringstream str;
+	str << t.sec
+        << ";" << t.nanosec
+		<< std::endl;
+    return str.str();
 }
