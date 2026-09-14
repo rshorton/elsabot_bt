@@ -1,0 +1,49 @@
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+	<BehaviorTree ID="MainTree">
+		<Sequence>
+         <TrackAction mode="Manual" rate="0" sound_track_mode="none" turn_base="false" object_type="person" />
+			<Repeat num_cycles="99999">
+            <Sequence>         
+               <ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0,0.0,0.0" />
+							<TextToSpeechAction text="pose 1" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="3000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+
+               <GetCameraFrameForVLMObjectDetectionAction base64_image="{b64_image}" image_time="{image_time}"/>
+               <GetSpatialCoordsForVLMDetectedObjectAction image_time="{image_time}" roi_x1="400" roi_y1="400" roi_x2="600" roi_y2="600"
+                                                      roi_image_w="1000" roi_image_h="1000" output_frame_id="base_link"
+                                                      x="{x}" y="{y}" z="{z}"/>
+
+               <ForceSuccess>
+						<Sequence>
+							<TrackManualAction pose="0.0,0.0,40.0" />
+							<TextToSpeechAction text="pose 2" />
+						</Sequence>
+					</ForceSuccess>
+
+					<Sequence>
+						<Delay delay_msec="6000">
+							<SmileAction level="2" duration_ms="2000" />
+						</Delay>
+					</Sequence>
+
+               <!-- The output of this action should be the same as before if the frame transforms corresponding to
+                    the snapshot time are used correctly.
+               -->
+               <GetSpatialCoordsForVLMDetectedObjectAction image_time="{image_time}" roi_x1="400" roi_y1="400" roi_x2="600" roi_y2="600"
+                                                      roi_image_w="1000" roi_image_h="1000" output_frame_id="base_link"
+                                                      x="{x}" y="{y}" z="{z}"/>
+
+            </Sequence>
+         </Repeat>
+		</Sequence>
+	</BehaviorTree>
+</root>

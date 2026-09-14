@@ -114,6 +114,8 @@ set(elsabot_bt_sources
   src/dart_gun_disable_tracking_action.cpp
   src/dart_gun_fire_at_aimed_target_action.cpp
   src/dart_gun_fire_at_specified_target_action.cpp
+  src/get_spatial_coords_for_vlm_detected_object_action.cpp
+  src/get_camera_frame_for_vlm_object_detection_action.cpp
   src/robot_status.cpp
   src/ros_common.cpp
   src/speech_to_text_action.cpp

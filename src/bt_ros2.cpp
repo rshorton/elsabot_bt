@@ -85,6 +85,9 @@
 #include "dart_gun_fire_at_aimed_target_action.hpp"
 #include "dart_gun_fire_at_specified_target_action.hpp"
 
+#include "get_camera_frame_for_vlm_object_detection_action.hpp"
+#include "get_spatial_coords_for_vlm_detected_object_action.hpp"
+
 #if defined(USE_GAME_FEATURES)
 #include "game_support/game_settings.hpp"
 #include "game_support/robot_says_init_actions.hpp"
@@ -295,6 +298,12 @@ int main(int argc, char **argv)
 
     params.default_port_value = "dart_gun_controller/fire_at_specified_target";
     factory->registerNodeType<DartGunFireAtSpecifiedTargetAction>("DartGunFireAtSpecifiedTargetAction", params);
+
+    params.default_port_value = "head/get_spatial_coords";
+    factory->registerNodeType<GetSpatialCoordsForVLMDetectedObjectAction>("GetSpatialCoordsForVLMDetectedObjectAction", params);
+
+    params.default_port_value = "head/rgbd_snapshot";
+    factory->registerNodeType<GetCameraFrameForVLMObjectDetectionAction>("GetCameraFrameForVLMObjectDetectionAction", params);
 
     ///////////////////////////////////////////
 
