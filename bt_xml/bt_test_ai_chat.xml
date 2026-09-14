@@ -7,6 +7,8 @@
 					<!-- Various one-time initialization -->
 
 					<!-- Initialize any BB vars needing initial values -->
+					<Script code=" primary_model:='/data/models/huggingface/models--cyankiwi--gemma-4-26B-A4B-it-AWQ-4bit/snapshots/519bdca117c8f10a9a578d1b70b5c0d54c59b7ba'"/>
+					<Script code=" @vlm_model:='/data/models/huggingface/models--cyankiwi--gemma-4-26B-A4B-it-AWQ-4bit/snapshots/519bdca117c8f10a9a578d1b70b5c0d54c59b7ba'"/>
 					<Script code=" run_tools:=false " />
 					<Script code=" tool_running:=false " />
 
@@ -484,6 +486,50 @@
 					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
         				"function": {
+            				"name": "fire_nerf_gun_at_specified_target_coords",
+							"supports_parallel": false,
+            				"description": "Use this tool to fire a kids nerf gun at the specified coordinates.",
+							"parameters": {
+                				"type": "object",
+								"properties": {
+									"coords": {
+										"type": "object",
+										"properties": {
+											"x": {
+												"type": "number",
+												"description": "X coordinate in meters (+ is forward)."
+											},
+											"y": {
+												"type": "number",
+												"description": "Y coordinate in meters (+ is to the left)"
+											},
+											"z": {
+												"type": "number",
+												"description": "Z coordinate in meters (+ is up)"
+											}
+										}
+									},
+                					"count": {
+                    					"type": "number",
+                    					"description": "The number of shots to fire" }
+								},
+                				"required": ["coords", "count"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
+							}
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
             				"name": "enable_nerf_gun_tracking",
 							"supports_parallel": false,
             				"description": "Use this tool to enable or disable tracking mode of the nerf gun.",
@@ -526,6 +572,74 @@
 						}
 					\}' />
 
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "vlm_bounding_box_to_spatial_coords",
+							"supports_parallel": false,
+            				"description": "Use this tool to calculate the spatial coordinates (x, y, z) that correponds to the center of a VLM outputted bounding box.",
+							"parameters": {
+								"type": "object",
+								"properties": {
+									"bounding_box": {
+										"type": "object",
+										"description": "The object bounding box in units of 0-1000",
+										"properties": {
+											"left": {
+												"type": "number",
+												"description": "Left coordinate of bounding box"
+											},
+											"top": {
+												"type": "number",
+												"description": "Top coordinate of bounding box"
+											},
+											"right": {
+												"type": "number",
+												"description": "Right coordinate of bounding box"
+											},
+											"bottom": {
+												"type": "number",
+												"description": "Bottom coordinate of bounding box"
+											}
+										},
+										"required": ["left", "top", "right", "bottom"]
+									},
+									"image_id": {
+										"type": "string",
+										"description": "ID of image from which bounding box was determined."
+									}
+								},
+								"required": ["bounding_box", "image_id"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									},
+									"coords": {
+										"type": "object",
+										"properties": {
+											"x": {
+												"type": "number",
+												"description": "X coordinate in meters (+ is forward)."
+											},
+											"y": {
+												"type": "number",
+												"description": "Y coordinate in meters (+ is to the left)"
+											},
+											"z": {
+												"type": "number",
+												"description": "Z coordinate in meters (+ is up)"
+											}
+										}
+									}
+								}
+							}
+						}
+					\}' />
+
 					<!-- Map each tool to the subtree used to implement it.  All tools are implemented using a subtree. -->
 					<ToolCallSetRunnerSubtreeAction tool_name="get_local_date_and_time" subtree_name="GetDateAndTime" />
 					<ToolCallSetRunnerSubtreeAction tool_name="analyze_camera_frame" subtree_name="AnalyzeCameraFrame" />
@@ -542,8 +656,10 @@
 					<ToolCallSetRunnerSubtreeAction tool_name="wait_for_object_detected" subtree_name="WaitForObjectDetected" />
 					<ToolCallSetRunnerSubtreeAction tool_name="set_reasoning_mode" subtree_name="SetReasoningMode" />
 					<ToolCallSetRunnerSubtreeAction tool_name="fire_nerf_gun" subtree_name="FireDartGun" />
+					<ToolCallSetRunnerSubtreeAction tool_name="fire_nerf_gun_at_specified_target_coords" subtree_name="FireDartGunAtSpecifiedCoords" />
 					<ToolCallSetRunnerSubtreeAction tool_name="enable_nerf_gun_tracking" subtree_name="EnableDartGunTracking" />
 					<ToolCallSetRunnerSubtreeAction tool_name="end_conversation" subtree_name="EndConversation" />
+					<ToolCallSetRunnerSubtreeAction tool_name="vlm_bounding_box_to_spatial_coords" subtree_name="VLMBoundingBoxToSpatialCoords" />
 
 					<!-- Allow the system prompt to be replaced or appended-to by command line args -->
 					<!-- Replacement case -->
@@ -759,7 +875,7 @@
 												tool_call_args="{tool_call_args}" tool_call_result="{tool_call_result}"
 												tool_calls="{tool_calls}" tool_call_results="{tool_call_results}"
 												tool_call_timeout_sec="180" system_prompt="{system_prompt}" streaming="true"
-												model="/data/models/huggingface/models--cyankiwi--gemma-4-26B-A4B-it-AWQ-4bit/snapshots/519bdca117c8f10a9a578d1b70b5c0d54c59b7ba"/>
+												model="{primary_model}"/>
 							</ReactiveSequence>
 
 							<!-- Buffer any new text generated by the final AIAction tick.  See comments
@@ -903,10 +1019,11 @@
 
 	<BehaviorTree ID="AnalyzeCameraFrame">
         <Sequence>
-			<GetCameraFrameAction base64_image="{b64_image}" />
+			<GetCameraFrameForVLMObjectDetectionAction base64_image="{b64_image}" image_time="{image_id}"/>
 			<PlayAudioFileAction file_path="/robot_ws/audio_files/camera_shutter.mp3" stream_type="bg" req_id="3" />
-			<ToolCallAnalyzeCameraFrameAction command="run" enable_reasoning="{@enable_reasoning}" args_json="{tool_call_args}"
-			 base64_image="{b64_image}" result_json="{tool_call_result}" />
+			<ToolCallAnalyzeCameraFrameAction command="run" model="{@vlm_model}" enable_reasoning="{@enable_reasoning}" args_json="{tool_call_args}"
+			 	base64_image="{b64_image}" image_id="{image_id}" result_json="{tool_call_result}" />
+
 		</Sequence>
     </BehaviorTree>
 
@@ -1056,7 +1173,7 @@
 			</Precondition>
 
 			<Script code=" tool_call_result:='{&quot;result&quot;: &quot;placeholder&quot;}'" />
-			<CopyBBValueIntoJsonKeyValueAction json_in_out="{tool_call_result}" json_key_pointer="/result" value="{said}" />
+			<CopyBBValueIntoJsonKeyValueAction json_in_out="{tool_call_result}" as_type="string" json_key_pointer="/result" str_value="{said}" />
 			<Script code=" said:='' " />
 			<Script code=" antenna_state_req:='model_active' " />
 		</Sequence>
@@ -1178,7 +1295,7 @@
 				<ForceFailure>
 					<Sequence>
 						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
-						<LogAction level="info" msg="SetReasoningMode Subtree - failed, invalid params" />
+						<LogAction level="info" msg="FireDartGun Subtree - failed, invalid params" />
 					</Sequence>						
 				</ForceFailure>
 			</Fallback>
@@ -1189,6 +1306,39 @@
 			</IfThenElse>
 		</Sequence>
     </BehaviorTree>
+
+	<BehaviorTree ID="FireDartGunAtSpecifiedCoords">
+        <Sequence>
+			<LogAction level="info" msg="FireDartGunAtSpecifiedCoords Subtree" arg1="{tool_call_args}" />
+
+			<!-- Parse json containing param and store in BB /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/count"
+						as_type="int" int_output="{fire_count}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/coords/x"
+						as_type="double" double_output="{x}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/coords/y"
+						as_type="double" double_output="{y}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/coords/z"
+						as_type="double" double_output="{z}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="FireDartGunAtSpecifiedCoords Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+			<IfThenElse>
+				<DartGunFireAtSpecifiedTargetAction frame_id="base_link" target_x="{x}" target_y="{y}" target_z="{z}" count="{fire_count}"/>
+				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+			</IfThenElse>
+		</Sequence>
+    </BehaviorTree>
+
+	
 
 	<BehaviorTree ID="EnableDartGunTracking">
         <Sequence>
@@ -1240,6 +1390,47 @@
 		</Sequence>
     </BehaviorTree>
 
-
+	<BehaviorTree ID="VLMBoundingBoxToSpatialCoords">
+        <Sequence>
+			<LogAction level="info" msg="VLMBoundingBoxToSpatialCoords Subtree" arg1="{tool_call_args}" />
+			<!-- Parse json input /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/bounding_box" as_type="string"
+						str_output="{bounding_box}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{bounding_box}" json_key_pointer="/left" as_type="uint"
+						uint_output="{left}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{bounding_box}" json_key_pointer="/top" as_type="uint"
+						uint_output="{top}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{bounding_box}" json_key_pointer="/right" as_type="uint"
+						uint_output="{right}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{bounding_box}" json_key_pointer="/bottom" as_type="uint"
+						uint_output="{bottom}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/image_id" as_type="string"
+						str_output="{image_id}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="VLMBoundingBoxToSpatialCoords Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+			<Sequence>
+				<IfThenElse>
+               		<GetSpatialCoordsForVLMDetectedObjectAction image_time="{image_id}" roi_x1="{left}" roi_y1="{top}" roi_x2="{right}" roi_y2="{bottom}"
+                        	                              roi_image_w="1000" roi_image_h="1000" output_frame_id="base_link"
+                            	                          x="{x_obj}" y="{y_obj}" z="{z_obj}"/>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;, &quot;coords&quot;: {&quot;x&quot;: 0, &quot;y&quot;: 0, &quot;z&quot;: 0 }}'" />
+						<CopyBBValueIntoJsonKeyValueAction json_in_out="{tool_call_result}" json_key_pointer="/coords/x" as_type="double" double_value="{x_obj}" />
+						<CopyBBValueIntoJsonKeyValueAction json_in_out="{tool_call_result}" json_key_pointer="/coords/y" as_type="double" double_value="{y_obj}" />
+						<CopyBBValueIntoJsonKeyValueAction json_in_out="{tool_call_result}" json_key_pointer="/coords/z" as_type="double" double_value="{z_obj}" />
+					</Sequence>
+					<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+				</IfThenElse>
+			</Sequence>					
+		</Sequence>
+    </BehaviorTree>
 
 </root>
