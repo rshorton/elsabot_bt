@@ -154,7 +154,7 @@ private:
                 "properties": {
                     "prompt": {
                         "type": "string",
-                        "description": "The prompt to use when analyzing the image using VLM"
+                        "description": "The prompt to use when analyzing the image using VLM.  Be sure to request bounding boxes when you are trying to detect objects."
                     }
                 },
                 "required": ["prompt"]                
