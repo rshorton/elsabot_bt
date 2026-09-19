@@ -476,7 +476,8 @@
 								"properties": {
 									"result": {
 										"type": "string",
-										"enum": ["success", "failed"]
+										"enum": ["success", "failed", "failed_gun_empty"],
+										"description": "success only implies the cmd was sent to the gun.  failed_gun_empty means there are no more darts in the gun."
 									}
 								}
 							}
@@ -520,7 +521,8 @@
 								"properties": {
 									"result": {
 										"type": "string",
-										"enum": ["success", "failed"]
+										"enum": ["success", "failed", "failed_gun_empty"],
+										"description": "success only implies the cmd was sent to the gun.  failed_gun_empty means there are no more darts in the gun."
 									}
 								}
 							}
@@ -1300,9 +1302,14 @@
 				</ForceFailure>
 			</Fallback>
 			<IfThenElse>
-				<DartGunFireAtAimedTargetAction count="{fire_count}"/>
+				<DartGunFireAtAimedTargetAction count="{fire_count}" empty="{empty}"/>
 				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
-				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+				<Sequence>
+					<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+					<Precondition if="empty == true" else="SUCCESS">				
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_gun_empty&quot;}'" />
+					</Precondition>
+				</Sequence>					
 			</IfThenElse>
 		</Sequence>
     </BehaviorTree>
@@ -1331,14 +1338,17 @@
 				</ForceFailure>
 			</Fallback>
 			<IfThenElse>
-				<DartGunFireAtSpecifiedTargetAction frame_id="base_link" target_x="{x}" target_y="{y}" target_z="{z}" count="{fire_count}"/>
+				<DartGunFireAtSpecifiedTargetAction frame_id="base_link" target_x="{x}" target_y="{y}" target_z="{z}" count="{fire_count}" empty="{empty}"/>
 				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
-				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+				<Sequence>
+					<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+					<Precondition if="empty == true" else="SUCCESS">				
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_gun_empty&quot;}'" />
+					</Precondition>
+				</Sequence>					
 			</IfThenElse>
 		</Sequence>
     </BehaviorTree>
-
-	
 
 	<BehaviorTree ID="EnableDartGunTracking">
         <Sequence>
@@ -1366,7 +1376,7 @@
 								<DartGunEnableTrackingAction tracking_pose_topic_name="/head/tracked_pose" />
 								<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
 								<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
-							</IfThenElse>						
+							</IfThenElse>
 						</ForceSuccess>							
 					</Precondition>
 				</Sequence>					
