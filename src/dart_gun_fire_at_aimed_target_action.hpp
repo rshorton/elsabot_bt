@@ -32,7 +32,8 @@ public:
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(
-        { BT::InputPort<int>("count") });
+        { BT::InputPort<int>("count"),
+          BT::OutputPort<bool>("empty") });
   }
 
   bool setRequest(Request::SharedPtr& request) override;

@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "dart_gun_interfaces/msg/cmd_result_codes.hpp"
+
 #include "dart_gun_fire_at_aimed_target_action.hpp"
+
+using CmdResultCodes = dart_gun_interfaces::msg::CmdResultCodes;
 
 bool DartGunFireAtAimedTargetAction::setRequest(Request::SharedPtr& request)
 {
@@ -31,7 +35,10 @@ BT::NodeStatus DartGunFireAtAimedTargetAction::onResponseReceived(const Response
 {
   RCLCPP_INFO(logger(), "DartGunFireAtAimedTargetAction result received, result: %d",
               response->cmd_result);
-  if (response->cmd_result == FireAtAimedTarget::Response::CMD_SUCCESS) {
+
+  setOutput("empty", response->cmd_result == CmdResultCodes::CMD_FAILED_EMPTY);
+
+  if (response->cmd_result == CmdResultCodes::CMD_SUCCESS) {
     return BT::NodeStatus::SUCCESS;
   } else {
     return BT::NodeStatus::FAILURE;

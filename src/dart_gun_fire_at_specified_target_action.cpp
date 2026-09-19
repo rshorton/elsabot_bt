@@ -16,7 +16,11 @@ limitations under the License.
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
+#include "dart_gun_interfaces/msg/cmd_result_codes.hpp"
+
 #include "dart_gun_fire_at_specified_target_action.hpp"
+
+using CmdResultCodes = dart_gun_interfaces::msg::CmdResultCodes;
 
 bool DartGunFireAtSpecifiedTargetAction::setRequest(Request::SharedPtr& request)
 {
@@ -70,7 +74,10 @@ BT::NodeStatus DartGunFireAtSpecifiedTargetAction::onResponseReceived(const Resp
 {
   RCLCPP_INFO(logger(), "DartGunFireAtSpecifiedTargetAction result received, result: %d",
               response->cmd_result);
-  if (response->cmd_result == FireAtSpecifiedTarget::Response::CMD_SUCCESS) {
+
+  setOutput("empty", response->cmd_result == CmdResultCodes::CMD_FAILED_EMPTY);
+
+  if (response->cmd_result == CmdResultCodes::CMD_SUCCESS) {
     return BT::NodeStatus::SUCCESS;
   } else {
     return BT::NodeStatus::FAILURE;

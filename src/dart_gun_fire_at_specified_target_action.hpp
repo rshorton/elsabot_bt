@@ -39,7 +39,8 @@ public:
           BT::InputPort<Pose3D>("target"),        // Specify a Pose3D or specific x,y,z values
           BT::InputPort<double>("target_x"),
           BT::InputPort<double>("target_y"),
-          BT::InputPort<double>("target_z") });
+          BT::InputPort<double>("target_z"),
+          BT::OutputPort<bool>("empty") });
   }
 
   bool setRequest(Request::SharedPtr& request) override;
