@@ -7,8 +7,8 @@
 					<!-- Various one-time initialization -->
 
 					<!-- Initialize any BB vars needing initial values -->
-					<Script code=" primary_model:='/data/models/huggingface/models--cyankiwi--gemma-4-26B-A4B-it-AWQ-4bit/snapshots/519bdca117c8f10a9a578d1b70b5c0d54c59b7ba'"/>
-					<Script code=" @vlm_model:='/data/models/huggingface/models--cyankiwi--gemma-4-26B-A4B-it-AWQ-4bit/snapshots/519bdca117c8f10a9a578d1b70b5c0d54c59b7ba'"/>
+					<Script code=" primary_model:='NeoChen1024/gemma-4-26B-A4B-it-qat-W4A16'"/>
+					<Script code=" @vlm_model:='NeoChen1024/gemma-4-26B-A4B-it-qat-W4A16'"/>
 					<Script code=" run_tools:=false " />
 					<Script code=" tool_running:=false " />
 
