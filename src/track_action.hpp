@@ -77,7 +77,7 @@ class TrackAction : public BT::SyncActionNode
 
         static BT::PortsList providedPorts()
         {
-        	return { BT::InputPort<std::string>("mode"),				// Off, Scan, TrackScan, Manual, LookDown
+        	return { BT::InputPort<std::string>("mode"),				// Off, Scan, Track, TrackScan, Manual, LookDown
         			 BT::InputPort<std::string>("rate"),				// Scan rate
 					 BT::InputPort<std::string>("sound_track_mode"),	// 'any', 'wakeword', 'none'
         			 BT::InputPort<bool>("turn_base"),					// Turn base to face tracked object
