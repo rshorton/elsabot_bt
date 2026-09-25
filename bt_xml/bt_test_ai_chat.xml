@@ -418,7 +418,11 @@
 								"properties": {
 									"obj_class": {
 										"type": "string",
-										"description": "Class type of object to be detected, supported types: person,cat."
+										"description": "Class type of object to be detected, the only supported types: person, cat."
+									},
+									"timeout_sec": {
+										"type": "number",
+										"description": "The number of seconds to wait for an object to be detected."
 									}
 								},
 								"required": ["obj_class", "timeout_sec"]
