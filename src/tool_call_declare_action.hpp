@@ -57,7 +57,7 @@ public:
 
         ToolCallData& tc_data = ToolCallData::getInstance();
         tc_data.declare_tool(tc_definition);
-        RCLCPP_INFO(node_->get_logger(), "Tool call declared: tool definition: %s", tc_definition.c_str());
+        RCLCPP_DEBUG(node_->get_logger(), "Tool call declared: tool definition: %s", tc_definition.c_str());
         return BT::NodeStatus::SUCCESS;
     }
 

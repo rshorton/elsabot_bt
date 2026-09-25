@@ -18,7 +18,7 @@ void ToolCallData::declare_tool(const std::string &tool_desc_json)
 	auto logger = ROSCommon::GetInstance()->GetNode()->get_logger(); 
 	try {
 		tool_descriptions_.push_back(nlohmann::json::parse(tool_desc_json));
-		RCLCPP_INFO(logger, "declare_tool, descriptions: %s", get_available_tools_json().c_str());
+		RCLCPP_DEBUG(logger, "declare_tool, descriptions: %s", get_available_tools_json().c_str());
 	} catch (nlohmann::json::parse_error& ex) {
         RCLCPP_ERROR(logger, "Error parsing tool description: %s at: %ld", tool_desc_json.c_str(), ex.byte);
 		throw std::runtime_error("Invalid tool description");
