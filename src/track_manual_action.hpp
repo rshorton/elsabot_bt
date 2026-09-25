@@ -69,17 +69,37 @@ public:
 
 	static BT::PortsList providedPorts()
 	{
-		return { BT::InputPort<std::string>("pose") };
+		return { BT::InputPort<std::string>("pose"),
+				 BT::InputPort<double>("roll"),
+				 BT::InputPort<double>("pitch"),
+				 BT::InputPort<double>("yaw") };
 	}
 
 	virtual BT::NodeStatus tick() override
 	{
 		std::string pose_str;
+		bool use_pose_str = true;
+		double roll = 0.0f;
+		double pitch = 0.0f;
+		double yaw = 0.0f;
 		if (!getInput<std::string>("pose", pose_str)) {
-			throw BT::RuntimeError("missing pose_str");
+			if (!getInput<double>("roll", roll) ||
+				!getInput<double>("pitch", pitch) ||
+				!getInput<double>("yaw", yaw)) {
+				throw BT::RuntimeError("missing pose_str/rpy");
+			} else {
+				use_pose_str = false;
+			}
 		}
 
-		OrientationRPY orient = BT::convertFromString<OrientationRPY>(pose_str);
+		OrientationRPY orient;
+		if (use_pose_str) {
+			orient = BT::convertFromString<OrientationRPY>(pose_str);
+		} else {
+			orient.r = roll;
+			orient.p = pitch;
+			orient.y = yaw;
+		}			
 		node_if_->setHeadPose(orient);
 		return BT::NodeStatus::SUCCESS;
 	}
