@@ -48,5 +48,6 @@ BT::NodeStatus DartGunFireAtAimedTargetAction::onResponseReceived(const Response
 BT::NodeStatus DartGunFireAtAimedTargetAction::onFailure(BT::ServiceNodeErrorCode error)
 {
   RCLCPP_ERROR(logger(), "%s; Error: %d", name().c_str(), error);  
+  setOutput("empty", false);
   return BT::NodeStatus::FAILURE;
 }
