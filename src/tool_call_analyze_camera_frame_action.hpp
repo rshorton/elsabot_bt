@@ -116,21 +116,27 @@ public:
             RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction VLM finished, result: %s",
                          AISession::result_to_str(result).c_str());
 
+            nlohmann::json result_obj;
+            auto status = BT::NodeStatus::FAILURE;
+
             if (result == AISession::Result::cancelled ||
                 result == AISession::Result::timeout ||
-                result == AISession::Result::failed) {
-                return BT::NodeStatus::FAILURE;
+                result == AISession::Result::failed ||
+                result == AISession::Result::failed_resp_parse_error_general ||
+                result == AISession::Result::failed_resp_parse_error_tc ||
+                result == AISession::Result::failed_request_error_general) {
+                result_obj["result"] = "failed";
             } else {
-                nlohmann::json result_obj;
+                result_obj["result"] = "success";
                 result_obj["analysis"] = full_response;
                 result_obj["filename"] = image_file_;
                 result_obj["image_id"] = image_id_;
 
-                std::string result_json = result_obj.dump();
-                setOutput("result_json", result_json);
-                RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction result: %s", result_json.c_str());
-                return BT::NodeStatus::SUCCESS;
             }
+            std::string result_json = result_obj.dump();
+            setOutput("result_json", result_json);
+            RCLCPP_INFO(node_->get_logger(), "ToolCallAnalyzeCameraFrameAction result: %s", result_json.c_str());
+            return status;
         }
         return BT::NodeStatus::RUNNING;
     }
@@ -154,7 +160,7 @@ private:
                 "properties": {
                     "prompt": {
                         "type": "string",
-                        "description": "The prompt to use when analyzing the image using VLM.  Be sure to request bounding boxes when you are trying to detect objects."
+                        "description": "The prompt to use when analyzing the image using VLM.  Be sure to request bounding boxes when you are trying to detect specific objects.  For general analysis of a scene, don't request bounding boxes."
                     }
                 },
                 "required": ["prompt"]                
@@ -162,6 +168,11 @@ private:
             "returns": {
                 "type": "object",
                 "properties": {
+					"result": {
+						"type": "string",
+						"enum": ["success", "failed"],
+                        "description": "The 'failed' result indicates that processing failed."
+					},
                     "analysis": {
                         "type": "string",
                         "description": "The analysis of the image"

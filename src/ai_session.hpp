@@ -21,7 +21,7 @@ class AISession {
  public:
   using CallbackData = std::function<void(const std::string &data)>;
 
-  enum class Result { success, cancelled, timeout, failed, failed_resp_parse_error_general, failed_resp_parse_error_tc };
+  enum class Result { success, cancelled, timeout, failed, failed_resp_parse_error_general, failed_resp_parse_error_tc, failed_request_error_general};
   enum class SessionMessageType { prompt, response, tool_request, tool_result};
  
   AISession(const std::string &model, int max_context_size, const std::string &auth_token,
@@ -62,6 +62,7 @@ class AISession {
   void build_request(bool stream, const std::string &tools_json, bool enable_reasoning);
   void perform(bool stream, const std::string &tools_json, bool enable_reasoning);
   void process_message(const std::string& msg_json, TokenUsage &usage);
+  void finish_toolcall_parsing();
   int fetch_token_count(const std::string& text) const;
   void update_tokens_for_last_prompt(size_t tokens);
   void prune_message_history_as_needed();
@@ -296,6 +297,8 @@ class AISession {
 
   bool response_parse_error_{false};
   bool response_parse_error_tool_call_{false};
+  bool request_error_{false};
+  std::string request_error_str_;
 
   TokenUsage token_usage_;
   TokenUsage token_usage_cur_msg_;

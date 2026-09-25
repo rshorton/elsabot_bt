@@ -86,7 +86,10 @@ BT::NodeStatus AIAction::onStart() {
   setOutput("tool_call_result", "");
   setOutput("tool_call_results", "");
 
+  RCLCPP_INFO(node_->get_logger(), "AIAction ===================================================");
+  RCLCPP_INFO(node_->get_logger(), "AIAction ===================================================");
   RCLCPP_INFO(node_->get_logger(), "AIAction prompt: %s", prompt.c_str());
+  RCLCPP_INFO(node_->get_logger(), "AIAction ===================================================");
 
   ToolCallData& tc_data = ToolCallData::getInstance();
   tools_json_ = tc_data.get_available_tools_json();
@@ -179,7 +182,10 @@ BT::NodeStatus AIAction::update_waiting_on_response(bool abort) {
       }          
 
     } else {
+      RCLCPP_INFO(node_->get_logger(), "AIAction ===================================================");
       RCLCPP_INFO(node_->get_logger(), "%s: final result: %s", name().c_str(), streaming_data_buffer_.c_str());
+      RCLCPP_INFO(node_->get_logger(), "AIAction ===================================================");
+      RCLCPP_INFO(node_->get_logger(), "AIAction ===================================================");
 
       // Run one more tick to allow the last part of the response to be processed by other BT node(s) (ie TTS)
       setOutput("result", streaming_data_buffer_);
