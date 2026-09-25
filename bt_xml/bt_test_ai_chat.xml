@@ -1238,7 +1238,7 @@
 				</ForceFailure>
 			</Fallback>
 			<IfThenElse>
-				<DetectionWaitForObjectDetectedAction det="detector1" obj_class="{obj_class}" timeout_sec="180.0"/>
+				<DetectionWaitForObjectDetectedAction det="detector1" obj_class="{obj_class}" timeout_sec="{timeout_sec}"/>
 				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
 				<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
 			</IfThenElse>
