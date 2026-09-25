@@ -42,6 +42,8 @@
 
 					<GetTimeNowAction now="{end_response_time}" />
 
+					<TrackAction mode="Track" rate="10" sound_track_mode="Any" turn_base="false" object_type="person" />
+
 					<!-- ================================================= -->
 					<!-- Declare the tool calls to be exposed to the model -->
 					<!-- ================================================= -->
