@@ -500,7 +500,7 @@
         				"function": {
             				"name": "fire_nerf_gun_at_specified_target_coords",
 							"supports_parallel": false,
-            				"description": "Use this tool to fire a kids nerf gun at the specified coordinates.",
+            				"description": "Use this tool to fire a kids nerf gun at the specified spatial/physical coordinates. Bounding box coordinates from VLM analysis must be converted using the vlm_bounding_box_to_spatial_coords tool before passing to this function.",
 							"parameters": {
                 				"type": "object",
 								"properties": {
@@ -590,7 +590,7 @@
         				"function": {
             				"name": "vlm_bounding_box_to_spatial_coords",
 							"supports_parallel": false,
-            				"description": "Use this tool to calculate the spatial coordinates (x, y, z) that correponds to the center of a VLM outputted bounding box.",
+            				"description": "Use this tool to calculate the spatial (ie physical) coordinates (x, y, z) that correponds to the center of a VLM outputted bounding box.",
 							"parameters": {
 								"type": "object",
 								"properties": {
