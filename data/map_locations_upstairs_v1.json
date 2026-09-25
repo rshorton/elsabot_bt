@@ -1,0 +1,8 @@
+[
+    {"location": "office", "x": 0.0, "y": 0.0, "yaw": 74.0},
+    {"location": "office tv", "x": -0.29, "y": 0.101, "yaw": 180.0},
+    {"location": "playroom",	"x": -4.48, "y": -1.0, "yaw": 135.0},
+    {"location": "playroom tv",	"x": -4.48, "y": 0.143, "yaw": 0.0},
+    {"location": "bedroom door", "x": -8.3, "y": 1.23, "yaw": 180.0},
+    {"location": "robot home", "x": 0.0, "y": 0.0, "yaw": 74.0}
+]

@@ -77,6 +77,7 @@
 #include "get_camera_frame_action.hpp"
 #include "get_power_status_action.hpp"
 
+#include "copy_file_into_bb_action.hpp"
 #include "copy_json_key_value_into_bb_action.hpp"
 #include "copy_bb_value_into_json_key_action.hpp"
 
@@ -232,6 +233,7 @@ int main(int argc, char **argv)
     factory->registerNodeType<ToolCallSetRunnerSubtreeAction>("ToolCallSetRunnerSubtreeAction");
 
     factory->registerNodeType<GetPowerStatusAction>("GetPowerStatusAction");
+    factory->registerNodeType<CopyFileIntoBBAction>("CopyFileIntoBBAction");
     factory->registerNodeType<CopyJsonKeyValueIntoBBAction>("CopyJsonKeyValueIntoBBAction");
     factory->registerNodeType<CopyBBValueIntoJsonKeyValueAction>("CopyBBValueIntoJsonKeyValueAction");
 

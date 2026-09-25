@@ -7,8 +7,13 @@
 					<!-- Various one-time initialization -->
 
 					<!-- Initialize any BB vars needing initial values -->
+					<Script code=" system_prompt_file:='/robot_ws/src/elsabot_bt/data/prompt_v1.md'" />
+					<Script code=" @map_locations_file:='/robot_ws/src/elsabot_bt/data/map_locations_upstairs_v1.json'" />
+
+					<!-- model names only needed when using vllm to run the model -->
 					<Script code=" primary_model:='NeoChen1024/gemma-4-26B-A4B-it-qat-W4A16'"/>
 					<Script code=" @vlm_model:='NeoChen1024/gemma-4-26B-A4B-it-qat-W4A16'"/>
+
 					<Script code=" run_tools:=false " />
 					<Script code=" tool_running:=false " />
 
@@ -667,13 +672,7 @@
 					<!-- Replacement case -->
 					<IfThenElse>
 						<TextCompareAction text="{def_value_1}" ck_for="" />
-						<SetBlackboard output_key="system_prompt" value="You are a robot called elsabot (pronounced as elsuh-bot) but you
-							should accept any name someone calls you.  You are also a helpful assistant. Your AI model is the Gemma 4,
-							with 26 billion parameters.	You use Faster-Whisper for speech-to-text, Piper for text-to-speech, and Openwakeword
-							for wake word detection and run on a Jetson Orin AGX computer. Respond only in plain text without narration.
-							Do not use asterisks (*) for actions. Do not describe actions.	Only use 'face' emojis (using unicode) as a secondary way to express emotions. Keep your responses concise and don't make assumptions. You can be fun, witty, and amusing. Use the 'speak' tool to announce your intentions before taking a major action. For example, if you are about to move to a new location, say: 'I'm heading to...' Don't over-explain your actions.  Here are some tool-call guidelines.  1. If prompted to perform multiple actions at the same time (ie. do X while also doing Y), use parallel tool calling.  For that case you must first call set_parallel_tool_mode to specify the execution policy. The policy controls whether to wait for both tools to finish, or whether the first one to complete terminates the other tool. Important - only include a tool in a parallel call if the tool definition property has supports_parallel=true.  2. The camera is mounted on a pan-tilt base
-							that tracks objects.  Do not try to assess relative object position by VLM analysis. The get_detected_objects tool should be used instead. 
-							Ask clarifying questions when a requested task is unclear."/>
+						<CopyFileIntoBBAction file_path="{system_prompt_file}" port="{system_prompt}" />
 						<SetBlackboard output_key="system_prompt" value="{def_value_1}" />
 					</IfThenElse>
 					<!-- Appending case -->
@@ -1134,13 +1133,10 @@
     </BehaviorTree>
 
 	<BehaviorTree ID="GetMapLocations">
-		<!-- Fix - get from a file or other source -->
-		<Sequence>
-			<SetBlackboard output_key="tool_call_result" value='[{"location": "office tv",
-						"x": -0.29, "y": 0.101, "yaw": 180.0},{"location": "playroom tv",
-						"x": -4.48, "y": 0.143, "yaw": 0.0},{"location": "amys_door", "x": -8.3, "y": 1.23, "yaw": 180.0},
-			{"location": "robot home", "x": 0.0, "y": 0.0, "yaw": 74.0}]'/>
-		</Sequence>
+		<Fallback>
+			<CopyFileIntoBBAction file_path="{@map_locations_file}" port="{tool_call_result}" />
+			<SetBlackboard output_key="tool_call_result" value='[]'/>
+		</Fallback>
     </BehaviorTree>
 
 	<BehaviorTree ID="AskQuestionAndGetResponse">

@@ -97,6 +97,7 @@ set(elsabot_bt_sources
   src/cancel_audio_action.cpp
   src/copy_bb_value_into_json_key_action.cpp
   src/copy_json_key_value_into_bb_action.cpp
+  src/copy_file_into_bb_action.cpp
   src/detection_get_objects_action.cpp
   src/detection_processor_container.cpp
   src/detection_processor.cpp
@@ -152,6 +153,11 @@ install (TARGETS
 
 install(
   DIRECTORY bt_xml
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY data
   DESTINATION share/${PROJECT_NAME}
 )
 
