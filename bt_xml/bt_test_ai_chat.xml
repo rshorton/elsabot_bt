@@ -421,7 +421,7 @@
 										"description": "Class type of object to be detected, supported types: person,cat."
 									}
 								},
-								"required": ["obj_class"]
+								"required": ["obj_class", "timeout_sec"]
 							},
 							"returns": {
 								"type": "object",
@@ -1223,6 +1223,8 @@
 					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/obj_class" as_type="string"
 						str_output="{obj_class}" />
 					<LogAction level="info" msg="Using obj_class" arg1="{obj_class}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/timeout_sec" as_type="double"
+						double_value="{timeout_sec}" />
 				</Sequence>
 				<ForceFailure>
 					<Sequence>
