@@ -56,7 +56,7 @@ private:
 	rclcpp::Node::SharedPtr node_;
 
 	std::shared_ptr<tf2_ros::TransformListener> tfl_;
-	tf2_ros::Buffer tfBuffer_;
+	std::shared_ptr<tf2_ros::Buffer> tfBuffer_;
 };
 
 #endif //_TRANSFORM_HELPER_HPP_

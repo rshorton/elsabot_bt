@@ -30,24 +30,28 @@ limitations under the License.
 
 using namespace std::chrono_literals;
 
+namespace {
 const std::string DEFAULT_SOURCE_FRAME = "oakd_center_camera";
+const double TF_BUFFER_DURATION_SEC = 30.0f;
 
 constexpr std::chrono::milliseconds lookup_wait_time = 50ms;
-
+}
 TransformHelper *TransformHelper::xform_helper_ = nullptr;
 
 TransformHelper::TransformHelper(rclcpp::Node::SharedPtr node)
-	: node_(node),
-  	  tfBuffer_(node->get_clock())
+	: node_(node)
 {
-	tfl_ = std::make_shared<tf2_ros::TransformListener>(tfBuffer_);
+	tf2::Duration cache_duration = tf2::durationFromSec(TF_BUFFER_DURATION_SEC);
+
+	tfBuffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock(), cache_duration);
+	tfl_ = std::make_shared<tf2_ros::TransformListener>(*tfBuffer_);
 }
 
 bool TransformHelper::GetTransform(const std::string &frame_from, const std::string &frame_to,
 								   geometry_msgs::msg::TransformStamped &transform, const rclcpp::Time time)
 {
 	try{
-		transform = tfBuffer_.lookupTransform(frame_to, frame_from, time);
+		transform = tfBuffer_->lookupTransform(frame_to, frame_from, time);
 		return true;
 	} catch (tf2::TransformException &ex) {
 		RCLCPP_ERROR(node_->get_logger(), "TransformHelper: Failed to transform from %s to %s",
@@ -61,7 +65,7 @@ bool TransformHelper::Transform(const std::string &frame_from, const std::string
 {
 	try{
 		geometry_msgs::msg::TransformStamped transformStamped;
-		transformStamped = tfBuffer_.lookupTransform(frame_to, frame_from, time, lookup_wait_time);
+		transformStamped = tfBuffer_->lookupTransform(frame_to, frame_from, time, lookup_wait_time);
 
 		geometry_msgs::msg::PointStamped pt;
 		pt.point.x = x;
