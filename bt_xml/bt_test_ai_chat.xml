@@ -42,7 +42,7 @@
 
 					<GetTimeNowAction now="{end_response_time}" />
 
-					<TrackAction mode="Track" rate="10" sound_track_mode="Any" turn_base="false" object_type="person" />
+					<TrackAction mode="Track" rate="10" sound_track_mode="None" turn_base="false" object_type="person" />
 
 					<!-- ================================================= -->
 					<!-- Declare the tool calls to be exposed to the model -->
@@ -653,6 +653,77 @@
 						}
 					\}' />
 
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "set_head_orientation",
+							"supports_parallel": false,
+            				"description": "Use this tool to set the orientation of the robot head which includes the Oakd RGBD and a laser pointer. This tool can be used when you want to look for objects around you without moving the robot base position.  After moving the head, wait at least 1 second before requesting the current object detections.",
+							"parameters": {
+								"type": "object",
+								"properties": {
+									"orientation": {
+										"type": "object",
+										"description": "These set the orientation of the head. The usable camera field of view is: w= 60 deg, h=50 deg",
+										"properties": {
+											"yaw": {
+												"type": "number",
+												"description": "Yaw angle in degrees.  Positive values turn left and vice versa, range [-135, 135]"
+											},
+											"pitch": {
+												"type": "number",
+												"description": "Pitch angle in degrees. Positive values raise tilt upward and vice versa, range [-40, 40]."
+											}
+										},
+										"required": ["yaw", "pitch"]
+									}
+								},
+								"required": ["orientation"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
+							}
+						}
+					\}' />
+
+					<ToolCallDeclareAction tc_definition='\{
+        				"type": "function",
+        				"function": {
+            				"name": "set_head_tracking_mode",
+							"supports_parallel": false,
+            				"description": "Use this tool to configure the tracking mode used by the robot head.  Tracking allows the head to follow a detected object.",
+							"parameters": {
+								"type": "object",
+								"properties": {
+									"mode": {
+										"type": "string",
+										"description": "The tracking mode to use: None - dont track. Track - track the selected object type. Scan to find an object, but then track once found.  Manual - head position is manually controlled."
+									},
+									"object_type": {
+										"type": "string",
+										"description": "Type of object to track.  Supported types: person, cat"
+									}
+								},
+								"required": ["mode", "object_type"]
+							},
+							"returns": {
+								"type": "object",
+								"properties": {
+									"result": {
+										"type": "string",
+										"enum": ["success", "failed"]
+									}
+								}
+							}
+						}
+					\}' />
+
 					<!-- Map each tool to the subtree used to implement it.  All tools are implemented using a subtree. -->
 					<ToolCallSetRunnerSubtreeAction tool_name="get_local_date_and_time" subtree_name="GetDateAndTime" />
 					<ToolCallSetRunnerSubtreeAction tool_name="analyze_camera_frame" subtree_name="AnalyzeCameraFrame" />
@@ -673,6 +744,8 @@
 					<ToolCallSetRunnerSubtreeAction tool_name="enable_nerf_gun_tracking" subtree_name="EnableDartGunTracking" />
 					<ToolCallSetRunnerSubtreeAction tool_name="end_conversation" subtree_name="EndConversation" />
 					<ToolCallSetRunnerSubtreeAction tool_name="vlm_bounding_box_to_spatial_coords" subtree_name="VLMBoundingBoxToSpatialCoords" />
+					<ToolCallSetRunnerSubtreeAction tool_name="set_head_orientation" subtree_name="SetHeadOrientation" />
+					<ToolCallSetRunnerSubtreeAction tool_name="set_head_tracking_mode" subtree_name="SetHeadTrackingMode" />
 
 					<!-- Allow the system prompt to be replaced or appended-to by command line args -->
 					<!-- Replacement case -->
@@ -1446,5 +1519,66 @@
 			</Sequence>					
 		</Sequence>
     </BehaviorTree>
+
+	<BehaviorTree ID="SetHeadOrientation">
+		<Sequence>
+			<LogAction level="info" msg="SetHeadOrientation Subtree" arg1="{tool_call_args}" />
+			<!-- Parse json input /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/orientation" as_type="string"
+						str_output="{orientation}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{orientation}" json_key_pointer="/yaw" as_type="double"
+						double_output="{yaw}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{orientation}" json_key_pointer="/pitch" as_type="double"
+						double_output="{pitch}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="SetHeadOrientation Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+			<Sequence>
+				<IfThenElse>
+					<TrackManualAction roll="0.0" pitch="{pitch}" yaw="{yaw}" />
+					<!-- On success, give time for the head to move -->
+					<Delay delay_msec="1000">
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+					</Delay>						
+					<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+				</IfThenElse>
+			</Sequence>					
+		</Sequence>
+	</BehaviorTree>
+
+	<BehaviorTree ID="SetHeadTrackingMode">
+		<Sequence>
+			<LogAction level="info" msg="SetHeadTrackingMode Subtree" arg1="{tool_call_args}" />
+			<!-- Parse json input /-->
+			<Fallback>
+				<Sequence>
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/mode" as_type="string"
+						str_output="{mode}" />
+					<CopyJsonKeyValueIntoBBAction json_in="{tool_call_args}" json_key_pointer="/object_type" as_type="string"
+						str_output="{object_type}" />
+				</Sequence>
+				<ForceFailure>
+					<Sequence>
+						<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed_invalid_parameters&quot;}'" />
+						<LogAction level="info" msg="SetHeadTrackingMode Subtree - failed, invalid params" />
+					</Sequence>						
+				</ForceFailure>
+			</Fallback>
+			<Sequence>
+				<IfThenElse>
+					<TrackAction mode="{mode}" rate="10" sound_track_mode="None" turn_base="false" object_type="{object_type}" />
+					<Script code=" tool_call_result:='{&quot;result&quot;: &quot;success&quot;}'" />
+					<Script code=" tool_call_result:='{&quot;result&quot;: &quot;failed&quot;}'" />
+				</IfThenElse>
+			</Sequence>					
+		</Sequence>
+	</BehaviorTree>
 
 </root>
