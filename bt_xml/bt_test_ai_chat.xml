@@ -178,6 +178,7 @@
 						"type": "function"
 					\}' /-->
 
+					<!-- Fix - don't declare when in ackermann steering mode
 					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
         				"function": {
@@ -216,6 +217,7 @@
 							}
 						}
 					\}' />
+					-->
 
 					<ToolCallDeclareAction tc_definition='\{
         				"type": "function",
