@@ -25,7 +25,6 @@ limitations under the License.
 #include <cctype>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_srvs/srv/empty.hpp"
 #include <behaviortree_cpp/action_node.h>
 
 class TextCompareAction : public BT::SyncActionNode

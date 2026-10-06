@@ -16,6 +16,7 @@
   <depend>sensor_msgs</depend>
   <depend>nav2_behavior_tree</depend>
   <depend>nav2_msgs</depend>
+  <depend>nav2_util</depend>
   <depend>behaviortree_cpp</depend>
   <depend>speech_action_interfaces</depend>
   <depend>elsabot_audio_output_interfaces</depend>
@@ -24,11 +25,13 @@
   <depend>object_detection_msgs</depend>
   <depend>dart_gun_interfaces</depend>
   <depend>visualization_msgs</depend>
-  <depend>nav2_util</depend>
   <depend>robot_localization</depend>
   <depend>image_transport</depend>
   <depend>image_transport_plugins</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
   <depend>cv_bridge</depend>
+  <depend>curl</depend>
 
 <!--
   <depend>moveit_ros_planning_interface</depend>

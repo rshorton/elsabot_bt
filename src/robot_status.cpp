@@ -21,9 +21,9 @@ limitations under the License.
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-#include "tf2/transform_datatypes.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2/transform_datatypes.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/LinearMath/Matrix3x3.hpp"
 
 #include "robot_status.hpp"
 #include "transform_helper.hpp"

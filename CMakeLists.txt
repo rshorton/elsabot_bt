@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(elsabot_bt)
 
 # Default to C99
@@ -48,6 +48,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(CURL REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 #find_package(moveit_ros_planning REQUIRED)
 #find_package(moveit_ros_planning_interface REQUIRED)
@@ -64,27 +66,28 @@ if(BUILD_TESTING)
 endif()
 
 set(dependencies
-  behaviortree_cpp
-  CURL
-  cv_bridge
-  elsabot_audio_output_interfaces
-  geometry_msgs
-  image_transport
-  nav_msgs
-  nav2_behavior_tree
-  nav2_msgs
-  nav2_util
-  object_detection_msgs
-  rclcpp
-  rclcpp_action
-  robot_head_interfaces
-  robot_localization
-  robot_ui_interfaces
-  sensor_msgs
-  speech_action_interfaces
-  dart_gun_interfaces
-  std_msgs
-  visualization_msgs
+  behaviortree_cpp::behaviortree_cpp
+  curl
+  cv_bridge::cv_bridge
+  elsabot_audio_output_interfaces::elsabot_audio_output_interfaces
+  geometry_msgs::geometry_msgs
+  image_transport::image_transport
+  nav_msgs::nav_msgs
+  nav2_behavior_tree::nav2_behavior_tree
+  nav2_msgs::nav2_msgs
+  object_detection_msgs::object_detection_msgs
+  rclcpp::rclcpp
+  rclcpp_action::rclcpp_action
+  robot_head_interfaces::robot_head_interfaces
+  robot_localization::robot_localization
+  robot_ui_interfaces::robot_ui_interfaces
+  sensor_msgs::sensor_msgs
+  speech_action_interfaces::speech_action_interfaces
+  dart_gun_interfaces::dart_gun_interfaces
+  std_msgs::std_msgs
+  visualization_msgs::visualization_msgs
+  tf2::tf2
+  tf2_ros::tf2_ros
   #moveit_ros_planning
   #moveit_ros_planning_interface
 )
@@ -140,7 +143,7 @@ endif()
 
 add_executable(elsabot_bt ${elsabot_bt_sources})
 
-ament_target_dependencies(elsabot_bt
+target_link_libraries(elsabot_bt
 	${dependencies}
 )
 
